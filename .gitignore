@@ -1,0 +1,9 @@
+.DS_Store
+.context/
+
+# Output folders (exclude large/generated files)
+output/
+output/*/
+
+# Node modules
+node_modules/

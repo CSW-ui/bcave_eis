@@ -1,0 +1,30 @@
+{
+  "design_keywords": ["Doodle", "Graffiti", "Pop Art", "Bold Lines", "Vivid Colors"],
+  "mood": "Not just clothes, it's a culture.",
+  "color_palette": {
+    "primary": {
+      "signature_yellow": "#FEF200",
+      "black": "#000000",
+      "white": "#FFFFFF"
+    },
+    "secondary": {
+      "sky_blue": "#68A8DB"
+    },
+    "usage": "Primary = 브랜드 아이덴티티 (Black + Signature Yellow), Secondary = 시즌 악센트 (Sky Blue)"
+  },
+  "typography": {
+    "display": "Bold grotesque sans-serif (graffiti 감성)",
+    "body": "Clean sans-serif (가독성 우선)",
+    "accent": "Hand-drawn / doodle style (IP 콘텐츠용)"
+  },
+  "graphic_style": {
+    "ip_application": "Bold outline + flat color fill, doodle/graffiti aesthetic",
+    "photo_direction": "Street context, 자연광, 움직임이 있는 포즈",
+    "layout_principles": ["asymmetric", "bold-crop", "text-overlay-ok", "white-space-minimal"]
+  },
+  "signature_items": [
+    "키치한 그래픽 티셔츠",
+    "릴리 포인트 크롭 가디건",
+    "플라이트 백팩"
+  ]
+}

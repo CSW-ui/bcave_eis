@@ -1,0 +1,65 @@
+{
+  "core_target": {
+    "age_range": "18-25",
+    "definition": "어떠한 틀이나 규칙에 얽매이지 않는 자유로운 트렌드리더",
+    "traits": [
+      {
+        "name": "자기표현 수단으로서의 소비",
+        "detail": "소비를 통해 자신의 취향/태도/정체성 표현. 광고보다 자연스러운 공감 선호. 브랜드의 결이 나를 표현하는가에 초점."
+      },
+      {
+        "name": "경험 가치관 중시",
+        "detail": "보유보다 경험 중시. 여행, 페스티벌, 팝업 스토어 등 적극 참여. 감성 소비 트렌드 확대."
+      },
+      {
+        "name": "합리성에 집중",
+        "detail": "가격 대비 디자인, 디테일, 스토리에 집중. 합리적 판매가에 대한 개인 기준 명확. 다양한 브랜드 접근 통한 가치 기준 투영."
+      }
+    ],
+    "strategy": {
+      "lineup": "다가올 트렌드를 와키윌리만의 감성으로 제안 (컬러, IP, 실루엣)",
+      "experience": "브랜드 세계관 보여주는 오프라인 구조 + 상품에 스토리 투영",
+      "value": "가격 접근성 + 한정성의 균형, 상품 신뢰도 고도화"
+    }
+  },
+  "personas": [
+    {
+      "id": "uni",
+      "name": "UNI",
+      "age": 20,
+      "gender": "unisex",
+      "occupation": "대학생 / 밴드부 베이시스트",
+      "hobbies": ["시티러닝", "커피 로스팅"],
+      "preferred_brands": ["LLEGE", "포스트아카이브", "썬러브", "온러닝", "테켓"],
+      "shopping_behavior": "오프라인 매장 경험 중시, 스타일링 탐색",
+      "content_preference": "스트릿 컬처, 음악, 러닝 관련 콘텐츠"
+    },
+    {
+      "id": "woman",
+      "name": "WOMAN",
+      "age": 21,
+      "gender": "female",
+      "occupation": "대학생 / 나노 인플루언서",
+      "hobbies": ["텍스트힙", "팝업투어"],
+      "preferred_brands": ["코이세이오", "브랜드멜빌", "글로니", "낫띵", "미세키서울"],
+      "shopping_behavior": "온라인 탐색 후 오프라인 구매, SNS 공유",
+      "content_preference": "패션 에디토리얼, 걸리시 무드, 팝업 리뷰"
+    }
+  ],
+  "data_insights": {
+    "search_demographic": {
+      "female_pct": 83,
+      "top_age_group": "40대",
+      "top_age_pct": 63
+    },
+    "offline_purchase": {
+      "top_ages": ["20대(19%)", "25대(18%)"],
+      "womens_share_pct": 36
+    },
+    "online_purchase": {
+      "top_ages": ["40대(25%)", "20대(23%)"],
+      "womens_share_pct": 12
+    },
+    "strategic_implication": "인지(검색)와 구매의 괴리 존재. 20대 핵심 타겟에 마케팅 자원 집중하여 구매 전환율과 객단가 극대화 추진."
+  }
+}

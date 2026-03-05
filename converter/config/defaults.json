@@ -1,0 +1,63 @@
+{
+  "brand_fallback": {
+    "colors": {
+      "primary":   "#FEF200",
+      "secondary": "#000000",
+      "accent1":   "#68A8DB",
+      "accent2":   "#FEF200",
+      "accent3":   "#FFFFFF",
+      "background": "#FFFFFF",
+      "text":       "#000000",
+      "text_light": "#666666"
+    },
+    "typography": {
+      "display_font": "Inter",
+      "body_font":    "Inter",
+      "heading_size": 32,
+      "body_size":    18,
+      "caption_size": 12
+    },
+    "brand_name": "FPOF Brand"
+  },
+  "formats": {
+    "pptx": {
+      "slide_width_inches":  13.33,
+      "slide_height_inches": 7.5,
+      "default_template":    "executive",
+      "font_title_pt":       36,
+      "font_body_pt":        18,
+      "font_caption_pt":     12,
+      "max_bullets_per_slide": 6
+    },
+    "docx": {
+      "page_width_mm":    210,
+      "page_height_mm":   297,
+      "margin_mm":        25,
+      "font_h1_pt":       24,
+      "font_h2_pt":       18,
+      "font_h3_pt":       14,
+      "font_body_pt":     11,
+      "font_caption_pt":  9
+    },
+    "xlsx": {
+      "header_row_height":  30,
+      "default_col_width":  18,
+      "freeze_top_row":     true,
+      "auto_filter":        true
+    },
+    "pdf": {
+      "page_size":      "A4",
+      "margin_mm":      20,
+      "font_h1_pt":     24,
+      "font_h2_pt":     18,
+      "font_h3_pt":     14,
+      "font_body_pt":   11,
+      "font_caption_pt": 9,
+      "line_spacing":   1.4
+    }
+  },
+  "output": {
+    "exports_subdir": "exports",
+    "filename_separator": "_"
+  }
+}

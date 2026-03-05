@@ -1,0 +1,150 @@
+{
+  "universe": {
+    "name": "Wacky Universe",
+    "slogan": "규칙은 없어, 우리만의 놀이터로 초대할게!",
+    "atmosphere": ["자유분방함", "키치함", "생동감 넘치는 컬러와 그래픽"],
+    "themes": ["변신", "우정", "모험", "장난기"]
+  },
+  "characters": {
+    "main": [
+      {
+        "id": "kiky",
+        "name_kr": "키키",
+        "name_en": "KIKY",
+        "role": "메인 페르소나, 변신의 귀재",
+        "personality": ["밝고 유쾌", "키키 웃음소리", "친화력 대장"],
+        "ability": "변신 — 카멜레온처럼 자유자재 외형 변화",
+        "transform_examples": ["자유의 여신상", "바이커", "화가", "복서", "낚시꾼", "식물", "파일럿", "기사"],
+        "group": "A"
+      }
+    ],
+    "friends": [
+      {
+        "id": "lilly",
+        "name_kr": "릴리",
+        "role": "키키의 절친 (Soulmate)",
+        "personality": ["부드럽고 온화", "순수한 4차원", "두둥실 하늘을 날아다니는 것을 좋아함"],
+        "trait": "햇빛에 반짝임, 행복한 멜로디로 컬러 변화 + 회전",
+        "group": "A"
+      },
+      {
+        "id": "leo",
+        "name_kr": "레오",
+        "role": "키키의 반려묘(상전)",
+        "species": "레오파드 캣",
+        "personality": ["삶 자체를 즐김", "필요할 때만 키키를 찾음", "쥐돌이와 노는 것을 좋아함"],
+        "visual": "이마에 두 개의 선 + 짧고 통통한 꼬리",
+        "group": "A"
+      },
+      {
+        "id": "quokka-bao",
+        "name_kr": "쿼바오",
+        "role": "키키의 여행 친구 (Travel Mate)",
+        "species": "쿼카",
+        "personality": ["키키를 너무 좋아함", "끊임없이 입을 움직임", "먹을 것 없으면 키키를 깨물음"],
+        "note": "키키와 함께 호주를 떠나 세계 여행 중",
+        "group": "A"
+      },
+      {
+        "id": "hound",
+        "name_kr": "하운드",
+        "role": "릴리를 짝사랑하는 부잣집 도련님",
+        "visual": "하트 모양 외형",
+        "personality": ["까다로운 츤데레", "혼자 있는 것을 좋아함", "앞머리 컬 중시"],
+        "note": "해삐와 이란성 쌍둥이",
+        "group": "A"
+      }
+    ],
+    "sub": [
+      {
+        "id": "happy",
+        "name_kr": "해삐",
+        "role": "하운드의 이란성 쌍둥이",
+        "personality": ["무한 긍정 낙천주의자", "사색과 독서를 좋아함"],
+        "group": "C"
+      },
+      {
+        "id": "lotto",
+        "name_kr": "로또",
+        "role": "현상금 사냥꾼 (선인장)",
+        "personality": ["프로페셔널", "걷기 싫을 때 화분에 들어감"],
+        "group": "B"
+      },
+      {
+        "id": "rayner",
+        "name_kr": "레이너",
+        "role": "로또의 파트너 (카우보이)",
+        "personality": ["출중한 능력 but 게으름", "침대 사랑", "파인애플 좋아함"],
+        "group": "C"
+      },
+      {
+        "id": "ace",
+        "name_kr": "에이스",
+        "species": "까치",
+        "role": "스타일리시한 자기관리의 신",
+        "personality": ["까마귀가 되고 싶어 흰 털을 심음", "배에 스페이드 에이스 문양"],
+        "group": "B"
+      },
+      {
+        "id": "choco",
+        "name_kr": "초코",
+        "role": "키키의 츤데레 강아지 친구",
+        "personality": ["무심한 듯 항상 옆에서 놀아줌", "운동에 진심"],
+        "group": "C"
+      },
+      {
+        "id": "mango",
+        "name_kr": "망고",
+        "role": "릴리의 자유로운 영혼 강아지 친구",
+        "personality": ["취미 부자", "자유로운 영혼"],
+        "group": "C"
+      }
+    ],
+    "villains": [
+      {
+        "id": "wizard",
+        "name_kr": "위자드",
+        "role": "키키의 라이벌 (Self-proclaimed)",
+        "motivation": "키키의 인싸력을 질투",
+        "traits": ["햇볕 알레르기로 온몸을 가림", "스프레이 낙서 즐김", "마법(염동력+공간이동)"],
+        "sd_version": "몸을 자유자재로 변화 가능, 햇볕 알레르기 때문에 몸을 모자에 넣고 생활",
+        "group": "C"
+      },
+      {
+        "id": "pishisik",
+        "name_kr": "피시식",
+        "role": "위자드의 소환수",
+        "visual": "번개 모양 외형",
+        "group": "B"
+      }
+    ]
+  },
+  "groups": {
+    "A": {
+      "name": "메인 그룹",
+      "usage": "브랜드 메인 로고, 핵심 의류 라인업, 서브 심볼 IP",
+      "members": ["kiky", "lilly", "leo", "quokka-bao", "hound"]
+    },
+    "B": {
+      "name": "그래픽 소스",
+      "usage": "핵심 그래픽 소스, 포인트 디자인",
+      "members": ["pishisik", "lotto", "ace"]
+    },
+    "C": {
+      "name": "서브/출원X",
+      "usage": "서브 그래픽 소스, 스토리텔링 보조",
+      "members": ["rayner", "mango", "choco", "wizard", "happy"]
+    }
+  },
+  "relationships": [
+    { "type": "절친", "between": ["kiky", "lilly"] },
+    { "type": "반려묘", "between": ["kiky", "leo"] },
+    { "type": "여행친구", "between": ["kiky", "quokka-bao"] },
+    { "type": "짝사랑", "from": "hound", "to": "lilly" },
+    { "type": "쌍둥이", "between": ["hound", "happy"] },
+    { "type": "비즈니스 파트너", "between": ["lotto", "rayner"] },
+    { "type": "라이벌", "from": "wizard", "to": "kiky" },
+    { "type": "츤데레 친구", "between": ["kiky", "choco"] },
+    { "type": "취미 공유", "between": ["lilly", "mango"] }
+  ]
+}

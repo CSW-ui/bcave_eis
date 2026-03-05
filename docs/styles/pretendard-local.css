@@ -1,0 +1,17 @@
+@font-face {
+  font-family: "Pretendard Local";
+  src: url("../../../Pretendard-1.3.9/public/variable/PretendardVariable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --local-doc-font: "Pretendard Local", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+html,
+body,
+.markdown-body {
+  font-family: var(--local-doc-font);
+}

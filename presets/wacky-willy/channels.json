@@ -1,0 +1,66 @@
+{
+  "channels": [
+    {
+      "id": "shop-in-shop",
+      "name": "샵인샵",
+      "type": "offline",
+      "current_revenue_mm": 32074,
+      "target_revenue_mm": 35502,
+      "growth_pct": 11,
+      "priority": "maintain"
+    },
+    {
+      "id": "fss",
+      "name": "직영점 (FSS)",
+      "type": "offline",
+      "current_revenue_mm": 7053,
+      "target_revenue_mm": 10058,
+      "growth_pct": 43,
+      "priority": "high-growth",
+      "note": "성수 플래그십 + 명동 FSS (외국인 타겟)"
+    },
+    {
+      "id": "retail-other",
+      "name": "리테일 (면세 등)",
+      "type": "offline",
+      "current_revenue_mm": 12266,
+      "target_revenue_mm": 14435,
+      "growth_pct": 18,
+      "priority": "maintain"
+    },
+    {
+      "id": "own-mall",
+      "name": "자사몰",
+      "type": "online",
+      "current_revenue_mm": 3218,
+      "target_revenue_mm": 4818,
+      "growth_pct": 50,
+      "priority": "high-growth"
+    },
+    {
+      "id": "online-other",
+      "name": "온라인 (외부몰)",
+      "type": "online",
+      "current_revenue_mm": 6376,
+      "target_revenue_mm": 8036,
+      "growth_pct": 26,
+      "priority": "grow"
+    },
+    {
+      "id": "global",
+      "name": "해외",
+      "type": "global",
+      "current_revenue_mm": 843,
+      "target_revenue_mm": 6896,
+      "growth_pct": 718,
+      "priority": "high-growth",
+      "note": "2026 대만 1호점, 이후 태국/중국 확장"
+    }
+  ],
+  "total": {
+    "current_revenue_mm": 61830,
+    "target_revenue_mm": 79746,
+    "growth_pct": 29
+  },
+  "strategy": "高 손익 채널(FSS, 자사몰) 중심 성장 + 글로벌 718% 확장"
+}

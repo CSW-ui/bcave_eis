@@ -1,0 +1,25 @@
+{
+  "voice": {
+    "personality": ["유쾌한(Playful)", "자유분방한(Free-spirited)", "재치있는(Witty)"],
+    "energy": "high",
+    "formality": "casual-but-confident",
+    "humor_style": "키치, 반전, 위트 (NOT slapstick, NOT crude)"
+  },
+  "language_rules": {
+    "default_language": "ko",
+    "gen_z_friendly": true,
+    "avoid": ["경직된 어투", "과도한 존댓말", "기업형 브로슈어 톤", "직접적 가격 할인 소구"],
+    "prefer": ["친근한 반말+약간의 존댓말 믹스", "짧고 임팩트 있는 문장", "이모지 적절히 활용", "감각적 형용사"],
+    "hashtag_style": "한글+영문 믹스, 브랜드명 항상 포함"
+  },
+  "channel_tone": {
+    "instagram": { "tone": "visual-first, 감성적 캡션", "length": "short" },
+    "tiktok": { "tone": "트렌디, 밈 활용, 참여 유도", "length": "ultra-short" },
+    "official_site": { "tone": "세련된 editorial", "length": "medium" },
+    "pdp_copy": { "tone": "기능+감성 밸런스, 스토리텔링", "length": "medium" }
+  },
+  "brand_vocabulary": {
+    "must_use": ["와키윌리", "KIKY", "키치", "플레이그라운드", "Wacky Universe"],
+    "never_use": ["저렴한", "짝퉁", "따라하기", "평범한"]
+  }
+}

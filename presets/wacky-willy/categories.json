@@ -1,0 +1,45 @@
+{
+  "lines": [
+    {
+      "id": "unisex",
+      "name": "유니섹스",
+      "positioning": "빠른 트렌드 캐치 + 와키윌리 식 악센트 재해석",
+      "sub_categories": [
+        { "id": "tops", "name": "상의", "items": ["티셔츠", "스웻셔츠", "후디", "셔츠", "자켓"] },
+        { "id": "bottoms", "name": "하의", "items": ["팬츠", "쇼츠", "데님"] },
+        { "id": "outerwear", "name": "아우터", "items": ["코치자켓", "윈드브레이커", "패딩"] }
+      ],
+      "hero_items": ["그래픽 티셔츠", "로고 스웻"],
+      "new_line_2026": "러닝 코어 (글로벌 스포티즘 재해석)"
+    },
+    {
+      "id": "womens",
+      "name": "우먼스",
+      "positioning": "유니크 걸리시 캐주얼 — 트렌디함 + 합리적 가격",
+      "sub_categories": [
+        { "id": "tops", "name": "상의", "items": ["크롭탑", "블라우스", "가디건", "니트"] },
+        { "id": "bottoms", "name": "하의", "items": ["미니스커트", "와이드팬츠", "숏팬츠"] },
+        { "id": "dresses", "name": "원피스/셋업", "items": ["미니원피스", "셋업"] }
+      ],
+      "hero_items": ["릴리 포인트 크롭 가디건"],
+      "new_line_2026": "LOVE 컬렉션 (페미닌 감성)"
+    },
+    {
+      "id": "accessories",
+      "name": "용품/악세서리",
+      "positioning": "IP 세계관 반영 캐릭터 잡화 + 기능성 용품",
+      "sub_categories": [
+        { "id": "bags", "name": "가방", "items": ["백팩", "크로스백", "토트백", "데일리백"] },
+        { "id": "headwear", "name": "모자", "items": ["볼캡", "비니", "버킷햇"] },
+        { "id": "character_goods", "name": "캐릭터 잡화", "items": ["키링", "문구", "헤어ACC", "폰케이스"] }
+      ],
+      "strategy": "용품 라인업 다양화 + 여성향 용품 확대 (데일리백, 여성 전용 ACC)"
+    }
+  ],
+  "product_strategy": {
+    "hit_product_rule": "상위 20% 히트상품으로 전체 매출의 50% 이상 리딩",
+    "qr_target": "QR(리오더+SPOT) 포함 60%+ 매출 기여",
+    "material_focus": "쿨링 기능성 원단, 트렌디한 핏/실루엣",
+    "celeb_marketing": "뮤즈 지젤 활용 주력 제품 노출 극대화"
+  }
+}

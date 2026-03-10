@@ -20,18 +20,25 @@
           "output/26SS/_season/plan_trend-brief.md",
           "output/26SS/_season/plan_trend-snapshot-2026-02.md",
           "output/26SS/_season/plan_strategy-summary.md",
-          "output/26SS/_season/strategy-summary-presentation.pptx"
+          "output/26SS/_season/strategy-summary-presentation.pptx",
+          "output/26SS/_season/plan_market-intel-weekly-2026-03-10.md"
         ]
       },
       "design": {
-        "status": "not_started",
-        "completion_pct": 0,
-        "artifacts": []
+        "status": "in_progress",
+        "completion_pct": 15,
+        "artifacts": [
+          "output/26SS/_season/design_meeting-경영진통합회의-20260309.md",
+          "output/26SS/_season/design_consumer-insight-brief.md",
+          "output/26SS/_season/check_seongsu-flagship-opening-analysis.md"
+        ]
       },
       "do": {
-        "status": "not_started",
-        "completion_pct": 0,
-        "artifacts": []
+        "status": "in_progress",
+        "completion_pct": 5,
+        "artifacts": [
+          "output/26SS/_season/do_seongsu-souvenir-zone-annual-plan.md"
+        ]
       },
       "check": {
         "status": "not_started",
@@ -73,7 +80,12 @@
       "2026-03-09: 신규 PM-Skills 50개 설치 (pm-strategy/research/gtm/discovery/execution/analytics/marketing/toolkit)",
       "2026-03-09: 6개 에이전시 README 업데이트 — 신규 스킬 경로 및 확장 팀원 추가",
       "2026-03-09: CLAUDE.md 자연어 라우팅을 의도 기반 대화형 한국어로 전면 개편",
-      "2026-03-09: 에이전트 팀 토큰 절감 4대 전략 적용 (계획승인/모델믹싱/비용최적화/훅품질게이트)"
+      "2026-03-09: 에이전트 팀 토큰 절감 4대 전략 적용 (계획승인/모델믹싱/비용최적화/훅품질게이트)",
+      "2026-03-10: 마켓 인텔리전스 자동 리포트 생성 — output/26SS/_season/plan_market-intel-weekly-2026-03-10.md",
+      "2026-03-10: 마켓 인텔리전스 자동 리포트 생성 — output/26SS/_season/plan_market-intel-weekly-2026-03-10.md",
+      "2026-03-10: 마켓 인텔리전스 자동 리포트 생성 — output/26SS/_season/plan_market-intel-weekly-2026-03-10.md",
+      "2026-03-10: 성수 플래그십 오픈 반응 분석 — output/26SS/_season/check_seongsu-flagship-opening-analysis.md",
+      "2026-03-10: 성수 수버니어 존 연간 기획서 작성 — output/26SS/_season/do_seongsu-souvenir-zone-annual-plan.md"
     ],
     "todo": [],
     "decisions_log": [

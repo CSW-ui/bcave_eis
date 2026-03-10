@@ -8,3 +8,9 @@ output/*/
 # Node modules
 node_modules/
 _pm-skills-source/
+
+# API credentials
+.env
+
+# Market Intelligence raw data (auto-generated)
+data/market-intel/

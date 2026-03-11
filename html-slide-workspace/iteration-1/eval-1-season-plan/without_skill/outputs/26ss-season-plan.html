@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wacky Willy — 26SS 시즌 기획 발표</title>
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+      overflow: hidden;
+    }
+
+    /* ─── Slide Container ─── */
+    #slider {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 48px 64px;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ─── Color Variables ─── */
+    :root {
+      --yellow: #FFE600;
+      --pink: #FF3CAC;
+      --cyan: #00E5FF;
+      --green: #00FF9F;
+      --orange: #FF6B35;
+      --purple: #9B59FF;
+      --dark: #111115;
+      --card-bg: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.12);
+    }
+
+    /* ─── Typography ─── */
+    .eyebrow {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    h1 { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 900; line-height: 1.05; }
+    h2 { font-size: clamp(1.6rem, 3.5vw, 2.6rem); font-weight: 800; line-height: 1.1; }
+    h3 { font-size: clamp(1rem, 2vw, 1.4rem); font-weight: 700; }
+    p  { font-size: clamp(0.85rem, 1.4vw, 1rem); line-height: 1.65; color: rgba(240,240,240,0.78); }
+
+    .highlight { color: var(--yellow); }
+    .highlight-pink { color: var(--pink); }
+    .highlight-cyan { color: var(--cyan); }
+    .highlight-green { color: var(--green); }
+
+    /* ─── Layout Helpers ─── */
+    .full-width  { width: 100%; max-width: 1200px; }
+    .grid-2      { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; max-width: 1200px; }
+    .grid-3      { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 1200px; }
+    .grid-5      { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; width: 100%; max-width: 1200px; }
+    .flex-row    { display: flex; flex-direction: row; gap: 24px; align-items: flex-start; width: 100%; max-width: 1200px; }
+
+    /* ─── Card ─── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+    }
+    .card-accent {
+      border-top: 3px solid var(--yellow);
+    }
+
+    /* ─── Stat Card ─── */
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .stat-card .stat-value {
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-card .stat-label {
+      font-size: 0.78rem;
+      color: rgba(240,240,240,0.6);
+      letter-spacing: 0.05em;
+    }
+    .stat-card .stat-growth {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(0,255,159,0.15);
+      color: var(--green);
+    }
+
+    /* ─── Progress Bar ─── */
+    .progress-wrap { width: 100%; margin-top: 8px; }
+    .progress-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease 0.3s;
+    }
+
+    /* ─── Bar Chart ─── */
+    .bar-chart {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .bar-label {
+      font-size: 0.78rem;
+      width: 100px;
+      flex-shrink: 0;
+      color: rgba(240,240,240,0.75);
+      text-align: right;
+    }
+    .bar-outer {
+      flex: 1;
+      height: 28px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-inner {
+      height: 100%;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #000;
+      white-space: nowrap;
+    }
+    .bar-end-label {
+      font-size: 0.72rem;
+      color: rgba(240,240,240,0.55);
+      width: 60px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Donut Wrapper ─── */
+    .donut-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .donut-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      color: rgba(240,240,240,0.75);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ─── Timeline ─── */
+    .timeline {
+      width: 100%;
+      max-width: 1100px;
+      position: relative;
+    }
+    .timeline-track {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+    .timeline-track::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--border);
+    }
+    .timeline-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 130px;
+      position: relative;
+      z-index: 1;
+    }
+    .node-dot {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: #111115;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .node-dot.active-node { border-color: var(--yellow); color: var(--yellow); }
+    .timeline-node h4 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-align: center;
+      color: rgba(240,240,240,0.85);
+    }
+    .timeline-node p {
+      font-size: 0.68rem;
+      text-align: center;
+      color: rgba(240,240,240,0.5);
+    }
+
+    /* ─── Strategy Card ─── */
+    .strategy-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .strategy-num {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+    .strategy-card h3 { margin-bottom: 6px; font-size: 0.95rem; }
+    .strategy-card p  { font-size: 0.78rem; }
+
+    /* ─── KPI Row ─── */
+    .kpi-row {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      max-width: 1200px;
+      flex-wrap: wrap;
+    }
+    .kpi-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 130px;
+    }
+    .kpi-pill .kpi-title { font-size: 0.7rem; color: rgba(240,240,240,0.5); letter-spacing: 0.05em; }
+    .kpi-pill .kpi-value { font-size: 1.45rem; font-weight: 900; }
+    .kpi-pill .kpi-sub   { font-size: 0.7rem; color: rgba(240,240,240,0.5); }
+
+    /* ─── Cover Decoration ─── */
+    .brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--yellow);
+      color: #000;
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .cover-sub {
+      font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+      color: rgba(240,240,240,0.55);
+      margin-top: 16px;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    /* ─── BG Blobs ─── */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .slide > *:not(.blob) { position: relative; z-index: 1; }
+
+    /* ─── Divider ─── */
+    .divider {
+      width: 48px; height: 3px;
+      background: var(--yellow);
+      border-radius: 2px;
+      margin: 14px 0;
+    }
+
+    /* ─── Page Number ─── */
+    #page-indicator {
+      position: fixed;
+      bottom: 28px;
+      right: 40px;
+      font-size: 0.75rem;
+      color: rgba(240,240,240,0.35);
+      letter-spacing: 0.1em;
+      z-index: 100;
+    }
+
+    /* ─── Nav Buttons ─── */
+    .nav-btn {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      color: rgba(240,240,240,0.6);
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,230,0,0.15); color: var(--yellow); }
+    #btn-prev { left: 16px; }
+    #btn-next { right: 16px; }
+
+    /* ─── Slide-specific Backgrounds ─── */
+    .bg-cover  { background: radial-gradient(ellipse at 60% 40%, #1a1a2e 0%, #0a0a0a 70%); }
+    .bg-dark1  { background: #0e0e14; }
+    .bg-dark2  { background: #0c0c12; }
+
+    /* ─── Table ─── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .data-table th {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      color: rgba(240,240,240,0.5);
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: rgba(240,240,240,0.82);
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+    .badge-green  { background: rgba(0,255,159,0.15); color: var(--green); }
+    .badge-yellow { background: rgba(255,230,0,0.15); color: var(--yellow); }
+    .badge-pink   { background: rgba(255,60,172,0.15); color: var(--pink); }
+    .badge-cyan   { background: rgba(0,229,255,0.15); color: var(--cyan); }
+
+    /* ─── Slide 10: Closing ─── */
+    .closing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 24px;
+    }
+    .closing-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+    }
+    .closing-item .ci-icon { font-size: 1.6rem; margin-bottom: 8px; }
+    .closing-item h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; }
+    .closing-item p  { font-size: 0.72rem; color: rgba(240,240,240,0.5); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<button class="nav-btn" id="btn-prev" onclick="changeSlide(-1)">&#8592;</button>
+<button class="nav-btn" id="btn-next" onclick="changeSlide(1)">&#8594;</button>
+<div id="page-indicator">01 / 10</div>
+
+<div id="slider">
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 01 · COVER
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-cover active" data-index="0">
+    <div class="blob" style="width:500px;height:500px;background:var(--yellow);top:-100px;right:-80px;"></div>
+    <div class="blob" style="width:400px;height:400px;background:var(--pink);bottom:-80px;left:-60px;"></div>
+
+    <div class="brand-tag">&#9733; Wacky Willy</div>
+    <h1 style="text-align:center;">
+      26SS 시즌 기획<br/>
+      <span class="highlight">발표 자료</span>
+    </h1>
+    <p class="cover-sub">
+      Spring / Summer 2026 &nbsp;|&nbsp; 시즌 전략 · KPI · 채널 · 실행 로드맵
+    </p>
+    <div style="margin-top:36px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+      <div style="text-align:center;">
+        <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">시즌</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--yellow);">26SS</div>
+      </div>
+      <div style="width:1px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">단계</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--cyan);">Plan</div>
+      </div>
+      <div style="width:1px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">목표 매출</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--green);">79.7억</div>
+      </div>
+      <div style="width:1px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">목표 성장률</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--pink);">+29%</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 02 · BRAND OVERVIEW
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark1" data-index="1">
+    <div class="blob" style="width:350px;height:350px;background:var(--purple);top:20%;left:-80px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">Brand Overview</div>
+      <h2>와키윌리, <span class="highlight">우리는 누구인가</span></h2>
+      <div class="divider"></div>
+
+      <div class="grid-2" style="margin-top:28px;">
+        <div class="card card-accent">
+          <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;">Design Concept</div>
+          <h3 style="color:var(--yellow);font-size:1.3rem;margin-bottom:10px;">Kitsch Street &amp; IP Universe</h3>
+          <p>과감한 컬러와 독특한 그래픽의 Kitsch Street 감성에 고유 IP 세계관을 결합. 패션을 넘어 콘텐츠·경험을 만드는 글로벌 문화 브랜드를 지향합니다.</p>
+          <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;">
+            <span style="background:rgba(255,230,0,0.1);color:var(--yellow);border-radius:20px;padding:4px 12px;font-size:0.72rem;font-weight:700;">Fun</span>
+            <span style="background:rgba(0,229,255,0.1);color:var(--cyan);border-radius:20px;padding:4px 12px;font-size:0.72rem;font-weight:700;">Originality</span>
+            <span style="background:rgba(255,60,172,0.1);color:var(--pink);border-radius:20px;padding:4px 12px;font-size:0.72rem;font-weight:700;">Fandom</span>
+            <span style="background:rgba(0,255,159,0.1);color:var(--green);border-radius:20px;padding:4px 12px;font-size:0.72rem;font-weight:700;">Automation</span>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card">
+            <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Core Target</div>
+            <p style="font-size:0.88rem;color:rgba(240,240,240,0.85);">18–25세 자유로운 트렌드리더 &nbsp;·&nbsp; 뮤즈 지젤</p>
+          </div>
+          <div class="card">
+            <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Vision 2029</div>
+            <p style="font-size:0.88rem;color:rgba(240,240,240,0.85);">K-컬처를 기반으로 Youth Culture를 IP로 확장하며<br/><strong style="color:var(--yellow);">NO.1 K-Lifestyle Brand</strong></p>
+          </div>
+          <div class="card">
+            <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Slogan</div>
+            <p style="font-size:0.88rem;color:rgba(240,240,240,0.85);font-style:italic;">"규칙은 없어, 우리만의 놀이터로 초대할게!"</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2026 전략 방향 3가지 -->
+      <div style="display:flex;gap:16px;margin-top:20px;">
+        <div class="card" style="flex:1;border-left:3px solid var(--yellow);">
+          <div style="font-size:0.7rem;color:var(--yellow);font-weight:700;margin-bottom:6px;">방향 1</div>
+          <h3 style="font-size:0.88rem;margin-bottom:4px;">타겟 스펙트럼 확장</h3>
+          <p style="font-size:0.75rem;">10대 팬덤 → 20대 남녀 메인 타겟, 뮤즈 지젤 활용 고급화</p>
+        </div>
+        <div class="card" style="flex:1;border-left:3px solid var(--cyan);">
+          <div style="font-size:0.7rem;color:var(--cyan);font-weight:700;margin-bottom:6px;">방향 2</div>
+          <h3 style="font-size:0.88rem;margin-bottom:4px;">Kitsch Street &amp; IP Universe</h3>
+          <p style="font-size:0.75rem;">일반 스트릿 → 과감한 Kitsch + IP 세계관 정체성 강화</p>
+        </div>
+        <div class="card" style="flex:1;border-left:3px solid var(--pink);">
+          <div style="font-size:0.7rem;color:var(--pink);font-weight:700;margin-bottom:6px;">방향 3</div>
+          <h3 style="font-size:0.88rem;margin-bottom:4px;">신속한 트렌드 대응</h3>
+          <p style="font-size:0.75rem;">정기 시즌 → QR 시스템 최적화 + 주력 아이템 퀄리티 고도화</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 03 · KPI GOALS
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark2" data-index="2">
+    <div class="blob" style="width:400px;height:400px;background:var(--yellow);bottom:-100px;right:-100px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">KPI Goals</div>
+      <h2>26SS <span class="highlight">핵심 KPI 목표</span></h2>
+      <div class="divider"></div>
+
+      <!-- Top Stats Row -->
+      <div class="grid-5" style="margin-top:24px;">
+        <div class="stat-card" style="border-top:3px solid var(--yellow);">
+          <div class="stat-value highlight">79.7억</div>
+          <div class="stat-label">목표 총 매출</div>
+          <div class="stat-growth">+29% YoY</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--pink);">
+          <div class="stat-value highlight-pink">≥50%</div>
+          <div class="stat-label">상위 20% 히트상품 매출 기여</div>
+          <div class="stat-growth">60%+ (QR 포함)</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--cyan);">
+          <div class="stat-value highlight-cyan">718%</div>
+          <div class="stat-label">해외 채널 성장 목표</div>
+          <div class="stat-growth">대만 1호점 포함</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--green);">
+          <div class="stat-value highlight-green">50%</div>
+          <div class="stat-label">자사몰 매출 성장률</div>
+          <div class="stat-growth">3.2억 → 4.8억</div>
+        </div>
+        <div class="stat-card" style="border-top:3px solid var(--orange);">
+          <div class="stat-value" style="color:var(--orange);">43%</div>
+          <div class="stat-label">직영점(FSS) 성장률</div>
+          <div class="stat-growth">7억 → 10억</div>
+        </div>
+      </div>
+
+      <!-- 5대 경영목표 KPI -->
+      <div class="grid-2" style="margin-top:20px;gap:14px;">
+        <div class="card" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="background:rgba(255,230,0,0.15);color:var(--yellow);border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:800;">목표 01</div>
+            <h3 style="font-size:0.9rem;">브랜드 아이덴티티 정립</h3>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>코어타겟 매출 비중</span><span style="color:var(--yellow);">목표 달성</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:65%;background:var(--yellow);"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>브랜드 인지도/선호도</span><span style="color:var(--yellow);">OKR 측정</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:40%;background:var(--yellow);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="background:rgba(255,60,172,0.15);color:var(--pink);border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:800;">목표 02</div>
+            <h3 style="font-size:0.9rem;">히트상품 + IMC 강화</h3>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>상위 20% 매출 기여</span><span style="color:var(--pink);">≥50%</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:50%;background:var(--pink);"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>캠페인 ROAS</span><span style="color:var(--pink);">목표 설정</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:30%;background:var(--pink);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="background:rgba(0,229,255,0.15);color:var(--cyan);border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:800;">목표 03</div>
+            <h3 style="font-size:0.9rem;">QR(리오더+SPOT) 비중 확대</h3>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>QR 매출 비중</span><span style="color:var(--cyan);">60%+ 목표</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:60%;background:var(--cyan);"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>인시즌 리드타임 단축</span><span style="color:var(--cyan);">4주 이내</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:45%;background:var(--cyan);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:18px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="background:rgba(0,255,159,0.15);color:var(--green);border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:800;">목표 04·05</div>
+            <h3 style="font-size:0.9rem;">용품 경쟁력 + 글로벌</h3>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>용품 매출 비중 확대</span><span style="color:var(--green);">여성향 ACC 집중</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:35%;background:var(--green);"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:4px;"><span>글로벌 매출 달성률</span><span style="color:var(--green);">6.9억 목표</span></div>
+              <div class="progress-bg"><div class="progress-fill" style="width:25%;background:var(--green);"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 04 · CHANNEL REVENUE MIX (Bar Chart)
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark1" data-index="3">
+    <div class="blob" style="width:380px;height:380px;background:var(--cyan);top:-60px;right:-80px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">Channel Analysis</div>
+      <h2>채널별 <span class="highlight-cyan">매출 현황 &amp; 목표</span></h2>
+      <div class="divider" style="background:var(--cyan);"></div>
+
+      <div class="grid-2" style="margin-top:24px;align-items:start;">
+        <!-- Bar Chart -->
+        <div class="card" style="padding:24px;">
+          <h3 style="font-size:0.9rem;margin-bottom:16px;color:rgba(240,240,240,0.7);">채널별 목표 매출 (만원)</h3>
+          <div class="bar-chart">
+            <div class="bar-row">
+              <div class="bar-label">샵인샵</div>
+              <div class="bar-outer">
+                <div class="bar-inner" style="width:89%;background:var(--yellow);">35,502</div>
+              </div>
+              <div class="bar-end-label">+11%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">리테일(면세)</div>
+              <div class="bar-outer">
+                <div class="bar-inner" style="width:36%;background:#a0a0ff;">14,435</div>
+              </div>
+              <div class="bar-end-label">+18%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">온라인 외부몰</div>
+              <div class="bar-outer">
+                <div class="bar-inner" style="width:20%;background:var(--cyan);">8,036</div>
+              </div>
+              <div class="bar-end-label">+26%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">직영점(FSS)</div>
+              <div class="bar-outer">
+                <div class="bar-inner" style="width:25%;background:var(--orange);">10,058</div>
+              </div>
+              <div class="bar-end-label">+43%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">자사몰</div>
+              <div class="bar-outer">
+                <div class="bar-inner" style="width:12%;background:var(--green);">4,818</div>
+              </div>
+              <div class="bar-end-label">+50%</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">해외</div>
+              <div class="bar-outer">
+                <div class="bar-inner" style="width:17%;background:var(--pink);">6,896</div>
+              </div>
+              <div class="bar-end-label" style="color:var(--pink);font-weight:700;">+718%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Channel Detail Table -->
+        <div class="card" style="padding:24px;">
+          <h3 style="font-size:0.9rem;margin-bottom:16px;color:rgba(240,240,240,0.7);">채널 상세 데이터</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>채널</th>
+                <th>현재 (만원)</th>
+                <th>목표 (만원)</th>
+                <th>성장률</th>
+                <th>우선순위</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>샵인샵</td>
+                <td>32,074</td>
+                <td>35,502</td>
+                <td>+11%</td>
+                <td><span class="badge badge-yellow">유지</span></td>
+              </tr>
+              <tr>
+                <td>직영점(FSS)</td>
+                <td>7,053</td>
+                <td>10,058</td>
+                <td>+43%</td>
+                <td><span class="badge badge-pink">고성장</span></td>
+              </tr>
+              <tr>
+                <td>리테일(면세)</td>
+                <td>12,266</td>
+                <td>14,435</td>
+                <td>+18%</td>
+                <td><span class="badge badge-yellow">유지</span></td>
+              </tr>
+              <tr>
+                <td>자사몰</td>
+                <td>3,218</td>
+                <td>4,818</td>
+                <td>+50%</td>
+                <td><span class="badge badge-pink">고성장</span></td>
+              </tr>
+              <tr>
+                <td>온라인 외부몰</td>
+                <td>6,376</td>
+                <td>8,036</td>
+                <td>+26%</td>
+                <td><span class="badge badge-cyan">성장</span></td>
+              </tr>
+              <tr>
+                <td><strong>해외</strong></td>
+                <td>843</td>
+                <td><strong>6,896</strong></td>
+                <td style="color:var(--pink);font-weight:700;">+718%</td>
+                <td><span class="badge badge-pink">고성장</span></td>
+              </tr>
+              <tr style="border-top:1px solid var(--border);">
+                <td><strong>합계</strong></td>
+                <td><strong>61,830</strong></td>
+                <td><strong>79,746</strong></td>
+                <td><strong style="color:var(--green);">+29%</strong></td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size:0.72rem;margin-top:12px;color:rgba(240,240,240,0.4);">
+            전략 키워드: 高 손익 채널(FSS·자사몰) 중심 성장 + 글로벌 718% 확장
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 05 · CHANNEL REVENUE SHARE (Donut)
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark2" data-index="4">
+    <div class="blob" style="width:320px;height:320px;background:var(--pink);bottom:-80px;left:-60px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">Revenue Distribution</div>
+      <h2>채널별 <span class="highlight-pink">매출 비중</span></h2>
+      <div class="divider" style="background:var(--pink);"></div>
+
+      <div class="grid-2" style="margin-top:24px;align-items:center;">
+        <!-- SVG Donut Chart -->
+        <div class="donut-wrap">
+          <svg viewBox="0 0 220 220" width="220" height="220" style="overflow:visible;">
+            <defs>
+              <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <!-- cx=110, cy=110, r=80, stroke-width=32, circumference = 2*pi*80 ≈ 502.65 -->
+            <!-- 샵인샵 44.5% → offset 0, dash 223.7 -->
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#FFE600" stroke-width="32"
+              stroke-dasharray="223.7 278.95" stroke-dashoffset="0" transform="rotate(-90 110 110)" filter="url(#glow)"/>
+            <!-- 리테일 18.1% → offset -223.7, dash 90.97 -->
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#a0a0ff" stroke-width="32"
+              stroke-dasharray="91 411.65" stroke-dashoffset="-223.7" transform="rotate(-90 110 110)"/>
+            <!-- 온라인외부몰 10.1% → offset -314.67, dash 50.77 -->
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#00E5FF" stroke-width="32"
+              stroke-dasharray="50.8 451.85" stroke-dashoffset="-314.7" transform="rotate(-90 110 110)"/>
+            <!-- FSS 12.6% → offset -365.47, dash 63.33 -->
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#FF6B35" stroke-width="32"
+              stroke-dasharray="63.4 439.25" stroke-dashoffset="-365.5" transform="rotate(-90 110 110)"/>
+            <!-- 자사몰 6% → offset -428.8, dash 30.16 -->
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#00FF9F" stroke-width="32"
+              stroke-dasharray="30.2 472.45" stroke-dashoffset="-428.8" transform="rotate(-90 110 110)"/>
+            <!-- 해외 8.6% → offset -459, dash 43.23 -->
+            <circle cx="110" cy="110" r="80" fill="none" stroke="#FF3CAC" stroke-width="32"
+              stroke-dasharray="43.2 459.45" stroke-dashoffset="-459" transform="rotate(-90 110 110)"/>
+            <!-- Center text -->
+            <text x="110" y="105" text-anchor="middle" fill="#FFE600" font-size="22" font-weight="900" font-family="sans-serif">79.7억</text>
+            <text x="110" y="126" text-anchor="middle" fill="rgba(240,240,240,0.45)" font-size="9" font-family="sans-serif">목표 총 매출</text>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);"></div>샵인샵 44.5%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#a0a0ff;"></div>리테일 18.1%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cyan);"></div>온라인외부 10.1%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--orange);"></div>직영(FSS) 12.6%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>자사몰 6.0%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--pink);"></div>해외 8.6%</div>
+          </div>
+        </div>
+
+        <!-- Insight Cards -->
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card" style="border-left:3px solid var(--yellow);padding:16px 20px;">
+            <div style="font-size:0.7rem;color:var(--yellow);font-weight:700;margin-bottom:4px;">MAINTAIN — 샵인샵 44.5%</div>
+            <p style="font-size:0.82rem;">여전히 최대 매출 채널. 안정적 운영으로 캐시카우 역할 유지.</p>
+          </div>
+          <div class="card" style="border-left:3px solid var(--orange);padding:16px 20px;">
+            <div style="font-size:0.7rem;color:var(--orange);font-weight:700;margin-bottom:4px;">HIGH GROWTH — 직영점(FSS) +43%</div>
+            <p style="font-size:0.82rem;">성수 플래그십 + 명동 FSS 오픈. 외국인 타겟 접점 확대.</p>
+          </div>
+          <div class="card" style="border-left:3px solid var(--green);padding:16px 20px;">
+            <div style="font-size:0.7rem;color:var(--green);font-weight:700;margin-bottom:4px;">HIGH GROWTH — 자사몰 +50%</div>
+            <p style="font-size:0.82rem;">높은 손익률. 직접 고객 데이터 수집 채널. 브랜드 충성도 강화.</p>
+          </div>
+          <div class="card" style="border-left:3px solid var(--pink);padding:16px 20px;">
+            <div style="font-size:0.7rem;color:var(--pink);font-weight:700;margin-bottom:4px;">BREAKTHROUGH — 해외 +718%</div>
+            <p style="font-size:0.82rem;">2026 대만 1호점 오픈. 843만원 → 6,896만원으로 폭발적 성장 목표.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 06 · CORE STRATEGIES
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark1" data-index="5">
+    <div class="blob" style="width:350px;height:350px;background:var(--green);top:-80px;right:-60px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">Core Strategies</div>
+      <h2>26SS <span class="highlight-green">핵심 전략 5가지</span></h2>
+      <div class="divider" style="background:var(--green);"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;">
+        <div class="strategy-card">
+          <div class="strategy-num" style="background:rgba(255,230,0,0.15);color:var(--yellow);">01</div>
+          <div>
+            <h3>히트상품 리딩 전략</h3>
+            <p style="font-size:0.78rem;margin-top:6px;">상위 20% 히트상품으로 전체 매출 50% 이상 리딩. QR(리오더+SPOT) 포함 60%+. 뮤즈 지젤 활용 주력 제품 노출 극대화. 그래픽 티셔츠·로고 스웻 히어로 아이템 집중 운영.</p>
+            <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="background:rgba(255,230,0,0.1);color:var(--yellow);border-radius:20px;padding:2px 10px;font-size:0.7rem;">히트상품</span>
+              <span style="background:rgba(255,230,0,0.1);color:var(--yellow);border-radius:20px;padding:2px 10px;font-size:0.7rem;">셀럽마케팅</span>
+              <span style="background:rgba(255,230,0,0.1);color:var(--yellow);border-radius:20px;padding:2px 10px;font-size:0.7rem;">QR확대</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-num" style="background:rgba(0,229,255,0.15);color:var(--cyan);">02</div>
+          <div>
+            <h3>IP 세계관 콘텐츠 강화</h3>
+            <p style="font-size:0.78rem;margin-top:6px;">키키+11 캐릭터 IP 세계관 기반 콘텐츠 생산. Kitsch Street 감성 그래픽 시즌 테마 강화. IP 활용 캐릭터 잡화·용품 라인업 확장으로 팬덤 이커머스 수익 창출.</p>
+            <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="background:rgba(0,229,255,0.1);color:var(--cyan);border-radius:20px;padding:2px 10px;font-size:0.7rem;">IP콘텐츠</span>
+              <span style="background:rgba(0,229,255,0.1);color:var(--cyan);border-radius:20px;padding:2px 10px;font-size:0.7rem;">캐릭터잡화</span>
+              <span style="background:rgba(0,229,255,0.1);color:var(--cyan);border-radius:20px;padding:2px 10px;font-size:0.7rem;">팬덤커머스</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-num" style="background:rgba(255,60,172,0.15);color:var(--pink);">03</div>
+          <div>
+            <h3>우먼스 + 용품 라인업 확대</h3>
+            <p style="font-size:0.78rem;margin-top:6px;">LOVE 컬렉션(페미닌 감성) 신규 론칭. 여성향 용품 확대(데일리백·여성 전용 ACC). 유니크 걸리시 캐주얼 포지셔닝으로 20대 여성 코어타겟 공략 강화.</p>
+            <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="background:rgba(255,60,172,0.1);color:var(--pink);border-radius:20px;padding:2px 10px;font-size:0.7rem;">LOVE컬렉션</span>
+              <span style="background:rgba(255,60,172,0.1);color:var(--pink);border-radius:20px;padding:2px 10px;font-size:0.7rem;">여성향ACC</span>
+              <span style="background:rgba(255,60,172,0.1);color:var(--pink);border-radius:20px;padding:2px 10px;font-size:0.7rem;">용품강화</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-num" style="background:rgba(0,255,159,0.15);color:var(--green);">04</div>
+          <div>
+            <h3>QR 시스템 고도화</h3>
+            <p style="font-size:0.78rem;margin-top:6px;">SPOT 스타일 확대 및 호조 상품 리오더 프로세스 확립. 인시즌 리드타임 4주 이내 목표. 단기 생산 일정 체계화로 트렌드 반응속도 극대화.</p>
+            <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="background:rgba(0,255,159,0.1);color:var(--green);border-radius:20px;padding:2px 10px;font-size:0.7rem;">SPOT확대</span>
+              <span style="background:rgba(0,255,159,0.1);color:var(--green);border-radius:20px;padding:2px 10px;font-size:0.7rem;">리오더</span>
+              <span style="background:rgba(0,255,159,0.1);color:var(--green);border-radius:20px;padding:2px 10px;font-size:0.7rem;">리드타임단축</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strategy 5 (Full width) -->
+      <div class="strategy-card" style="margin-top:14px;">
+        <div class="strategy-num" style="background:rgba(255,107,53,0.15);color:var(--orange);">05</div>
+        <div style="flex:1;">
+          <h3>글로벌 도약 원년 — 대만 1호점 + 명동 FSS</h3>
+          <p style="font-size:0.78rem;margin-top:6px;">2026 글로벌 원년 선언. 대만 1호점 오픈(해외 +718% 목표), 명동 FSS 외국인 타겟 접점 확대. 글로벌 전용 IMC 전략(모델·콘텐츠·디지털 현지화) 수립. 이후 태국·중국 확장 로드맵 연계.</p>
+          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="background:rgba(255,107,53,0.1);color:var(--orange);border-radius:20px;padding:2px 10px;font-size:0.7rem;">대만1호점</span>
+            <span style="background:rgba(255,107,53,0.1);color:var(--orange);border-radius:20px;padding:2px 10px;font-size:0.7rem;">명동FSS</span>
+            <span style="background:rgba(255,107,53,0.1);color:var(--orange);border-radius:20px;padding:2px 10px;font-size:0.7rem;">글로벌IMC</span>
+            <span style="background:rgba(255,107,53,0.1);color:var(--orange);border-radius:20px;padding:2px 10px;font-size:0.7rem;">현지화</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 07 · PRODUCT STRATEGY
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark2" data-index="6">
+    <div class="blob" style="width:360px;height:360px;background:var(--yellow);top:-80px;left:-60px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">Product Strategy</div>
+      <h2>상품 전략 — <span class="highlight">카테고리 &amp; 히어로 아이템</span></h2>
+      <div class="divider"></div>
+
+      <div class="grid-3" style="margin-top:24px;">
+        <!-- Unisex -->
+        <div class="card" style="border-top:3px solid var(--cyan);">
+          <div style="font-size:0.7rem;color:var(--cyan);font-weight:700;letter-spacing:0.1em;margin-bottom:10px;">UNISEX LINE</div>
+          <h3 style="font-size:1rem;margin-bottom:8px;">유니섹스</h3>
+          <p style="font-size:0.78rem;margin-bottom:12px;">빠른 트렌드 캐치 + 와키윌리식 악센트 재해석</p>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:0.75rem;color:rgba(240,240,240,0.6);">카테고리</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              <span style="background:rgba(0,229,255,0.08);color:var(--cyan);border-radius:6px;padding:3px 8px;font-size:0.7rem;">상의</span>
+              <span style="background:rgba(0,229,255,0.08);color:var(--cyan);border-radius:6px;padding:3px 8px;font-size:0.7rem;">하의</span>
+              <span style="background:rgba(0,229,255,0.08);color:var(--cyan);border-radius:6px;padding:3px 8px;font-size:0.7rem;">아우터</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:rgba(0,229,255,0.06);border-radius:8px;">
+            <div style="font-size:0.7rem;color:var(--cyan);font-weight:700;margin-bottom:4px;">Hero Items</div>
+            <div style="font-size:0.8rem;">그래픽 티셔츠, 로고 스웻</div>
+          </div>
+          <div style="margin-top:10px;padding:10px;background:rgba(255,230,0,0.06);border-radius:8px;">
+            <div style="font-size:0.7rem;color:var(--yellow);font-weight:700;margin-bottom:4px;">2026 신규</div>
+            <div style="font-size:0.78rem;">러닝 코어 (글로벌 스포티즘 재해석)</div>
+          </div>
+        </div>
+
+        <!-- Womens -->
+        <div class="card" style="border-top:3px solid var(--pink);">
+          <div style="font-size:0.7rem;color:var(--pink);font-weight:700;letter-spacing:0.1em;margin-bottom:10px;">WOMEN'S LINE</div>
+          <h3 style="font-size:1rem;margin-bottom:8px;">우먼스</h3>
+          <p style="font-size:0.78rem;margin-bottom:12px;">유니크 걸리시 캐주얼 — 트렌디함 + 합리적 가격</p>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:0.75rem;color:rgba(240,240,240,0.6);">카테고리</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              <span style="background:rgba(255,60,172,0.08);color:var(--pink);border-radius:6px;padding:3px 8px;font-size:0.7rem;">상의</span>
+              <span style="background:rgba(255,60,172,0.08);color:var(--pink);border-radius:6px;padding:3px 8px;font-size:0.7rem;">하의</span>
+              <span style="background:rgba(255,60,172,0.08);color:var(--pink);border-radius:6px;padding:3px 8px;font-size:0.7rem;">원피스/셋업</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:rgba(255,60,172,0.06);border-radius:8px;">
+            <div style="font-size:0.7rem;color:var(--pink);font-weight:700;margin-bottom:4px;">Hero Items</div>
+            <div style="font-size:0.8rem;">릴리 포인트 크롭 가디건</div>
+          </div>
+          <div style="margin-top:10px;padding:10px;background:rgba(255,230,0,0.06);border-radius:8px;">
+            <div style="font-size:0.7rem;color:var(--yellow);font-weight:700;margin-bottom:4px;">2026 신규</div>
+            <div style="font-size:0.78rem;">LOVE 컬렉션 (페미닌 감성)</div>
+          </div>
+        </div>
+
+        <!-- Accessories -->
+        <div class="card" style="border-top:3px solid var(--green);">
+          <div style="font-size:0.7rem;color:var(--green);font-weight:700;letter-spacing:0.1em;margin-bottom:10px;">ACCESSORIES</div>
+          <h3 style="font-size:1rem;margin-bottom:8px;">용품/악세서리</h3>
+          <p style="font-size:0.78rem;margin-bottom:12px;">IP 세계관 반영 캐릭터 잡화 + 기능성 용품</p>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:0.75rem;color:rgba(240,240,240,0.6);">카테고리</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              <span style="background:rgba(0,255,159,0.08);color:var(--green);border-radius:6px;padding:3px 8px;font-size:0.7rem;">가방</span>
+              <span style="background:rgba(0,255,159,0.08);color:var(--green);border-radius:6px;padding:3px 8px;font-size:0.7rem;">모자</span>
+              <span style="background:rgba(0,255,159,0.08);color:var(--green);border-radius:6px;padding:3px 8px;font-size:0.7rem;">캐릭터 잡화</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:rgba(0,255,159,0.06);border-radius:8px;">
+            <div style="font-size:0.7rem;color:var(--green);font-weight:700;margin-bottom:4px;">확장 전략</div>
+            <div style="font-size:0.78rem;">데일리백, 여성 전용 ACC 라인업 확대</div>
+          </div>
+          <div style="margin-top:10px;padding:10px;background:rgba(255,107,53,0.06);border-radius:8px;">
+            <div style="font-size:0.7rem;color:var(--orange);font-weight:700;margin-bottom:4px;">IP 활용</div>
+            <div style="font-size:0.78rem;">키링, 문구, 헤어ACC, 폰케이스</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Rule Bar -->
+      <div class="card" style="margin-top:20px;padding:18px 24px;display:flex;gap:24px;align-items:center;">
+        <div style="flex:1;border-right:1px solid var(--border);padding-right:24px;">
+          <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">히트상품 룰</div>
+          <div style="font-size:0.9rem;font-weight:700;">상위 20% 히트상품 <span style="color:var(--yellow);">매출 50% 이상</span> 리딩</div>
+        </div>
+        <div style="flex:1;border-right:1px solid var(--border);padding-right:24px;">
+          <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">QR 포함 목표</div>
+          <div style="font-size:0.9rem;font-weight:700;">리오더+SPOT <span style="color:var(--cyan);">60%+ 매출 기여</span></div>
+        </div>
+        <div style="flex:1;border-right:1px solid var(--border);padding-right:24px;">
+          <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">소재 포커스</div>
+          <div style="font-size:0.9rem;font-weight:700;"><span style="color:var(--green);">쿨링 기능성 원단</span> + 트렌디한 핏</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:0.7rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">셀럽 마케팅</div>
+          <div style="font-size:0.9rem;font-weight:700;">뮤즈 <span style="color:var(--pink);">지젤</span> 활용 노출 극대화</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 08 · IMC STRATEGY
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark1" data-index="7">
+    <div class="blob" style="width:340px;height:340px;background:var(--orange);bottom:-60px;right:-60px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">IMC Strategy</div>
+      <h2>통합 마케팅 <span class="highlight" style="color:var(--orange);">IMC 전략</span></h2>
+      <div class="divider" style="background:var(--orange);"></div>
+
+      <div class="grid-2" style="margin-top:20px;gap:18px;">
+        <!-- Left: IMC Phases -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card" style="padding:16px 20px;border-left:3px solid var(--yellow);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <h3 style="font-size:0.9rem;">런칭 전 (Pre-Launch)</h3>
+              <span class="badge badge-yellow">D-30</span>
+            </div>
+            <p style="font-size:0.78rem;">뮤즈 지젤 티저 콘텐츠 · SNS 사전 팬덤 빌드업 · 인플루언서 시딩 · 예약판매 얼리버드</p>
+          </div>
+          <div class="card" style="padding:16px 20px;border-left:3px solid var(--pink);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <h3 style="font-size:0.9rem;">런칭 위크 (Launch)</h3>
+              <span class="badge badge-pink">D-Day</span>
+            </div>
+            <p style="font-size:0.78rem;">화보 공개 · 라이브 커머스 · 팝업 이벤트 · 퍼포먼스 광고 집중 집행 · PR 기사 배포</p>
+          </div>
+          <div class="card" style="padding:16px 20px;border-left:3px solid var(--cyan);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <h3 style="font-size:0.9rem;">피크 유지 (Sustain)</h3>
+              <span class="badge badge-cyan">D+7~30</span>
+            </div>
+            <p style="font-size:0.78rem;">UGC 리포스팅 · 리타게팅 광고 · QR 리오더 연동 · ROAS 최적화 캠페인</p>
+          </div>
+          <div class="card" style="padding:16px 20px;border-left:3px solid var(--green);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <h3 style="font-size:0.9rem;">시즌 후반 (Close)</h3>
+              <span class="badge badge-green">D+30~</span>
+            </div>
+            <p style="font-size:0.78rem;">특가 프로모션 · 재고 소진 캠페인 · 고객 리뷰 수집 · 다음 시즌 팬덤 예열</p>
+          </div>
+        </div>
+
+        <!-- Right: Channel Mix & KPIs -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card" style="padding:18px;">
+            <h3 style="font-size:0.88rem;margin-bottom:12px;color:rgba(240,240,240,0.7);">채널별 마케팅 믹스</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:80px;font-size:0.75rem;color:rgba(240,240,240,0.6);">인스타그램</div>
+                <div style="flex:1;height:18px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                  <div style="width:85%;height:100%;background:linear-gradient(90deg,var(--pink),var(--purple));border-radius:4px;"></div>
+                </div>
+                <div style="font-size:0.75rem;color:var(--pink);">35%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:80px;font-size:0.75rem;color:rgba(240,240,240,0.6);">유튜브</div>
+                <div style="flex:1;height:18px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                  <div style="width:60%;height:100%;background:linear-gradient(90deg,var(--orange),#ff9500);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:0.75rem;color:var(--orange);">25%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:80px;font-size:0.75rem;color:rgba(240,240,240,0.6);">TikTok</div>
+                <div style="flex:1;height:18px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                  <div style="width:45%;height:100%;background:linear-gradient(90deg,var(--cyan),var(--green));border-radius:4px;"></div>
+                </div>
+                <div style="font-size:0.75rem;color:var(--cyan);">20%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:80px;font-size:0.75rem;color:rgba(240,240,240,0.6);">검색광고</div>
+                <div style="flex:1;height:18px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                  <div style="width:25%;height:100%;background:linear-gradient(90deg,var(--yellow),#ffc400);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:0.75rem;color:var(--yellow);">10%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:80px;font-size:0.75rem;color:rgba(240,240,240,0.6);">기타</div>
+                <div style="flex:1;height:18px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                  <div style="width:20%;height:100%;background:rgba(255,255,255,0.2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:0.75rem;color:rgba(240,240,240,0.5);">10%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2" style="gap:10px;">
+            <div class="stat-card">
+              <div class="stat-value" style="color:var(--yellow);font-size:1.6rem;">노션</div>
+              <div class="stat-label">IMC 캘린더 운영</div>
+              <div class="stat-growth">통합 스케줄 관리</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" style="color:var(--pink);font-size:1.6rem;">ROAS</div>
+              <div class="stat-label">캠페인 핵심 KPI</div>
+              <div class="stat-growth">퍼포먼스 최적화</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 09 · EXECUTION ROADMAP
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-dark2" data-index="8">
+    <div class="blob" style="width:380px;height:380px;background:var(--cyan);top:-80px;left:-60px;"></div>
+
+    <div class="full-width">
+      <div class="eyebrow">Execution Roadmap</div>
+      <h2>26SS <span class="highlight-cyan">실행 로드맵</span></h2>
+      <div class="divider" style="background:var(--cyan);"></div>
+
+      <!-- PDCA Timeline -->
+      <div class="card" style="margin-top:22px;padding:28px;">
+        <div class="timeline">
+          <div class="timeline-track">
+            <div class="timeline-node">
+              <div class="node-dot active-node">PLAN</div>
+              <h4>기획 (Plan)</h4>
+              <p>Mar 2026<br/>트렌드 분석<br/>SKU 기획<br/>라인시트</p>
+            </div>
+            <div class="timeline-node">
+              <div class="node-dot" style="color:var(--pink);border-color:var(--pink);">DESIGN</div>
+              <h4>디자인</h4>
+              <p>Apr 2026<br/>무드보드<br/>디자인 스펙<br/>원가 검토</p>
+            </div>
+            <div class="timeline-node">
+              <div class="node-dot" style="color:var(--cyan);border-color:var(--cyan);">PROD</div>
+              <h4>생산 (Do)</h4>
+              <p>May 2026<br/>테크팩<br/>샘플 승인<br/>발주</p>
+            </div>
+            <div class="timeline-node">
+              <div class="node-dot" style="color:var(--green);border-color:var(--green);">LAUNCH</div>
+              <h4>런칭</h4>
+              <p>Jun 2026<br/>IMC 집행<br/>채널 입고<br/>퍼포먼스</p>
+            </div>
+            <div class="timeline-node">
+              <div class="node-dot" style="color:var(--orange);border-color:var(--orange);">QR</div>
+              <h4>QR 운영</h4>
+              <p>Jun–Aug<br/>리오더<br/>SPOT 투입<br/>재고 관리</p>
+            </div>
+            <div class="timeline-node">
+              <div class="node-dot" style="color:rgba(240,240,240,0.4);">CHECK</div>
+              <h4>성과 분석</h4>
+              <p>Aug 2026<br/>매출 분석<br/>KPI 검토<br/>시즌 보고</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Action Items -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px;">
+        <div class="card" style="padding:14px;border-top:2px solid var(--yellow);">
+          <div style="font-size:0.68rem;color:var(--yellow);font-weight:700;margin-bottom:8px;">3월 — PLAN</div>
+          <div style="font-size:0.75rem;display:flex;flex-direction:column;gap:4px;color:rgba(240,240,240,0.75);">
+            <span>&#x25CF; 26SS 트렌드 리서치</span>
+            <span>&#x25CF; SKU 구성 확정</span>
+            <span>&#x25CF; 채널별 물량 계획</span>
+            <span>&#x25CF; IMC 캘린더 수립</span>
+          </div>
+        </div>
+        <div class="card" style="padding:14px;border-top:2px solid var(--pink);">
+          <div style="font-size:0.68rem;color:var(--pink);font-weight:700;margin-bottom:8px;">4월 — DESIGN</div>
+          <div style="font-size:0.75rem;display:flex;flex-direction:column;gap:4px;color:rgba(240,240,240,0.75);">
+            <span>&#x25CF; 무드보드·디자인 스펙</span>
+            <span>&#x25CF; 원가 VE 검토</span>
+            <span>&#x25CF; 샘플 발주</span>
+            <span>&#x25CF; 뮤즈 촬영 준비</span>
+          </div>
+        </div>
+        <div class="card" style="padding:14px;border-top:2px solid var(--cyan);">
+          <div style="font-size:0.68rem;color:var(--cyan);font-weight:700;margin-bottom:8px;">5월 — DO</div>
+          <div style="font-size:0.75rem;display:flex;flex-direction:column;gap:4px;color:rgba(240,240,240,0.75);">
+            <span>&#x25CF; 테크팩 완성</span>
+            <span>&#x25CF; 최종 샘플 승인</span>
+            <span>&#x25CF; 생산 발주 확정</span>
+            <span>&#x25CF; 런칭 콘텐츠 제작</span>
+          </div>
+        </div>
+        <div class="card" style="padding:14px;border-top:2px solid var(--green);">
+          <div style="font-size:0.68rem;color:var(--green);font-weight:700;margin-bottom:8px;">6월+ — LAUNCH</div>
+          <div style="font-size:0.75rem;display:flex;flex-direction:column;gap:4px;color:rgba(240,240,240,0.75);">
+            <span>&#x25CF; 시즌 오픈 런칭</span>
+            <span>&#x25CF; 대만 1호점 오픈</span>
+            <span>&#x25CF; QR 리오더 집행</span>
+            <span>&#x25CF; 성과 실시간 모니터링</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global Roadmap -->
+      <div class="card" style="margin-top:14px;padding:16px 22px;display:flex;gap:0;align-items:center;justify-content:space-between;">
+        <div style="text-align:center;">
+          <div style="font-size:0.68rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">2024</div>
+          <div style="font-size:0.8rem;font-weight:700;color:rgba(240,240,240,0.5);">브랜드<br/>기반 구축</div>
+        </div>
+        <div style="color:var(--border);font-size:1.2rem;">→</div>
+        <div style="text-align:center;">
+          <div style="font-size:0.68rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">2025</div>
+          <div style="font-size:0.8rem;font-weight:700;color:rgba(240,240,240,0.6);">내수 시장<br/>입지 강화</div>
+        </div>
+        <div style="color:var(--yellow);font-size:1.2rem;">→</div>
+        <div style="text-align:center;background:rgba(255,230,0,0.08);border-radius:10px;padding:8px 16px;border:1px solid rgba(255,230,0,0.3);">
+          <div style="font-size:0.68rem;color:var(--yellow);margin-bottom:4px;font-weight:700;">2026 NOW</div>
+          <div style="font-size:0.8rem;font-weight:800;color:var(--yellow);">글로벌<br/>도약 원년</div>
+        </div>
+        <div style="color:var(--border);font-size:1.2rem;">→</div>
+        <div style="text-align:center;">
+          <div style="font-size:0.68rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">2027–28</div>
+          <div style="font-size:0.8rem;font-weight:700;color:rgba(240,240,240,0.6);">아시아<br/>시장 확장</div>
+        </div>
+        <div style="color:var(--border);font-size:1.2rem;">→</div>
+        <div style="text-align:center;">
+          <div style="font-size:0.68rem;color:rgba(240,240,240,0.4);margin-bottom:4px;">2029</div>
+          <div style="font-size:0.8rem;font-weight:700;color:var(--cyan);">NO.1<br/>K-Lifestyle</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 10 · CLOSING / NEXT STEPS
+  ══════════════════════════════════════════════ -->
+  <section class="slide bg-cover" data-index="9">
+    <div class="blob" style="width:500px;height:500px;background:var(--yellow);bottom:-120px;right:-100px;"></div>
+    <div class="blob" style="width:300px;height:300px;background:var(--pink);top:-60px;left:-60px;"></div>
+
+    <div class="eyebrow">Next Steps</div>
+    <h2 style="text-align:center;">
+      26SS 시작, <span class="highlight">지금 바로 실행</span>
+    </h2>
+    <p style="text-align:center;max-width:560px;margin-top:12px;">
+      기획 승인 후 즉시 전략기획실 → 크리에이티브 스튜디오 → 프로덕트 랩 순서로<br/>
+      PDCA 사이클을 가동합니다.
+    </p>
+
+    <div class="closing-grid">
+      <div class="closing-item" style="border-top:2px solid var(--yellow);">
+        <div class="ci-icon">&#128269;</div>
+        <h4>01. 트렌드 리서치</h4>
+        <p>26SS 글로벌 트렌드 분석 착수 · 경쟁사 동향 파악</p>
+      </div>
+      <div class="closing-item" style="border-top:2px solid var(--pink);">
+        <div class="ci-icon">&#128208;</div>
+        <h4>02. SKU 기획 확정</h4>
+        <p>카테고리별 스타일 수·물량 · 히어로 아이템 선정</p>
+      </div>
+      <div class="closing-item" style="border-top:2px solid var(--cyan);">
+        <div class="ci-icon">&#127912;</div>
+        <h4>03. 무드보드 작성</h4>
+        <p>시즌 비주얼 테마·톤 확정 · 뮤즈 지젤 화보 방향</p>
+      </div>
+      <div class="closing-item" style="border-top:2px solid var(--green);">
+        <div class="ci-icon">&#128200;</div>
+        <h4>04. IMC 캘린더</h4>
+        <p>채널별 마케팅 스케줄 수립 · 런칭 시퀀스 설계</p>
+      </div>
+    </div>
+
+    <div style="margin-top:32px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+      <div style="background:var(--yellow);color:#000;border-radius:10px;padding:12px 28px;font-weight:800;font-size:0.9rem;">
+        목표 매출: 79.7억원 (+29%)
+      </div>
+      <div style="background:rgba(255,60,172,0.15);border:1px solid var(--pink);border-radius:10px;padding:12px 28px;font-weight:800;font-size:0.9rem;color:var(--pink);">
+        글로벌 원년: 대만 1호점
+      </div>
+      <div style="background:rgba(0,229,255,0.1);border:1px solid var(--cyan);border-radius:10px;padding:12px 28px;font-weight:800;font-size:0.9rem;color:var(--cyan);">
+        2029 NO.1 K-Lifestyle Brand
+      </div>
+    </div>
+
+    <p style="margin-top:28px;font-size:0.72rem;color:rgba(240,240,240,0.3);">
+      Wacky Willy &nbsp;|&nbsp; FPOF V2.2 &nbsp;|&nbsp; 26SS Season Plan &nbsp;|&nbsp; 2026.03
+    </p>
+  </section>
+
+</div><!-- /slider -->
+
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+  const total = slides.length;
+  const indicator = document.getElementById('page-indicator');
+
+  function pad(n) { return String(n).padStart(2,'0'); }
+
+  function goTo(index) {
+    if (index < 0 || index >= total) return;
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => { slides[current].classList.remove('exit'); }, 500);
+    current = index;
+    slides[current].classList.add('active');
+    indicator.textContent = pad(current + 1) + ' / ' + pad(total);
+    document.getElementById('btn-prev').style.opacity = current === 0 ? '0.3' : '1';
+    document.getElementById('btn-next').style.opacity = current === total - 1 ? '0.3' : '1';
+  }
+
+  function changeSlide(dir) { goTo(current + dir); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].clientX; });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (dx < -50) changeSlide(1);
+    if (dx >  50) changeSlide(-1);
+  });
+
+  // Init
+  goTo(0);
+</script>
+
+</body>
+</html>

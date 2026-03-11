@@ -1,0 +1,18 @@
+{
+  "eval_id": 1,
+  "eval_name": "season-plan",
+  "prompt": "26SS 시즌 기획 발표 자료를 HTML 슬라이드로 만들어줘. 브랜드 개요, KPI 목표, 채널별 매출 비중, 핵심 전략 5가지, 실행 로드맵을 포함하고, 차트랑 통계 카드도 넣어줘. 10장 내외로.",
+  "assertions": [
+    "Output is a single .html file",
+    "Contains at least 8 slides (section.slide elements)",
+    "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+    "Has F key fullscreen toggle",
+    "Shows slide counter (current / total)",
+    "Contains CSS design tokens in :root",
+    "Has at least one data visualization (bar chart, stat card, or donut chart)",
+    "Contains fragment elements for progressive reveal",
+    "Uses Noto Sans KR font for Korean text",
+    "Has progress bar at top",
+    "Has print/PDF media query"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "skill_name": "html-slide",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "26SS 시즌 기획 발표 자료를 HTML 슬라이드로 만들어줘. 브랜드 개요, KPI 목표, 채널별 매출 비중, 핵심 전략 5가지, 실행 로드맵을 포함하고, 차트랑 통계 카드도 넣어줘. 10장 내외로.",
+      "expected_output": "단일 HTML 파일로 10장 내외의 프레젠테이션. 방향키 내비게이션, F 풀스크린, 슬라이드 번호 표시, 바 차트/통계 카드/타임라인 등 데이터 시각화 포함.",
+      "files": [],
+      "expectations": [
+        "Output is a single .html file",
+        "Contains at least 8 slides (section.slide elements)",
+        "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+        "Has F key fullscreen toggle",
+        "Shows slide counter (current / total)",
+        "Contains CSS design tokens in :root",
+        "Has at least one data visualization (bar chart, stat card, or donut chart)",
+        "Contains fragment elements for progressive reveal",
+        "Uses Noto Sans KR font for Korean text",
+        "Has progress bar at top",
+        "Has print/PDF media query"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Create an HTML slide presentation for a SaaS startup pitch deck. Include these slides: Cover with company name 'CloudSync', Problem (data silos in enterprises), Solution (unified data platform), Market Size (TAM/SAM/SOM with numbers), Business Model (subscription tiers), Traction (growth metrics with charts), Team (3 co-founders), and Thank You. Use English only, professional blue color theme.",
+      "expected_output": "Single HTML file with 8 slides in English. Professional blue theme, data visualizations for market size and traction, keyboard navigation.",
+      "files": [],
+      "expectations": [
+        "Output is a single .html file",
+        "Contains exactly 8 slides",
+        "All text content is in English",
+        "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+        "Has F key fullscreen toggle",
+        "Shows slide counter",
+        "Contains data visualization for market size or traction",
+        "Uses a blue-themed color palette",
+        "Has fragment elements for progressive reveal",
+        "Font stack does not require Noto Sans KR (English only)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "HTML 슬라이드로 CSS Grid 강의 자료 만들어줘. 5장 정도로 짧게. 1장: 타이틀, 2장: Grid 기본 개념, 3장: grid-template-columns 예시, 4장: grid-area 활용, 5장: 마무리. 코드 블록도 넣어줘.",
+      "expected_output": "5장짜리 간결한 HTML 슬라이드. 코드 블록 포함, 교육용 레이아웃.",
+      "files": [],
+      "expectations": [
+        "Output is a single .html file",
+        "Contains exactly 5 slides",
+        "Has keyboard navigation",
+        "Has F key fullscreen toggle",
+        "Shows slide counter",
+        "Contains code examples (pre or code elements with CSS Grid syntax)",
+        "Has cover slide as first slide",
+        "Has end/thank-you slide as last slide"
+      ]
+    }
+  ]
+}

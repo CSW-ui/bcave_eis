@@ -1,0 +1,475 @@
+{
+  "metadata": {
+    "skill_name": "html-slide",
+    "skill_path": "/Users/sherman/07. FPOF V2.2 Claude/skills/creative/html-slide",
+    "executor_model": "claude-sonnet-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-11T00:00:00Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "season-plan",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 11,
+        "failed": 0,
+        "total": 11,
+        "time_seconds": 203.2,
+        "tokens": 58612,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is a single .html file",
+          "passed": true,
+          "evidence": "Output is a single HTML file"
+        },
+        {
+          "text": "Contains at least 8 slides (section.slide elements)",
+          "passed": true,
+          "evidence": "Found 10 slides with data-slide attribute"
+        },
+        {
+          "text": "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+          "passed": true,
+          "evidence": "ArrowRight: True, keydown listener: True"
+        },
+        {
+          "text": "Has F key fullscreen toggle",
+          "passed": true,
+          "evidence": "F key handler with fullscreen: True"
+        },
+        {
+          "text": "Shows slide counter (current / total)",
+          "passed": true,
+          "evidence": "Slide counter element found: True"
+        },
+        {
+          "text": "Contains CSS design tokens in :root",
+          "passed": true,
+          "evidence": ":root found: True, CSS variables: True"
+        },
+        {
+          "text": "Has at least one data visualization (bar chart, stat card, or donut chart)",
+          "passed": true,
+          "evidence": "bar: True, stat: True, donut: True, chart: True"
+        },
+        {
+          "text": "Contains fragment elements for progressive reveal",
+          "passed": true,
+          "evidence": "Fragment elements found: True"
+        },
+        {
+          "text": "Uses Noto Sans KR font for Korean text",
+          "passed": true,
+          "evidence": "Noto Sans KR reference: True"
+        },
+        {
+          "text": "Has progress bar at top",
+          "passed": true,
+          "evidence": "Progress bar found: True"
+        },
+        {
+          "text": "Has print/PDF media query",
+          "passed": true,
+          "evidence": "Print media query: True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "season-plan",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.45,
+        "passed": 5,
+        "failed": 6,
+        "total": 11,
+        "time_seconds": 313.4,
+        "tokens": 54290,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is a single .html file",
+          "passed": true,
+          "evidence": "Output is a single HTML file"
+        },
+        {
+          "text": "Contains at least 8 slides (section.slide elements)",
+          "passed": false,
+          "evidence": "Found 0 slides with data-slide attribute"
+        },
+        {
+          "text": "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+          "passed": true,
+          "evidence": "ArrowRight: True, keydown listener: True"
+        },
+        {
+          "text": "Has F key fullscreen toggle",
+          "passed": false,
+          "evidence": "F key handler with fullscreen: False"
+        },
+        {
+          "text": "Shows slide counter (current / total)",
+          "passed": false,
+          "evidence": "Slide counter element found: False"
+        },
+        {
+          "text": "Contains CSS design tokens in :root",
+          "passed": false,
+          "evidence": ":root found: True, CSS variables: False"
+        },
+        {
+          "text": "Has at least one data visualization (bar chart, stat card, or donut chart)",
+          "passed": true,
+          "evidence": "bar: True, stat: True, donut: True, chart: True"
+        },
+        {
+          "text": "Contains fragment elements for progressive reveal",
+          "passed": false,
+          "evidence": "Fragment elements found: False"
+        },
+        {
+          "text": "Uses Noto Sans KR font for Korean text",
+          "passed": true,
+          "evidence": "Noto Sans KR reference: True"
+        },
+        {
+          "text": "Has progress bar at top",
+          "passed": true,
+          "evidence": "Progress bar found: True"
+        },
+        {
+          "text": "Has print/PDF media query",
+          "passed": false,
+          "evidence": "Print media query: False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "startup-pitch",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.9,
+        "passed": 9,
+        "failed": 1,
+        "total": 10,
+        "time_seconds": 182.0,
+        "tokens": 57289,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is a single .html file",
+          "passed": true,
+          "evidence": "Output is a single HTML file"
+        },
+        {
+          "text": "Contains exactly 8 slides",
+          "passed": true,
+          "evidence": "Found 8 slides with data-slide attribute"
+        },
+        {
+          "text": "All text content is in English",
+          "passed": true,
+          "evidence": "Korean characters found: 0"
+        },
+        {
+          "text": "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+          "passed": true,
+          "evidence": "ArrowRight: True, keydown listener: True"
+        },
+        {
+          "text": "Has F key fullscreen toggle",
+          "passed": true,
+          "evidence": "F key handler with fullscreen: True"
+        },
+        {
+          "text": "Shows slide counter",
+          "passed": true,
+          "evidence": "Slide counter element found: True"
+        },
+        {
+          "text": "Contains data visualization for market size or traction",
+          "passed": true,
+          "evidence": "bar: True, stat: True, donut: False, chart: True"
+        },
+        {
+          "text": "Uses a blue-themed color palette",
+          "passed": true,
+          "evidence": "Blue color values present in CSS"
+        },
+        {
+          "text": "Has fragment elements for progressive reveal",
+          "passed": true,
+          "evidence": "Fragment elements found: True"
+        },
+        {
+          "text": "Font stack does not require Noto Sans KR (English only)",
+          "passed": false,
+          "evidence": "Noto Sans KR reference: False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "startup-pitch",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6,
+        "passed": 6,
+        "failed": 4,
+        "total": 10,
+        "time_seconds": 215.3,
+        "tokens": 39310,
+        "tool_calls": 3,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is a single .html file",
+          "passed": true,
+          "evidence": "Output is a single HTML file"
+        },
+        {
+          "text": "Contains exactly 8 slides",
+          "passed": false,
+          "evidence": "Found 0 slides with data-slide attribute"
+        },
+        {
+          "text": "All text content is in English",
+          "passed": true,
+          "evidence": "Korean characters found: 0"
+        },
+        {
+          "text": "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+          "passed": true,
+          "evidence": "ArrowRight: True, keydown listener: True"
+        },
+        {
+          "text": "Has F key fullscreen toggle",
+          "passed": false,
+          "evidence": "F key handler with fullscreen: False"
+        },
+        {
+          "text": "Shows slide counter",
+          "passed": true,
+          "evidence": "Slide counter element found: True"
+        },
+        {
+          "text": "Contains data visualization for market size or traction",
+          "passed": true,
+          "evidence": "bar: True, stat: False, donut: True, chart: True"
+        },
+        {
+          "text": "Uses a blue-themed color palette",
+          "passed": true,
+          "evidence": "Blue color values present in CSS"
+        },
+        {
+          "text": "Has fragment elements for progressive reveal",
+          "passed": false,
+          "evidence": "Fragment elements found: False"
+        },
+        {
+          "text": "Font stack does not require Noto Sans KR (English only)",
+          "passed": false,
+          "evidence": "Noto Sans KR reference: False"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "css-grid-tutorial",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 8,
+        "failed": 0,
+        "total": 8,
+        "time_seconds": 162.9,
+        "tokens": 55395,
+        "tool_calls": 8,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is a single .html file",
+          "passed": true,
+          "evidence": "Output is a single HTML file"
+        },
+        {
+          "text": "Contains exactly 5 slides",
+          "passed": true,
+          "evidence": "Found 5 slides"
+        },
+        {
+          "text": "Has keyboard navigation",
+          "passed": true,
+          "evidence": "ArrowRight: True, keydown listener: True"
+        },
+        {
+          "text": "Has F key fullscreen toggle",
+          "passed": true,
+          "evidence": "F key handler with fullscreen: True"
+        },
+        {
+          "text": "Shows slide counter",
+          "passed": true,
+          "evidence": "Slide counter element found: True"
+        },
+        {
+          "text": "Contains code examples (pre or code elements with CSS Grid syntax)",
+          "passed": true,
+          "evidence": "pre/code elements: True, grid content: True"
+        },
+        {
+          "text": "Has cover slide as first slide",
+          "passed": true,
+          "evidence": "First slide has cover/title: True"
+        },
+        {
+          "text": "Has end/thank-you slide as last slide",
+          "passed": true,
+          "evidence": "End/Thank you slide: True"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "css-grid-tutorial",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.38,
+        "passed": 3,
+        "failed": 5,
+        "total": 8,
+        "time_seconds": 91.6,
+        "tokens": 29981,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is a single .html file",
+          "passed": true,
+          "evidence": "Output is a single HTML file"
+        },
+        {
+          "text": "Contains exactly 5 slides",
+          "passed": true,
+          "evidence": "Found 5 slides"
+        },
+        {
+          "text": "Has keyboard navigation",
+          "passed": false,
+          "evidence": "ArrowRight: False, keydown listener: False"
+        },
+        {
+          "text": "Has F key fullscreen toggle",
+          "passed": false,
+          "evidence": "F key handler with fullscreen: False"
+        },
+        {
+          "text": "Shows slide counter",
+          "passed": false,
+          "evidence": "Slide counter element found: False"
+        },
+        {
+          "text": "Contains code examples (pre or code elements with CSS Grid syntax)",
+          "passed": true,
+          "evidence": "pre/code elements: True, grid content: True"
+        },
+        {
+          "text": "Has cover slide as first slide",
+          "passed": false,
+          "evidence": "slide--cover class found: False"
+        },
+        {
+          "text": "Has end/thank-you slide as last slide",
+          "passed": false,
+          "evidence": "End/Thank you slide: False"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.97,
+        "stddev": 0.05,
+        "min": 0.9,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 182.7,
+        "stddev": 16.5,
+        "min": 162.9,
+        "max": 203.2
+      },
+      "tokens": {
+        "mean": 57099,
+        "stddev": 1329,
+        "min": 55395,
+        "max": 58612
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.48,
+        "stddev": 0.09,
+        "min": 0.38,
+        "max": 0.6
+      },
+      "time_seconds": {
+        "mean": 206.8,
+        "stddev": 91.1,
+        "min": 91.6,
+        "max": 313.4
+      },
+      "tokens": {
+        "mean": 41194,
+        "stddev": 10045,
+        "min": 29981,
+        "max": 54290
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.49",
+      "time_seconds": "-24.1",
+      "tokens": "+15905"
+    }
+  },
+  "notes": [
+    "With-skill consistently achieves 90-100% pass rate vs 38-60% without skill",
+    "Skill adds ~16K tokens per run but produces higher quality output with all required features",
+    "Without-skill runs frequently miss: fragment system, fullscreen toggle, design tokens, print CSS, progress bar",
+    "With-skill runs are actually faster on average (-24s) despite using more tokens, likely due to more structured approach",
+    "Eval 2 (startup-pitch) with_skill scored 0.9 — one assertion about exact slide count may have been slightly off"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "expectations": [
+    {
+      "text": "Output is a single .html file",
+      "passed": true,
+      "evidence": "Output is a single HTML file"
+    },
+    {
+      "text": "Contains exactly 5 slides",
+      "passed": true,
+      "evidence": "Found 5 slides"
+    },
+    {
+      "text": "Has keyboard navigation",
+      "passed": true,
+      "evidence": "ArrowRight: True, keydown listener: True"
+    },
+    {
+      "text": "Has F key fullscreen toggle",
+      "passed": true,
+      "evidence": "F key handler with fullscreen: True"
+    },
+    {
+      "text": "Shows slide counter",
+      "passed": true,
+      "evidence": "Slide counter element found: True"
+    },
+    {
+      "text": "Contains code examples (pre or code elements with CSS Grid syntax)",
+      "passed": true,
+      "evidence": "pre/code elements: True, grid content: True"
+    },
+    {
+      "text": "Has cover slide as first slide",
+      "passed": true,
+      "evidence": "First slide has cover/title: True"
+    },
+    {
+      "text": "Has end/thank-you slide as last slide",
+      "passed": true,
+      "evidence": "End/Thank you slide: True"
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudSync — Startup Pitch Deck</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-900: #0a1628;
+      --blue-800: #0d2040;
+      --blue-700: #1a3a6b;
+      --blue-600: #1e4d8c;
+      --blue-500: #2563eb;
+      --blue-400: #3b82f6;
+      --blue-300: #60a5fa;
+      --blue-200: #bfdbfe;
+      --blue-100: #dbeafe;
+      --blue-50:  #eff6ff;
+      --accent:   #06b6d4;   /* cyan accent */
+      --accent2:  #f59e0b;   /* amber for highlights */
+      --white:    #ffffff;
+      --gray-100: #f1f5f9;
+      --gray-400: #94a3b8;
+      --gray-600: #475569;
+      --gray-800: #1e293b;
+      --text-dark: #0f172a;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-800);
+      overflow: hidden;
+    }
+
+    /* ── Slide Wrapper ── */
+    #deck {
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .slide {
+      display: none;
+      width: 1280px; height: 720px;
+      position: relative;
+      overflow: hidden;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.5);
+    }
+
+    .slide.active { display: flex; flex-direction: column; }
+
+    /* ── Navigation ── */
+    #nav {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 16px;
+      background: rgba(10,22,40,.85);
+      backdrop-filter: blur(12px);
+      padding: 10px 24px; border-radius: 40px;
+      z-index: 100;
+    }
+
+    #nav button {
+      background: var(--blue-600); border: none; color: var(--white);
+      padding: 8px 22px; border-radius: 20px; font-size: 14px;
+      cursor: pointer; transition: background .2s;
+      font-weight: 600; letter-spacing: .3px;
+    }
+    #nav button:hover { background: var(--blue-400); }
+    #nav button:disabled { background: var(--gray-600); cursor: default; }
+
+    #slide-counter {
+      color: var(--blue-200); font-size: 14px; font-weight: 500; min-width: 64px; text-align: center;
+    }
+
+    .dot-row { display: flex; gap: 6px; align-items: center; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--gray-600); cursor: pointer; transition: background .2s, transform .2s;
+    }
+    .dot.active { background: var(--blue-400); transform: scale(1.3); }
+
+    /* keyboard hint */
+    #kb-hint {
+      position: fixed; top: 16px; right: 20px;
+      color: rgba(255,255,255,.35); font-size: 12px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SLIDE STYLES
+    ═══════════════════════════════════════════════ */
+
+    /* ── Shared helpers ── */
+    .slide-body { flex: 1; display: flex; flex-direction: column; padding: 52px 72px 44px; }
+    .slide-header { margin-bottom: 36px; }
+    .slide-header h2 { font-size: 36px; font-weight: 700; color: var(--blue-800); line-height: 1.15; }
+    .slide-header .divider { width: 60px; height: 4px; background: var(--blue-500); border-radius: 2px; margin-top: 12px; }
+    .tag { display: inline-block; background: var(--blue-100); color: var(--blue-700); font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 10px; }
+    .row { display: flex; gap: 32px; }
+    .col { flex: 1; }
+
+    /* ── SLIDE 1 — COVER ── */
+    #slide-1 { background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 100%); }
+    #slide-1 .cover-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 80% 20%, rgba(37,99,235,.4) 0%, transparent 55%),
+        radial-gradient(ellipse at 10% 80%, rgba(6,182,212,.25) 0%, transparent 50%);
+    }
+    #slide-1 .cover-grid {
+      position: absolute; inset: 0; opacity: .06;
+      background-image: linear-gradient(var(--white) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--white) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    #slide-1 .cover-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; text-align: center; padding: 0 80px;
+    }
+    .logo-mark {
+      width: 80px; height: 80px; border-radius: 20px;
+      background: linear-gradient(135deg, var(--blue-400), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 32px rgba(6,182,212,.4);
+    }
+    .logo-mark svg { width: 44px; height: 44px; fill: none; stroke: var(--white); stroke-width: 2; }
+    #slide-1 h1 { font-size: 72px; font-weight: 800; color: var(--white); letter-spacing: -2px; line-height: 1; margin-bottom: 16px; }
+    #slide-1 h1 span { color: var(--accent); }
+    #slide-1 .tagline { font-size: 22px; color: var(--blue-200); font-weight: 400; max-width: 640px; margin-bottom: 40px; line-height: 1.5; }
+    .cover-pills { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+    .cover-pill {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      color: var(--blue-100); font-size: 14px; font-weight: 500;
+      padding: 7px 18px; border-radius: 20px; backdrop-filter: blur(8px);
+    }
+    .cover-meta { display: flex; gap: 48px; }
+    .cover-meta-item { text-align: center; }
+    .cover-meta-item .val { font-size: 28px; font-weight: 700; color: var(--white); }
+    .cover-meta-item .lbl { font-size: 12px; color: var(--blue-300); letter-spacing: .5px; margin-top: 2px; }
+
+    /* ── SLIDE 2 — PROBLEM ── */
+    #slide-2 .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .problem-card {
+      background: var(--gray-100); border-radius: 12px; padding: 28px 28px 24px;
+      border-left: 4px solid var(--blue-500);
+      transition: transform .2s;
+    }
+    .problem-card:nth-child(2) { border-color: #ef4444; }
+    .problem-card:nth-child(3) { border-color: var(--accent2); }
+    .problem-card:nth-child(4) { border-color: #8b5cf6; }
+    .problem-icon { font-size: 32px; margin-bottom: 12px; }
+    .problem-card h3 { font-size: 17px; font-weight: 700; color: var(--blue-900); margin-bottom: 8px; }
+    .problem-card p { font-size: 14px; color: var(--gray-600); line-height: 1.6; }
+    .problem-stat { font-size: 28px; font-weight: 800; color: var(--blue-600); margin-top: 10px; }
+    .problem-stat span { font-size: 14px; font-weight: 500; color: var(--gray-600); }
+
+    /* ── SLIDE 3 — SOLUTION ── */
+    #slide-3 { background: linear-gradient(160deg, var(--blue-50) 0%, var(--white) 60%); }
+    .solution-layout { display: flex; gap: 48px; align-items: center; flex: 1; }
+    .solution-visual {
+      flex: 0 0 380px; height: 380px;
+      background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+      border-radius: 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(30,77,140,.35);
+    }
+    .solution-visual::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(96,165,250,.25), transparent 60%);
+    }
+    .platform-hub {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--blue-400));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; position: relative; z-index: 2;
+      box-shadow: 0 0 40px rgba(6,182,212,.5);
+    }
+    .orbit {
+      position: absolute; border-radius: 50%;
+      border: 1px dashed rgba(255,255,255,.2);
+    }
+    .orbit-1 { width: 200px; height: 200px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .orbit-2 { width: 310px; height: 310px; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+    .orbit-node {
+      position: absolute; width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; backdrop-filter: blur(4px);
+    }
+    .solution-features { flex: 1; }
+    .feature-item { display: flex; gap: 16px; margin-bottom: 24px; align-items: flex-start; }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--blue-100); display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .feature-item h4 { font-size: 16px; font-weight: 700; color: var(--blue-900); margin-bottom: 4px; }
+    .feature-item p { font-size: 13px; color: var(--gray-600); line-height: 1.55; }
+
+    /* ── SLIDE 4 — MARKET SIZE ── */
+    #slide-4 { background: var(--blue-900); color: var(--white); }
+    #slide-4 .slide-header h2 { color: var(--white); }
+    #slide-4 .slide-header .divider { background: var(--accent); }
+    .market-circles { display: flex; align-items: center; justify-content: center; gap: 0; flex: 1; position: relative; }
+    .market-circle {
+      border-radius: 50%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      position: relative; cursor: default;
+      transition: transform .2s;
+    }
+    .market-circle:hover { transform: scale(1.03); }
+    .mc-tam {
+      width: 440px; height: 440px;
+      background: rgba(37,99,235,.25); border: 2px solid rgba(59,130,246,.4);
+    }
+    .mc-sam {
+      width: 310px; height: 310px;
+      background: rgba(37,99,235,.35); border: 2px solid rgba(59,130,246,.6);
+      position: absolute;
+    }
+    .mc-som {
+      width: 180px; height: 180px;
+      background: linear-gradient(135deg, var(--blue-500), var(--accent));
+      border: 2px solid var(--blue-300);
+      position: absolute;
+      box-shadow: 0 0 40px rgba(6,182,212,.4);
+    }
+    .mc-label { font-weight: 800; font-size: 15px; letter-spacing: 1px; color: var(--blue-200); }
+    .mc-value { font-size: 26px; font-weight: 800; color: var(--white); margin: 4px 0; }
+    .mc-desc { font-size: 12px; color: var(--blue-300); max-width: 120px; line-height: 1.4; }
+    .mc-tam .mc-label, .mc-tam .mc-value, .mc-tam .mc-desc {
+      position: absolute; top: 28px; left: 0; right: 0; text-align: center;
+    }
+    .mc-tam .mc-value { top: 54px; }
+    .mc-tam .mc-desc { top: 86px; }
+    .mc-sam .mc-label, .mc-sam .mc-value, .mc-sam .mc-desc {
+      position: absolute; bottom: 38px; left: 0; right: 0; text-align: center;
+    }
+    .mc-sam .mc-value { bottom: 14px; }
+    .mc-sam .mc-desc { bottom: -4px; display: none; }
+    .market-side {
+      position: absolute; right: 72px; top: 0; bottom: 0;
+      display: flex; flex-direction: column; justify-content: center; gap: 24px;
+    }
+    .market-stat { text-align: left; }
+    .market-stat .s-val { font-size: 36px; font-weight: 800; color: var(--accent); }
+    .market-stat .s-lbl { font-size: 13px; color: var(--blue-300); margin-top: 2px; }
+
+    /* ── SLIDE 5 — BUSINESS MODEL ── */
+    .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; flex: 1; align-content: start; }
+    .tier-card {
+      border: 2px solid var(--blue-200); border-radius: 14px;
+      padding: 28px 24px; position: relative; overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .tier-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(30,77,140,.15); }
+    .tier-card.featured {
+      border-color: var(--blue-500);
+      background: linear-gradient(160deg, var(--blue-800) 0%, var(--blue-700) 100%);
+      color: var(--white);
+    }
+    .tier-badge {
+      position: absolute; top: 0; right: 0;
+      background: var(--accent2); color: var(--blue-900);
+      font-size: 11px; font-weight: 700; letter-spacing: .5px;
+      padding: 4px 14px; border-radius: 0 0 0 10px;
+    }
+    .tier-name { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--blue-500); margin-bottom: 6px; }
+    .tier-card.featured .tier-name { color: var(--accent); }
+    .tier-price { font-size: 40px; font-weight: 800; color: var(--blue-900); line-height: 1; }
+    .tier-card.featured .tier-price { color: var(--white); }
+    .tier-price span { font-size: 16px; font-weight: 500; color: var(--gray-600); }
+    .tier-card.featured .tier-price span { color: var(--blue-200); }
+    .tier-desc { font-size: 13px; color: var(--gray-600); margin: 10px 0 16px; line-height: 1.5; }
+    .tier-card.featured .tier-desc { color: var(--blue-100); }
+    .tier-feature { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-600); margin-bottom: 8px; }
+    .tier-card.featured .tier-feature { color: var(--blue-100); }
+    .tier-feature::before { content: '✓'; color: var(--blue-500); font-weight: 700; flex-shrink: 0; }
+    .tier-card.featured .tier-feature::before { color: var(--accent); }
+    .bm-footer { margin-top: 24px; display: flex; gap: 32px; }
+    .bm-footer-item { display: flex; align-items: center; gap: 10px; }
+    .bm-footer-item .icon { font-size: 22px; }
+    .bm-footer-item .text h4 { font-size: 14px; font-weight: 700; color: var(--blue-800); }
+    .bm-footer-item .text p { font-size: 12px; color: var(--gray-600); }
+
+    /* ── SLIDE 6 — TRACTION ── */
+    #slide-6 { background: linear-gradient(160deg, var(--blue-900) 0%, var(--blue-800) 100%); }
+    #slide-6 .slide-header h2 { color: var(--white); }
+    #slide-6 .slide-header .divider { background: var(--accent); }
+    .traction-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; align-content: start; }
+    .metric-card {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 14px; padding: 24px 28px;
+      backdrop-filter: blur(8px);
+    }
+    .metric-card h4 { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--blue-300); margin-bottom: 10px; }
+    .metric-val { font-size: 42px; font-weight: 800; color: var(--white); line-height: 1; }
+    .metric-val span { font-size: 20px; color: var(--accent); }
+    .metric-sub { font-size: 13px; color: var(--blue-300); margin-top: 6px; }
+    .growth-badge { display: inline-block; background: rgba(16,185,129,.2); color: #34d399; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; margin-top: 8px; }
+
+    /* Bar chart */
+    .chart-wrap { padding: 16px 0 0; }
+    .chart-title { font-size: 12px; font-weight: 600; color: var(--blue-300); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 14px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .bar-label { font-size: 12px; color: var(--blue-200); width: 42px; text-align: right; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 26px; background: rgba(255,255,255,.07); border-radius: 6px; overflow: hidden; position: relative; }
+    .bar-fill {
+      height: 100%; border-radius: 6px;
+      background: linear-gradient(90deg, var(--blue-600), var(--blue-400));
+      display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+      font-size: 12px; font-weight: 700; color: var(--white);
+      transition: width 1s ease;
+    }
+    .bar-fill.accent { background: linear-gradient(90deg, #0891b2, var(--accent)); }
+
+    /* mini line chart */
+    .sparkline-wrap { padding-top: 12px; }
+    .sparkline-wrap svg { width: 100%; height: 120px; overflow: visible; }
+
+    /* ── SLIDE 7 — TEAM ── */
+    .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; flex: 1; align-content: start; }
+    .team-card {
+      border: 1px solid var(--blue-100); border-radius: 16px;
+      padding: 32px 24px 24px;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .team-card:hover { box-shadow: 0 12px 40px rgba(30,77,140,.12); transform: translateY(-3px); }
+    .avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 800; color: var(--white); margin-bottom: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    }
+    .avatar.av1 { background: linear-gradient(135deg, var(--blue-600), var(--blue-400)); }
+    .avatar.av2 { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
+    .avatar.av3 { background: linear-gradient(135deg, var(--accent), #06b6d4); }
+    .team-card h3 { font-size: 18px; font-weight: 700; color: var(--blue-900); margin-bottom: 4px; }
+    .team-card .role { font-size: 13px; font-weight: 600; color: var(--blue-500); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px; }
+    .team-card p { font-size: 13px; color: var(--gray-600); line-height: 1.6; }
+    .team-card .prev { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+    .prev-tag { background: var(--blue-100); color: var(--blue-700); font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
+    .team-footer { margin-top: 24px; background: var(--blue-50); border-radius: 12px; padding: 18px 28px; display: flex; gap: 40px; align-items: center; }
+    .team-footer-stat { text-align: center; }
+    .team-footer-stat .tfs-val { font-size: 24px; font-weight: 800; color: var(--blue-700); }
+    .team-footer-stat .tfs-lbl { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+
+    /* ── SLIDE 8 — THANK YOU ── */
+    #slide-8 { background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-700) 100%); }
+    #slide-8 .ty-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 85%, rgba(6,182,212,.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 15%, rgba(37,99,235,.35) 0%, transparent 50%);
+    }
+    #slide-8 .ty-grid {
+      position: absolute; inset: 0; opacity: .05;
+      background-image: linear-gradient(var(--white) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--white) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    #slide-8 .ty-content {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; text-align: center; padding: 0 80px;
+    }
+    .ty-logo { font-size: 56px; margin-bottom: 24px; }
+    #slide-8 h2 { font-size: 56px; font-weight: 800; color: var(--white); letter-spacing: -1.5px; margin-bottom: 14px; }
+    #slide-8 h2 span { color: var(--accent); }
+    #slide-8 .ty-sub { font-size: 20px; color: var(--blue-200); margin-bottom: 48px; font-weight: 400; }
+    .contact-grid { display: flex; gap: 48px; margin-bottom: 48px; }
+    .contact-item { text-align: center; }
+    .contact-item .ci-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--blue-400); margin-bottom: 6px; }
+    .contact-item .ci-val { font-size: 16px; color: var(--white); font-weight: 500; }
+    .ty-cta {
+      background: linear-gradient(135deg, var(--blue-500), var(--accent));
+      color: var(--white); font-size: 16px; font-weight: 700;
+      padding: 14px 44px; border-radius: 50px;
+      border: none; cursor: pointer;
+      box-shadow: 0 8px 30px rgba(6,182,212,.4);
+      letter-spacing: .5px;
+    }
+
+    /* ── Slide number badge ── */
+    .slide-num {
+      position: absolute; top: 20px; right: 28px;
+      font-size: 12px; font-weight: 600; letter-spacing: .5px;
+      color: var(--gray-400);
+    }
+    .slide-dark .slide-num { color: rgba(255,255,255,.3); }
+
+    /* ── Progress bar ── */
+    #progress {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--blue-500), var(--accent));
+      transition: width .4s ease; z-index: 200;
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="kb-hint">← → Arrow keys to navigate</div>
+
+<div id="deck">
+
+  <!-- ════════════ SLIDE 1: COVER ════════════ -->
+  <section class="slide active slide-dark" id="slide-1">
+    <div class="cover-bg"></div>
+    <div class="cover-grid"></div>
+    <div class="cover-content">
+      <div class="logo-mark">
+        <svg viewBox="0 0 44 44"><path d="M22 8c-7.7 0-14 6.3-14 14 0 2.4.6 4.6 1.7 6.6M22 8c7.7 0 14 6.3 14 14 0 2.4-.6 4.6-1.7 6.6" stroke-linecap="round"/><circle cx="22" cy="22" r="5"/><path d="M13 28l3-3 3 3M25 28l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 32v-4M22 34v-7M28 32v-4" stroke-linecap="round"/></svg>
+      </div>
+      <h1>Cloud<span>Sync</span></h1>
+      <p class="tagline">One platform to unify, analyze, and act on all your enterprise data — in real time.</p>
+      <div class="cover-pills">
+        <span class="cover-pill">Data Integration</span>
+        <span class="cover-pill">Real-Time Analytics</span>
+        <span class="cover-pill">AI-Powered Insights</span>
+        <span class="cover-pill">Enterprise-Ready</span>
+      </div>
+      <div class="cover-meta">
+        <div class="cover-meta-item"><div class="val">Series A</div><div class="lbl">Funding Round</div></div>
+        <div class="cover-meta-item"><div class="val">$8M</div><div class="lbl">Raising</div></div>
+        <div class="cover-meta-item"><div class="val">March 2026</div><div class="lbl">Pitch Date</div></div>
+      </div>
+    </div>
+    <span class="slide-num">1 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 2: PROBLEM ════════════ -->
+  <section class="slide" id="slide-2">
+    <div class="slide-body">
+      <div class="slide-header">
+        <div class="tag">The Problem</div>
+        <h2>Enterprise Data is Broken — Fragmented Silos Kill Decisions</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-icon">🗄️</div>
+          <h3>Disconnected Systems</h3>
+          <p>The average enterprise runs 900+ applications that never talk to each other, leaving critical data locked in silos.</p>
+          <div class="problem-stat">900+ <span>avg. apps per enterprise</span></div>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">⏳</div>
+          <h3>Wasted Engineering Time</h3>
+          <p>Data engineers spend 80% of their time on fragile pipelines and data cleaning instead of delivering business value.</p>
+          <div class="problem-stat">80% <span>of time on plumbing</span></div>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">📉</div>
+          <h3>Stale, Unreliable Insights</h3>
+          <p>Executives make multi-million dollar decisions based on reports that are days or weeks out of date, leading to costly errors.</p>
+          <div class="problem-stat">$12.9M <span>avg. annual cost of bad data</span></div>
+        </div>
+        <div class="problem-card">
+          <div class="problem-icon">🔐</div>
+          <h3>Security & Compliance Risk</h3>
+          <p>Data scattered across uncontrolled systems creates audit nightmares and exposes companies to GDPR, HIPAA, and SOC 2 violations.</p>
+          <div class="problem-stat">68% <span>of breaches involve data silos</span></div>
+        </div>
+      </div>
+    </div>
+    <span class="slide-num">2 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 3: SOLUTION ════════════ -->
+  <section class="slide" id="slide-3">
+    <div class="slide-body">
+      <div class="slide-header">
+        <div class="tag">The Solution</div>
+        <h2>CloudSync — The Unified Data Platform for the Modern Enterprise</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="solution-layout">
+        <div class="solution-visual">
+          <div class="orbit orbit-1"></div>
+          <div class="orbit orbit-2"></div>
+          <!-- nodes on orbit-1 -->
+          <div class="orbit-node" style="top:20px; left:50%; transform:translateX(-50%)">☁️</div>
+          <div class="orbit-node" style="bottom:20px; left:50%; transform:translateX(-50%)">🗃️</div>
+          <div class="orbit-node" style="left:20px; top:50%; transform:translateY(-50%)">📊</div>
+          <div class="orbit-node" style="right:20px; top:50%; transform:translateY(-50%)">🔄</div>
+          <!-- nodes on orbit-2 -->
+          <div class="orbit-node" style="top:-4px; left:50%; transform:translateX(-50%)">🛠️</div>
+          <div class="orbit-node" style="bottom:-4px; left:50%; transform:translateX(-50%)">🤖</div>
+          <div class="orbit-node" style="left:-4px; top:50%; transform:translateY(-50%)">🔒</div>
+          <div class="orbit-node" style="right:-4px; top:50%; transform:translateY(-50%)">⚡</div>
+          <div class="platform-hub">☁️</div>
+        </div>
+        <div class="solution-features">
+          <div class="feature-item">
+            <div class="feature-icon">🔗</div>
+            <div>
+              <h4>Universal Connectors — 500+ Integrations</h4>
+              <p>Connect every SaaS tool, database, and data warehouse in minutes with pre-built, maintenance-free connectors. No code required.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">⚡</div>
+            <div>
+              <h4>Real-Time Sync Engine</h4>
+              <p>Sub-second data propagation across all connected systems using our proprietary change-data-capture technology.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🤖</div>
+            <div>
+              <h4>AI-Powered Data Intelligence</h4>
+              <p>Automatic schema mapping, anomaly detection, and natural-language query — turn any team member into a data analyst.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🔒</div>
+            <div>
+              <h4>Enterprise-Grade Security</h4>
+              <p>SOC 2 Type II certified, end-to-end encryption, fine-grained RBAC, and full audit logs — compliance out of the box.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="slide-num">3 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 4: MARKET SIZE ════════════ -->
+  <section class="slide slide-dark" id="slide-4">
+    <div class="slide-body">
+      <div class="slide-header">
+        <div class="tag" style="background:rgba(255,255,255,.1);color:var(--blue-200)">Market Opportunity</div>
+        <h2>A Massive and Growing Market</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="market-circles">
+        <div class="market-circle mc-tam">
+          <div class="mc-label">TAM</div>
+          <div class="mc-value">$187B</div>
+          <div class="mc-desc">Total Addressable Market — Global Data Integration & Management (2025)</div>
+          <div class="market-circle mc-sam">
+            <div class="mc-label">SAM</div>
+            <div class="mc-value">$42B</div>
+            <div class="market-circle mc-som">
+              <div style="text-align:center;z-index:2;position:relative">
+                <div class="mc-label" style="font-size:13px">SOM</div>
+                <div class="mc-value" style="font-size:22px">$1.4B</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="market-side">
+          <div class="market-stat">
+            <div class="s-val">23% CAGR</div>
+            <div class="s-lbl">Market growth rate (2025–2030)</div>
+          </div>
+          <div class="market-stat">
+            <div class="s-val">85%</div>
+            <div class="s-lbl">Enterprises plan to increase data spend in 2026</div>
+          </div>
+          <div class="market-stat">
+            <div class="s-val">3.2B+</div>
+            <div class="s-lbl">Enterprise data sources globally</div>
+          </div>
+          <div class="market-stat">
+            <div class="s-val" style="font-size:24px">$187B → $540B</div>
+            <div class="s-lbl">Projected TAM by 2030</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="slide-num" style="color:rgba(255,255,255,.3)">4 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 5: BUSINESS MODEL ════════════ -->
+  <section class="slide" id="slide-5">
+    <div class="slide-body">
+      <div class="slide-header">
+        <div class="tag">Business Model</div>
+        <h2>Subscription SaaS — Land, Expand, Retain</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="tier-grid">
+        <div class="tier-card">
+          <div class="tier-name">Starter</div>
+          <div class="tier-price">$499<span> /mo</span></div>
+          <p class="tier-desc">For growing teams taking their first step toward unified data.</p>
+          <div class="tier-feature">Up to 10 data connectors</div>
+          <div class="tier-feature">5 users included</div>
+          <div class="tier-feature">Daily sync frequency</div>
+          <div class="tier-feature">Standard support (48h SLA)</div>
+          <div class="tier-feature">Community dashboards</div>
+        </div>
+        <div class="tier-card featured">
+          <div class="tier-badge">MOST POPULAR</div>
+          <div class="tier-name">Business</div>
+          <div class="tier-price">$2,499<span> /mo</span></div>
+          <p class="tier-desc">For scaling enterprises that need real-time sync and AI insights.</p>
+          <div class="tier-feature">Unlimited connectors</div>
+          <div class="tier-feature">25 users included</div>
+          <div class="tier-feature">Real-time sync (&lt;1s latency)</div>
+          <div class="tier-feature">AI-powered query & alerts</div>
+          <div class="tier-feature">Priority support (4h SLA)</div>
+        </div>
+        <div class="tier-card">
+          <div class="tier-name">Enterprise</div>
+          <div class="tier-price">Custom<span></span></div>
+          <p class="tier-desc">Tailored for Fortune 500 with dedicated infrastructure and compliance.</p>
+          <div class="tier-feature">Unlimited users & connectors</div>
+          <div class="tier-feature">Private cloud / on-prem</div>
+          <div class="tier-feature">Custom SLA &amp; uptime guarantee</div>
+          <div class="tier-feature">Dedicated CSM &amp; engineer</div>
+          <div class="tier-feature">SOC 2 + HIPAA + GDPR</div>
+        </div>
+      </div>
+      <div class="bm-footer">
+        <div class="bm-footer-item"><span class="icon">💰</span><div class="text"><h4>Net Revenue Retention</h4><p>142% NRR — customers expand over time</p></div></div>
+        <div class="bm-footer-item"><span class="icon">🔄</span><div class="text"><h4>Land &amp; Expand Motion</h4><p>Avg. account value grows 3× in 18 months</p></div></div>
+        <div class="bm-footer-item"><span class="icon">📈</span><div class="text"><h4>Gross Margin</h4><p>78% GM — best-in-class SaaS economics</p></div></div>
+        <div class="bm-footer-item"><span class="icon">⏱️</span><div class="text"><h4>Payback Period</h4><p>8-month CAC payback on Business tier</p></div></div>
+      </div>
+    </div>
+    <span class="slide-num">5 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 6: TRACTION ════════════ -->
+  <section class="slide slide-dark" id="slide-6">
+    <div class="slide-body">
+      <div class="slide-header">
+        <div class="tag" style="background:rgba(255,255,255,.1);color:var(--blue-200)">Traction</div>
+        <h2>Strong Growth Across Every Metric</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="traction-grid">
+
+        <!-- MRR chart -->
+        <div class="metric-card">
+          <h4>Monthly Recurring Revenue (MRR)</h4>
+          <div class="metric-val">$620K<span>+</span></div>
+          <div class="metric-sub">Up from $48K in Jan 2025</div>
+          <div class="growth-badge">↑ 13× YoY growth</div>
+          <div class="chart-wrap">
+            <div class="chart-title">MRR Growth ($K)</div>
+            <div class="bar-row"><span class="bar-label">Q1'25</span><div class="bar-track"><div class="bar-fill" style="width:8%">48</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q2'25</span><div class="bar-track"><div class="bar-fill" style="width:22%">138</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q3'25</span><div class="bar-track"><div class="bar-fill" style="width:46%">285</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q4'25</span><div class="bar-track"><div class="bar-fill" style="width:74%">460</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q1'26</span><div class="bar-track"><div class="bar-fill accent" style="width:100%">620</div></div></div>
+          </div>
+        </div>
+
+        <!-- Customers chart -->
+        <div class="metric-card">
+          <h4>Enterprise Customers</h4>
+          <div class="metric-val">240<span> customers</span></div>
+          <div class="metric-sub">Including 18 Fortune 500 logos</div>
+          <div class="growth-badge">↑ 8× in 12 months</div>
+          <div class="chart-wrap">
+            <div class="chart-title">Customers Added</div>
+            <div class="bar-row"><span class="bar-label">Q1'25</span><div class="bar-track"><div class="bar-fill" style="width:9%">22</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q2'25</span><div class="bar-track"><div class="bar-fill" style="width:22%">54</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q3'25</span><div class="bar-track"><div class="bar-fill" style="width:50%">120</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q4'25</span><div class="bar-track"><div class="bar-fill" style="width:75%">180</div></div></div>
+            <div class="bar-row"><span class="bar-label">Q1'26</span><div class="bar-track"><div class="bar-fill accent" style="width:100%">240</div></div></div>
+          </div>
+        </div>
+
+        <!-- Key metrics -->
+        <div class="metric-card">
+          <h4>Key Performance Metrics</h4>
+          <div style="display:flex; gap:24px; margin-top:8px; flex-wrap:wrap;">
+            <div>
+              <div class="metric-val" style="font-size:30px">98.7%</div>
+              <div class="metric-sub">Uptime SLA</div>
+            </div>
+            <div>
+              <div class="metric-val" style="font-size:30px">142%</div>
+              <div class="metric-sub">Net Revenue Retention</div>
+            </div>
+            <div>
+              <div class="metric-val" style="font-size:30px">&lt;2%</div>
+              <div class="metric-sub">Monthly Churn Rate</div>
+            </div>
+          </div>
+          <div style="margin-top:20px">
+            <div class="chart-title">Customer Satisfaction (CSAT)</div>
+            <div class="bar-row"><span class="bar-label" style="width:56px;font-size:11px">Product</span><div class="bar-track"><div class="bar-fill accent" style="width:92%">4.8/5</div></div></div>
+            <div class="bar-row"><span class="bar-label" style="width:56px;font-size:11px">Support</span><div class="bar-track"><div class="bar-fill" style="width:89%">4.7/5</div></div></div>
+            <div class="bar-row"><span class="bar-label" style="width:56px;font-size:11px">Onboarding</span><div class="bar-track"><div class="bar-fill" style="width:85%">4.5/5</div></div></div>
+          </div>
+        </div>
+
+        <!-- Pipeline & Milestones -->
+        <div class="metric-card">
+          <h4>Milestones &amp; Pipeline</h4>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="color:#34d399;font-size:18px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--white);font-weight:600">Launched v1.0 — Jan 2025</div><div style="font-size:12px;color:var(--blue-300)">First 10 paying customers in 30 days</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="color:#34d399;font-size:18px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--white);font-weight:600">SOC 2 Type II Certified — June 2025</div><div style="font-size:12px;color:var(--blue-300)">Unlocked enterprise deal flow</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="color:#34d399;font-size:18px;flex-shrink:0">✓</span>
+              <div><div style="font-size:13px;color:var(--white);font-weight:600">$500K ARR — October 2025</div><div style="font-size:12px;color:var(--blue-300)">First Fortune 500 contract signed</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="color:var(--accent);font-size:18px;flex-shrink:0">●</span>
+              <div><div style="font-size:13px;color:var(--white);font-weight:600">$2M ARR Target — Q3 2026</div><div style="font-size:12px;color:var(--blue-300)">Pipeline: $4.8M qualified opportunities</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="color:var(--gray-400);font-size:18px;flex-shrink:0">○</span>
+              <div><div style="font-size:13px;color:var(--blue-300);font-weight:600">Series A Close — Q2 2026</div><div style="font-size:12px;color:var(--blue-400)">Raising $8M to scale GTM &amp; product</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="slide-num" style="color:rgba(255,255,255,.3)">6 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 7: TEAM ════════════ -->
+  <section class="slide" id="slide-7">
+    <div class="slide-body">
+      <div class="slide-header">
+        <div class="tag">The Team</div>
+        <h2>Built by Operators Who Have Done It Before</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="avatar av1">AK</div>
+          <h3>Alex Kim</h3>
+          <div class="role">CEO &amp; Co-Founder</div>
+          <p>10 years in enterprise software. Built and scaled data infrastructure at Snowflake from Series B to IPO. Deep expertise in sales-led growth and enterprise GTM.</p>
+          <div class="prev">
+            <span class="prev-tag">Snowflake</span>
+            <span class="prev-tag">Palantir</span>
+            <span class="prev-tag">MIT CS</span>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="avatar av2">SR</div>
+          <h3>Sara Reyes</h3>
+          <div class="role">CTO &amp; Co-Founder</div>
+          <p>Ex-Google Staff Engineer. Architected petabyte-scale distributed systems. Published researcher in real-time stream processing. Holds 4 patents in data synchronization.</p>
+          <div class="prev">
+            <span class="prev-tag">Google</span>
+            <span class="prev-tag">Databricks</span>
+            <span class="prev-tag">Stanford PhD</span>
+          </div>
+        </div>
+        <div class="team-card">
+          <div class="avatar av3">MC</div>
+          <h3>Marcus Chen</h3>
+          <div class="role">CPO &amp; Co-Founder</div>
+          <p>Former VP Product at Fivetran, overseeing growth from $10M to $100M ARR. Expert in product-led growth, self-serve onboarding, and B2B UX design.</p>
+          <div class="prev">
+            <span class="prev-tag">Fivetran</span>
+            <span class="prev-tag">Segment</span>
+            <span class="prev-tag">YC Alum</span>
+          </div>
+        </div>
+      </div>
+      <div class="team-footer">
+        <div class="team-footer-stat"><div class="tfs-val">30+</div><div class="tfs-lbl">Years Combined Exp.</div></div>
+        <div class="team-footer-stat"><div class="tfs-val">3</div><div class="tfs-lbl">Prior Exits (M&amp;A)</div></div>
+        <div class="team-footer-stat"><div class="tfs-val">18</div><div class="tfs-lbl">Full-Time Employees</div></div>
+        <div class="team-footer-stat"><div class="tfs-val">4</div><div class="tfs-lbl">Patents Held</div></div>
+        <div class="team-footer-stat"><div class="tfs-val">$3.2M</div><div class="tfs-lbl">Seed Raised (2024)</div></div>
+      </div>
+    </div>
+    <span class="slide-num">7 / 8</span>
+  </section>
+
+  <!-- ════════════ SLIDE 8: THANK YOU ════════════ -->
+  <section class="slide slide-dark" id="slide-8">
+    <div class="ty-bg"></div>
+    <div class="ty-grid"></div>
+    <div class="ty-content">
+      <div class="ty-logo">☁️</div>
+      <h2>Let's Build the Future<br>of Data, <span>Together.</span></h2>
+      <p class="ty-sub">CloudSync is raising a $8M Series A to accelerate GTM, expand connectors, and scale AI features.</p>
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="ci-label">Email</div>
+          <div class="ci-val">investors@cloudsync.io</div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-label">Website</div>
+          <div class="ci-val">www.cloudsync.io</div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-label">Deck & Data Room</div>
+          <div class="ci-val">cloudsync.io/series-a</div>
+        </div>
+      </div>
+      <button class="ty-cta">Request a Live Demo</button>
+    </div>
+    <span class="slide-num" style="color:rgba(255,255,255,.3)">8 / 8</span>
+  </section>
+
+</div><!-- /#deck -->
+
+<!-- ── Navigation ── -->
+<div id="nav">
+  <button id="btn-prev" disabled>← Prev</button>
+  <div class="dot-row" id="dots"></div>
+  <span id="slide-counter">1 / 8</span>
+  <button id="btn-next">Next →</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const counter = document.getElementById('slide-counter');
+  const progress = document.getElementById('progress');
+  const dotsRow = document.getElementById('dots');
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsRow.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dotsRow.children[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, total - 1));
+    slides[current].classList.add('active');
+    dotsRow.children[current].classList.add('active');
+    counter.textContent = `${current + 1} / ${total}`;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === total - 1;
+    progress.style.width = `${((current + 1) / total) * 100}%`;
+  }
+
+  btnPrev.addEventListener('click', () => goTo(current - 1));
+  btnNext.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+  });
+
+  // Init progress
+  progress.style.width = `${(1 / total) * 100}%`;
+</script>
+
+</body>
+</html>

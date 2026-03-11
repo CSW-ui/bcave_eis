@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudSync — Investor Pitch Deck</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── A. Design Tokens ── */
+    :root {
+      /* Blue professional palette */
+      --c-ink: #0d1b2a;
+      --c-ink-light: #1a3550;
+      --c-slate: #3d5a73;
+      --c-muted: #7a9bb5;
+      --c-border: #d0dde8;
+      --c-surface: #f0f5fa;
+      --c-bg: #ffffff;
+      --c-white: #ffffff;
+
+      /* Accent — blue tones */
+      --c-accent: #1a6fc4;
+      --c-accent-soft: rgba(26, 111, 196, 0.1);
+      --c-accent-light: rgba(26, 111, 196, 0.15);
+      --c-teal: #0ea8c5;
+      --c-teal-soft: rgba(14, 168, 197, 0.1);
+      --c-rose: #e05278;
+      --c-amber: #e09839;
+      --c-emerald: #22a06b;
+
+      /* Chart colors */
+      --chart-1: #1a6fc4;
+      --chart-2: #0ea8c5;
+      --chart-3: #3b8ee8;
+      --chart-4: #5ba4ef;
+      --chart-5: #22a06b;
+      --chart-6: #8b5cf6;
+
+      /* Typography — English only */
+      --font-body: 'Inter', system-ui, sans-serif;
+      --font-heading: 'Inter', system-ui, sans-serif;
+      --font-en: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+      --fs-display: clamp(2rem, 4.5vw, 3.2rem);
+      --fs-h1: clamp(1.6rem, 3vw, 2.2rem);
+      --fs-h2: clamp(1.1rem, 2vw, 1.5rem);
+      --fs-body: clamp(0.85rem, 1.2vw, 1.05rem);
+      --fs-small: clamp(0.7rem, 0.9vw, 0.8rem);
+      --fs-tiny: clamp(0.6rem, 0.75vw, 0.7rem);
+
+      /* Layout */
+      --content-max: 760px;
+      --slide-px: clamp(2rem, 5vw, 4rem);
+      --slide-py: clamp(2rem, 4vh, 3rem);
+      --gap: 1.25rem;
+
+      /* Transitions */
+      --t-speed: 0.45s;
+      --t-ease: cubic-bezier(0.4, 0, 0.15, 1);
+    }
+
+    /* ── B. Reset + Slide Engine ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font-body);
+      color: var(--c-ink);
+      background: var(--c-ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .slides-container { position: fixed; inset: 0; }
+
+    section.slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: var(--slide-py) var(--slide-px);
+      opacity: 0; visibility: hidden;
+      transform: translateY(24px);
+      transition: opacity var(--t-speed) var(--t-ease),
+                  transform var(--t-speed) var(--t-ease);
+      z-index: 0; overflow: hidden;
+    }
+
+    section.slide.active {
+      opacity: 1; visibility: visible;
+      transform: translateY(0); z-index: 2;
+    }
+
+    section.slide.prev {
+      opacity: 0; visibility: hidden;
+      transform: translateY(-24px); z-index: 1;
+    }
+
+    .content { width: 100%; max-width: var(--content-max); }
+
+    /* ── C. Slide Variants ── */
+
+    /* Cover */
+    .slide--cover {
+      background: linear-gradient(145deg, var(--c-ink) 0%, var(--c-ink-light) 100%);
+      color: var(--c-white);
+      text-align: center;
+    }
+    .slide--cover .content {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 1.2rem;
+    }
+    .slide--cover .tag {
+      display: inline-block;
+      font-family: var(--font-en); font-size: var(--fs-tiny);
+      font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--c-accent); background: var(--c-accent-light);
+      padding: 0.3em 0.9em; border-radius: 100px;
+    }
+    .slide--cover h1 {
+      font-size: var(--fs-display); font-weight: 800;
+      line-height: 1.15; letter-spacing: -0.02em;
+    }
+    .slide--cover .subtitle {
+      font-size: var(--fs-body); color: var(--c-muted);
+      max-width: 480px; line-height: 1.6;
+    }
+    .slide--cover .divider {
+      width: 48px; height: 2px;
+      background: var(--c-accent); border-radius: 1px;
+    }
+
+    /* Section */
+    .slide--section { background: var(--c-surface); }
+    .slide--section .content {
+      display: flex; align-items: flex-end; gap: 1.5rem;
+    }
+    .slide--section .section-num {
+      font-family: var(--font-en);
+      font-size: clamp(4rem, 10vw, 7rem);
+      font-weight: 700; line-height: 0.85;
+      color: var(--c-accent); opacity: 0.12;
+    }
+    .slide--section h2 {
+      font-size: var(--fs-display); font-weight: 700;
+      line-height: 1.1; color: var(--c-ink); letter-spacing: -0.02em;
+    }
+    .slide--section .section-sub {
+      font-size: var(--fs-small); color: var(--c-muted); margin-top: 0.4rem;
+    }
+
+    /* Content */
+    .slide--content { background: var(--c-bg); }
+    .slide--content h2 {
+      font-size: var(--fs-h1); font-weight: 700;
+      line-height: 1.25; margin-bottom: 0.4rem; color: var(--c-ink);
+    }
+    .slide--content .lead {
+      font-size: var(--fs-small); color: var(--c-muted); margin-bottom: 1.5rem;
+    }
+
+    /* Dark */
+    .slide--dark { background: var(--c-ink); color: var(--c-white); }
+    .slide--dark h2 { color: var(--c-white); }
+    .slide--dark .lead { color: var(--c-muted); }
+
+    /* End */
+    .slide--end {
+      background: linear-gradient(145deg, var(--c-ink) 0%, var(--c-ink-light) 100%);
+      color: var(--c-white); text-align: center;
+    }
+    .slide--end .content {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 1.2rem;
+    }
+    .slide--end h2 {
+      font-size: var(--fs-display); font-weight: 700; letter-spacing: -0.02em;
+    }
+    .slide--end .contact {
+      font-size: var(--fs-small); color: var(--c-muted); margin-top: 0.8rem;
+    }
+    .slide--end .divider {
+      width: 48px; height: 2px;
+      background: var(--c-accent); border-radius: 1px;
+    }
+
+    /* ── D. Components ── */
+
+    /* Stat Cards */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);
+    }
+    .stat-card {
+      background: var(--c-surface); border-radius: 10px;
+      padding: 1.2rem 1rem; text-align: center;
+      border-left: 3px solid var(--c-accent);
+    }
+    .stat-card .num {
+      font-family: var(--font-en);
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      font-weight: 700; color: var(--c-accent); line-height: 1;
+    }
+    .stat-card .lbl {
+      font-size: var(--fs-tiny); color: var(--c-slate);
+      margin-top: 0.35rem; line-height: 1.35;
+    }
+    .slide--dark .stat-card {
+      background: rgba(255,255,255,0.05); border-left-color: var(--c-teal);
+    }
+    .slide--dark .stat-card .num { color: var(--c-teal); }
+    .slide--dark .stat-card .lbl { color: var(--c-muted); }
+
+    /* Bar Chart */
+    .bar-chart { display: flex; flex-direction: column; gap: 0.55rem; }
+    .bar-row {
+      display: grid; grid-template-columns: 100px 1fr 52px;
+      align-items: center; gap: 0.6rem; font-size: var(--fs-small);
+    }
+    .bar-row .bar-label {
+      text-align: right; color: var(--c-slate);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bar-row .bar-track {
+      height: 22px; background: var(--c-surface);
+      border-radius: 4px; overflow: hidden;
+    }
+    .bar-row .bar-fill {
+      height: 100%; border-radius: 4px;
+      transition: width 0.8s var(--t-ease);
+    }
+    .bar-row .bar-value {
+      font-family: var(--font-en); font-weight: 600;
+      font-size: var(--fs-tiny); color: var(--c-ink);
+    }
+    .slide--dark .bar-row .bar-label { color: var(--c-muted); }
+    .slide--dark .bar-row .bar-track { background: rgba(255,255,255,0.06); }
+    .slide--dark .bar-row .bar-value { color: rgba(255,255,255,0.7); }
+
+    /* Metric Cards */
+    .metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .metric-card {
+      background: var(--c-surface); border-radius: 10px;
+      padding: 1rem 1.1rem; display: flex;
+      flex-direction: column; gap: 0.3rem;
+    }
+    .metric-card .metric-title { font-size: var(--fs-tiny); color: var(--c-muted); }
+    .metric-card .metric-value {
+      font-family: var(--font-en);
+      font-size: clamp(1.2rem, 2vw, 1.6rem);
+      font-weight: 700; color: var(--c-ink);
+    }
+    .metric-card .metric-delta {
+      font-family: var(--font-en); font-size: var(--fs-tiny); font-weight: 600;
+    }
+    .metric-delta.up { color: var(--c-emerald); }
+    .metric-delta.down { color: var(--c-rose); }
+    .slide--dark .metric-card { background: rgba(255,255,255,0.05); }
+    .slide--dark .metric-card .metric-title { color: var(--c-muted); }
+    .slide--dark .metric-card .metric-value { color: var(--c-white); }
+
+    /* Two Column */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .two-col h3 { font-size: var(--fs-h2); font-weight: 700; margin-bottom: 0.6rem; }
+    .two-col .col-tag {
+      display: inline-block; font-family: var(--font-en);
+      font-size: var(--fs-tiny); font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.2em 0.55em; border-radius: 4px; margin-bottom: 0.5rem;
+    }
+    .two-col .col-tag--a { background: var(--c-accent-soft); color: var(--c-accent); }
+    .two-col .col-tag--b { background: var(--c-teal-soft); color: var(--c-teal); }
+
+    /* Item List */
+    .item-list { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .item-list li {
+      font-size: var(--fs-body); line-height: 1.55;
+      padding-left: 1.1rem; position: relative; color: var(--c-ink);
+    }
+    .item-list li::before {
+      content: ''; position: absolute; left: 0; top: 0.55em;
+      width: 5px; height: 5px; border-radius: 50%; background: var(--c-accent);
+    }
+    .slide--dark .item-list li { color: rgba(255,255,255,0.85); }
+    .slide--dark .item-list li::before { background: var(--c-teal); }
+
+    /* ── Market Size (TAM/SAM/SOM) ── */
+    .market-funnel {
+      display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem;
+    }
+    .market-tier {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.9rem 1.2rem; border-radius: 10px;
+      border-left: 4px solid transparent;
+    }
+    .market-tier.tam {
+      background: rgba(26, 111, 196, 0.08);
+      border-left-color: var(--c-accent);
+    }
+    .market-tier.sam {
+      background: rgba(14, 168, 197, 0.08);
+      border-left-color: var(--c-teal);
+    }
+    .market-tier.som {
+      background: rgba(34, 160, 107, 0.08);
+      border-left-color: var(--c-emerald);
+    }
+    .market-tier .tier-badge {
+      font-family: var(--font-en); font-size: var(--fs-tiny);
+      font-weight: 700; letter-spacing: 0.08em;
+      min-width: 44px; text-align: center;
+    }
+    .tam .tier-badge { color: var(--c-accent); }
+    .sam .tier-badge { color: var(--c-teal); }
+    .som .tier-badge { color: var(--c-emerald); }
+    .market-tier .tier-amount {
+      font-family: var(--font-en);
+      font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+      font-weight: 700; color: var(--c-ink); min-width: 100px;
+    }
+    .market-tier .tier-desc {
+      font-size: var(--fs-small); color: var(--c-slate); line-height: 1.4;
+    }
+
+    /* ── Business Model Tiers ── */
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);
+      margin-top: 0.5rem;
+    }
+    .pricing-card {
+      border-radius: 12px; padding: 1.2rem 1rem;
+      border: 1.5px solid var(--c-border);
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .pricing-card.featured {
+      border-color: var(--c-accent);
+      background: var(--c-accent-soft);
+    }
+    .pricing-card .plan-name {
+      font-family: var(--font-en); font-size: var(--fs-tiny);
+      font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--c-muted);
+    }
+    .pricing-card.featured .plan-name { color: var(--c-accent); }
+    .pricing-card .plan-price {
+      font-family: var(--font-en);
+      font-size: clamp(1.3rem, 2vw, 1.8rem);
+      font-weight: 800; color: var(--c-ink); line-height: 1;
+    }
+    .pricing-card .plan-unit {
+      font-size: var(--fs-tiny); color: var(--c-muted);
+      font-weight: 400; margin-left: 2px;
+    }
+    .pricing-card .plan-desc {
+      font-size: var(--fs-tiny); color: var(--c-slate);
+      line-height: 1.5; padding-top: 0.3rem;
+      border-top: 1px solid var(--c-border);
+    }
+    .pricing-card .plan-features {
+      list-style: none; display: flex; flex-direction: column; gap: 0.3rem;
+      padding-top: 0.1rem;
+    }
+    .pricing-card .plan-features li {
+      font-size: var(--fs-tiny); color: var(--c-slate);
+      padding-left: 0.9rem; position: relative;
+    }
+    .pricing-card .plan-features li::before {
+      content: '✓'; position: absolute; left: 0;
+      color: var(--c-accent); font-size: 0.6rem; top: 0.1em;
+    }
+
+    /* ── Team Cards ── */
+    .team-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap);
+      margin-top: 0.5rem;
+    }
+    .team-card {
+      background: var(--c-surface); border-radius: 12px;
+      padding: 1.4rem 1rem; text-align: center;
+      border-top: 3px solid var(--c-accent);
+    }
+    .team-card .avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--c-accent), var(--c-teal));
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 0.8rem;
+      font-family: var(--font-en); font-size: 1.1rem;
+      font-weight: 700; color: var(--c-white);
+    }
+    .team-card .member-name {
+      font-family: var(--font-en); font-size: var(--fs-body);
+      font-weight: 700; color: var(--c-ink); margin-bottom: 0.25rem;
+    }
+    .team-card .member-role {
+      font-size: var(--fs-tiny); color: var(--c-accent);
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 0.5rem;
+    }
+    .team-card .member-bio {
+      font-size: var(--fs-tiny); color: var(--c-slate); line-height: 1.5;
+    }
+
+    /* ── Traction Growth Chart ── */
+    .growth-chart {
+      display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.5rem;
+    }
+    .growth-bar-row {
+      display: grid; grid-template-columns: 48px 1fr 64px;
+      align-items: center; gap: 0.6rem;
+    }
+    .growth-bar-row .g-label {
+      font-family: var(--font-en); font-size: var(--fs-tiny);
+      font-weight: 600; color: var(--c-muted); text-align: right;
+    }
+    .growth-bar-row .g-track {
+      height: 20px; background: var(--c-surface);
+      border-radius: 4px; overflow: hidden;
+    }
+    .growth-bar-row .g-fill {
+      height: 100%; border-radius: 4px;
+      transition: width 0.8s var(--t-ease);
+    }
+    .growth-bar-row .g-value {
+      font-family: var(--font-en); font-weight: 700;
+      font-size: var(--fs-tiny); color: var(--c-ink);
+    }
+
+    /* ── E. UI Elements ── */
+
+    /* Fragment */
+    .fragment {
+      opacity: 0; transform: translateY(14px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .fragment.visible { opacity: 1; transform: translateY(0); }
+
+    /* Progress Bar */
+    .progress-bar {
+      position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 100;
+    }
+    .progress-fill {
+      height: 100%; background: var(--c-accent); transition: width 0.3s ease; width: 0%;
+    }
+
+    /* Slide Counter */
+    .slide-counter {
+      position: fixed; bottom: 16px; right: 24px;
+      font-family: var(--font-en); font-size: 0.65rem;
+      font-weight: 600; z-index: 100; pointer-events: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Keyboard Hint */
+    .keyboard-hint {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-en); font-size: 0.6rem;
+      z-index: 100; pointer-events: none;
+      transition: opacity 2s ease;
+    }
+    .keyboard-hint.hidden { opacity: 0; }
+
+    /* ── F. Overview + Print ── */
+    body.overview .slides-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px; padding: 16px;
+      position: fixed; inset: 0; overflow: auto;
+      background: var(--c-ink);
+    }
+    body.overview section.slide {
+      position: relative; opacity: 1; visibility: visible;
+      transform: none; height: auto; aspect-ratio: 16/9;
+      border-radius: 6px; cursor: pointer; font-size: 0.28rem;
+      border: 2px solid transparent;
+    }
+    body.overview section.slide:hover { border-color: var(--c-accent); }
+    body.overview section.slide.active { border-color: var(--c-accent); }
+    body.overview .progress-bar,
+    body.overview .slide-counter,
+    body.overview .keyboard-hint { display: none; }
+
+    @media print {
+      @page { size: 254mm 142.9mm; margin: 0; }
+      html, body { overflow: visible; background: white; }
+      .slides-container { position: static; }
+      section.slide {
+        position: relative !important; opacity: 1 !important;
+        visibility: visible !important; transform: none !important;
+        break-before: page; break-inside: avoid;
+      }
+      section.slide:first-child { break-before: auto; }
+      .fragment { opacity: 1 !important; transform: none !important; }
+      .progress-bar, .slide-counter, .keyboard-hint { display: none !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      section.slide, .fragment, .progress-fill, .bar-fill, .g-fill {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="slides-container">
+
+  <!-- Slide 1: Cover -->
+  <section class="slide slide--cover active" data-slide="1">
+    <div class="content">
+      <span class="tag">Series A — 2026</span>
+      <div class="divider"></div>
+      <h1>CloudSync</h1>
+      <p class="subtitle">The unified data platform that eliminates enterprise data silos — once and for all.</p>
+    </div>
+  </section>
+
+  <!-- Slide 2: Problem -->
+  <section class="slide slide--content" data-slide="2">
+    <div class="content">
+      <h2>The Problem</h2>
+      <p class="lead">Enterprise data is trapped in silos, costing billions in lost productivity.</p>
+      <div class="stats-row">
+        <div class="stat-card fragment" data-fragment="0">
+          <div class="num">$3.1T</div>
+          <div class="lbl">Annual cost of poor data quality in the US alone</div>
+        </div>
+        <div class="stat-card fragment" data-fragment="1">
+          <div class="num">68%</div>
+          <div class="lbl">Of enterprise data goes unused due to silos</div>
+        </div>
+        <div class="stat-card fragment" data-fragment="2">
+          <div class="num">2.5hrs</div>
+          <div class="lbl">Average time per day spent searching for data</div>
+        </div>
+      </div>
+      <ul class="item-list" style="margin-top: 1.2rem;">
+        <li class="fragment" data-fragment="3"><strong>Fragmented tools</strong> — CRM, ERP, BI and 40+ SaaS apps with no central hub</li>
+        <li class="fragment" data-fragment="4"><strong>Delayed decisions</strong> — Leadership waits days for cross-system reports</li>
+        <li class="fragment" data-fragment="5"><strong>Compliance risk</strong> — Inconsistent data across departments creates audit vulnerabilities</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Slide 3: Solution -->
+  <section class="slide slide--dark" data-slide="3">
+    <div class="content">
+      <h2>Our Solution</h2>
+      <p class="lead">CloudSync — a single, intelligent data platform that unifies every enterprise data source.</p>
+      <div class="two-col" style="margin-top: 1rem;">
+        <div>
+          <span class="col-tag col-tag--a">CONNECT</span>
+          <h3 style="color: #fff; margin-bottom: 0.6rem;">Universal Integration</h3>
+          <ul class="item-list">
+            <li class="fragment" data-fragment="0">300+ pre-built connectors for CRM, ERP, cloud storage</li>
+            <li class="fragment" data-fragment="1">Real-time sync with sub-second latency</li>
+            <li class="fragment" data-fragment="2">No-code pipeline builder for custom sources</li>
+          </ul>
+        </div>
+        <div>
+          <span class="col-tag col-tag--b">ANALYZE</span>
+          <h3 style="color: #fff; margin-bottom: 0.6rem;">AI-Powered Insights</h3>
+          <ul class="item-list">
+            <li class="fragment" data-fragment="3">Natural language queries across all data</li>
+            <li class="fragment" data-fragment="4">Automated anomaly detection &amp; alerts</li>
+            <li class="fragment" data-fragment="5">Role-based dashboards for every team</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 4: Market Size -->
+  <section class="slide slide--content" data-slide="4">
+    <div class="content">
+      <h2>Market Opportunity</h2>
+      <p class="lead">Targeting the rapidly growing enterprise data integration and analytics market.</p>
+      <div class="market-funnel">
+        <div class="market-tier tam fragment" data-fragment="0">
+          <span class="tier-badge">TAM</span>
+          <span class="tier-amount">$97B</span>
+          <span class="tier-desc">Total enterprise data integration &amp; analytics market (2026, global)</span>
+        </div>
+        <div class="market-tier sam fragment" data-fragment="1">
+          <span class="tier-badge">SAM</span>
+          <span class="tier-amount">$24B</span>
+          <span class="tier-desc">Mid-to-large enterprises (500–5,000 employees) in North America &amp; Europe</span>
+        </div>
+        <div class="market-tier som fragment" data-fragment="2">
+          <span class="tier-badge">SOM</span>
+          <span class="tier-amount">$480M</span>
+          <span class="tier-desc">Serviceable obtainable market — 2% capture over 3 years via direct &amp; partner sales</span>
+        </div>
+      </div>
+      <div class="stats-row" style="margin-top: 1rem;">
+        <div class="stat-card fragment" data-fragment="3">
+          <div class="num">18%</div>
+          <div class="lbl">CAGR through 2030</div>
+        </div>
+        <div class="stat-card fragment" data-fragment="4">
+          <div class="num">12,400</div>
+          <div class="lbl">Target accounts in ICP</div>
+        </div>
+        <div class="stat-card fragment" data-fragment="5">
+          <div class="num">$38K</div>
+          <div class="lbl">Average contract value (ACV)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 5: Business Model -->
+  <section class="slide slide--content" data-slide="5">
+    <div class="content">
+      <h2>Business Model</h2>
+      <p class="lead">Subscription-based SaaS with usage-based expansion. Predictable, recurring revenue.</p>
+      <div class="pricing-grid">
+        <div class="pricing-card fragment" data-fragment="0">
+          <div class="plan-name">Starter</div>
+          <div class="plan-price">$999<span class="plan-unit">/mo</span></div>
+          <div class="plan-desc">For growing teams getting started with unified data</div>
+          <ul class="plan-features">
+            <li>Up to 10 data connectors</li>
+            <li>5 user seats</li>
+            <li>10GB data volume</li>
+            <li>Standard dashboards</li>
+          </ul>
+        </div>
+        <div class="pricing-card featured fragment" data-fragment="1">
+          <div class="plan-name">Business</div>
+          <div class="plan-price">$3,499<span class="plan-unit">/mo</span></div>
+          <div class="plan-desc">For scaling enterprises with advanced analytics needs</div>
+          <ul class="plan-features">
+            <li>Unlimited connectors</li>
+            <li>50 user seats</li>
+            <li>500GB data volume</li>
+            <li>AI insights + NL queries</li>
+          </ul>
+        </div>
+        <div class="pricing-card fragment" data-fragment="2">
+          <div class="plan-name">Enterprise</div>
+          <div class="plan-price">Custom</div>
+          <div class="plan-desc">For large organizations with complex, multi-region data needs</div>
+          <ul class="plan-features">
+            <li>Unlimited everything</li>
+            <li>Dedicated support</li>
+            <li>On-prem deployment</li>
+            <li>SLA + compliance packs</li>
+          </ul>
+        </div>
+      </div>
+      <div class="metric-row" style="margin-top: 1rem;">
+        <div class="metric-card fragment" data-fragment="3">
+          <div class="metric-title">Gross Margin</div>
+          <div class="metric-value">78%</div>
+          <div class="metric-delta up">Industry leading SaaS margins</div>
+        </div>
+        <div class="metric-card fragment" data-fragment="4">
+          <div class="metric-title">Net Revenue Retention</div>
+          <div class="metric-value">128%</div>
+          <div class="metric-delta up">Expansion revenue from existing customers</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 6: Traction -->
+  <section class="slide slide--dark" data-slide="6">
+    <div class="content">
+      <h2>Traction</h2>
+      <p class="lead">Consistent growth across all key metrics since launch 18 months ago.</p>
+      <div class="stats-row" style="margin-bottom: 1.2rem;">
+        <div class="stat-card fragment" data-fragment="0">
+          <div class="num">$2.4M</div>
+          <div class="lbl">Annual Recurring Revenue (ARR)</div>
+        </div>
+        <div class="stat-card fragment" data-fragment="1">
+          <div class="num">187</div>
+          <div class="lbl">Paying enterprise customers</div>
+        </div>
+        <div class="stat-card fragment" data-fragment="2">
+          <div class="num">22%</div>
+          <div class="lbl">Month-over-month ARR growth</div>
+        </div>
+      </div>
+      <div class="growth-chart">
+        <div class="growth-bar-row fragment" data-fragment="3">
+          <span class="g-label">Q1 '25</span>
+          <div class="g-track"><div class="g-fill" style="width:12%; background:var(--chart-3);"></div></div>
+          <span class="g-value">$280K ARR</span>
+        </div>
+        <div class="growth-bar-row fragment" data-fragment="4">
+          <span class="g-label">Q2 '25</span>
+          <div class="g-track"><div class="g-fill" style="width:28%; background:var(--chart-3);"></div></div>
+          <span class="g-value">$670K ARR</span>
+        </div>
+        <div class="growth-bar-row fragment" data-fragment="5">
+          <span class="g-label">Q3 '25</span>
+          <div class="g-track"><div class="g-fill" style="width:52%; background:var(--chart-2);"></div></div>
+          <span class="g-value">$1.25M ARR</span>
+        </div>
+        <div class="growth-bar-row fragment" data-fragment="6">
+          <span class="g-label">Q4 '25</span>
+          <div class="g-track"><div class="g-fill" style="width:78%; background:var(--chart-2);"></div></div>
+          <span class="g-value">$1.87M ARR</span>
+        </div>
+        <div class="growth-bar-row fragment" data-fragment="7">
+          <span class="g-label">Q1 '26</span>
+          <div class="g-track"><div class="g-fill" style="width:100%; background:var(--chart-1);"></div></div>
+          <span class="g-value">$2.4M ARR</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 7: Team -->
+  <section class="slide slide--content" data-slide="7">
+    <div class="content">
+      <h2>The Team</h2>
+      <p class="lead">Seasoned founders with deep enterprise software and data engineering expertise.</p>
+      <div class="team-grid">
+        <div class="team-card fragment" data-fragment="0">
+          <div class="avatar">JK</div>
+          <div class="member-name">James Kim</div>
+          <div class="member-role">CEO &amp; Co-Founder</div>
+          <div class="member-bio">Former VP of Product at Snowflake. Led enterprise data platform from $10M to $200M ARR. Stanford MBA.</div>
+        </div>
+        <div class="team-card fragment" data-fragment="1">
+          <div class="avatar">SR</div>
+          <div class="member-name">Sara Reyes</div>
+          <div class="member-role">CTO &amp; Co-Founder</div>
+          <div class="member-bio">Previously Staff Engineer at Databricks. Built distributed data pipelines processing 5PB+ daily. MIT CS.</div>
+        </div>
+        <div class="team-card fragment" data-fragment="2">
+          <div class="avatar">MC</div>
+          <div class="member-name">Michael Chen</div>
+          <div class="member-role">CRO &amp; Co-Founder</div>
+          <div class="member-bio">Former Head of Sales at MuleSoft (pre-Salesforce acquisition). Closed $120M+ in enterprise contracts.</div>
+        </div>
+      </div>
+      <div class="metric-row" style="margin-top: 1rem;">
+        <div class="metric-card fragment" data-fragment="3">
+          <div class="metric-title">Combined Enterprise Experience</div>
+          <div class="metric-value">40+ yrs</div>
+          <div class="metric-delta up">Snowflake, Databricks, MuleSoft alumni</div>
+        </div>
+        <div class="metric-card fragment" data-fragment="4">
+          <div class="metric-title">Team Size</div>
+          <div class="metric-value">28 FTE</div>
+          <div class="metric-delta up">Growing to 45 with Series A capital</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide 8: Thank You -->
+  <section class="slide slide--end" data-slide="8">
+    <div class="content">
+      <div class="divider"></div>
+      <h2>Thank You</h2>
+      <p class="contact">Let's build the future of enterprise data together.</p>
+      <p class="contact" style="margin-top: 0.3rem;">hello@cloudsync.io &nbsp;·&nbsp; cloudsync.io &nbsp;·&nbsp; @CloudSyncHQ</p>
+      <div style="margin-top: 1.5rem; display: flex; gap: 1.5rem; justify-content: center; align-items: center;">
+        <div style="text-align: center;">
+          <div style="font-family: var(--font-en); font-size: 1.4rem; font-weight: 800; color: var(--c-accent);">$5M</div>
+          <div style="font-size: var(--fs-tiny); color: var(--c-muted); margin-top: 0.2rem;">Series A Target</div>
+        </div>
+        <div style="width: 1px; height: 36px; background: rgba(255,255,255,0.1);"></div>
+        <div style="text-align: center;">
+          <div style="font-family: var(--font-en); font-size: 1.4rem; font-weight: 800; color: var(--c-teal);">18 mo</div>
+          <div style="font-size: var(--fs-tiny); color: var(--c-muted); margin-top: 0.2rem;">Runway</div>
+        </div>
+        <div style="width: 1px; height: 36px; background: rgba(255,255,255,0.1);"></div>
+        <div style="text-align: center;">
+          <div style="font-family: var(--font-en); font-size: 1.4rem; font-weight: 800; color: var(--c-emerald);">$10M</div>
+          <div style="font-size: var(--fs-tiny); color: var(--c-muted); margin-top: 0.2rem;">ARR Target (12mo)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.slides-container -->
+
+<!-- Progress Bar -->
+<div class="progress-bar"><div class="progress-fill"></div></div>
+
+<!-- Slide Counter -->
+<div class="slide-counter">
+  <span id="current-num">1</span> / <span id="total-num">8</span>
+</div>
+
+<!-- Keyboard Hint -->
+<div class="keyboard-hint" id="keyboard-hint">
+  ← → Arrow Keys &nbsp;·&nbsp; Space Next &nbsp;·&nbsp; F Fullscreen &nbsp;·&nbsp; O Overview
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const state = {
+    currentSlide: 0,
+    currentFragment: -1,
+    slides: [],
+    totalSlides: 0,
+    isOverview: false,
+    transitioning: false,
+  };
+
+  // ── Init ──
+  function init() {
+    state.slides = Array.from(document.querySelectorAll('section.slide'));
+    state.totalSlides = state.slides.length;
+    document.getElementById('total-num').textContent = state.totalSlides;
+
+    const hash = parseInt(location.hash.replace('#slide-', ''), 10);
+    if (hash >= 1 && hash <= state.totalSlides) state.currentSlide = hash - 1;
+
+    goToSlide(state.currentSlide, true);
+    setupKeyboard();
+    setupTouch();
+    setupWheel();
+    setupOverviewClick();
+
+    document.addEventListener('keydown', hideHint, { once: true });
+    document.addEventListener('touchstart', hideHint, { once: true });
+  }
+
+  function hideHint() {
+    document.getElementById('keyboard-hint').classList.add('hidden');
+  }
+
+  // ── Navigation ──
+  function goToSlide(index, instant) {
+    index = Math.max(0, Math.min(index, state.totalSlides - 1));
+
+    if (instant) {
+      state.slides.forEach(s => { s.style.transition = 'none'; });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          state.slides.forEach(s => { s.style.transition = ''; });
+        });
+      });
+    }
+
+    state.slides.forEach((slide, i) => {
+      slide.classList.remove('active', 'prev');
+      if (i < index) slide.classList.add('prev');
+      else if (i === index) slide.classList.add('active');
+    });
+
+    resetFragments(index);
+    state.currentSlide = index;
+    state.currentFragment = -1;
+
+    updateUI();
+    updateCounterColor();
+    history.replaceState({ slide: index }, '', `#slide-${index + 1}`);
+
+    state.transitioning = true;
+    setTimeout(() => { state.transitioning = false; }, instant ? 50 : 480);
+  }
+
+  function next() {
+    if (state.isOverview || state.transitioning) return;
+    if (!nextFragment()) {
+      if (state.currentSlide < state.totalSlides - 1) goToSlide(state.currentSlide + 1);
+    }
+  }
+
+  function prev() {
+    if (state.isOverview || state.transitioning) return;
+    if (!prevFragment()) {
+      if (state.currentSlide > 0) {
+        goToSlide(state.currentSlide - 1);
+        const frags = getFragments(state.currentSlide);
+        frags.forEach(f => f.classList.add('visible'));
+        state.currentFragment = frags.length - 1;
+      }
+    }
+  }
+
+  // ── Fragments ──
+  function getFragments(idx) {
+    return Array.from(state.slides[idx].querySelectorAll('.fragment'))
+      .sort((a, b) => (parseInt(a.dataset.fragment) || 0) - (parseInt(b.dataset.fragment) || 0));
+  }
+
+  function resetFragments(idx) {
+    getFragments(idx).forEach(f => f.classList.remove('visible'));
+  }
+
+  function nextFragment() {
+    const frags = getFragments(state.currentSlide);
+    if (state.currentFragment < frags.length - 1) {
+      state.currentFragment++;
+      frags[state.currentFragment].classList.add('visible');
+      return true;
+    }
+    return false;
+  }
+
+  function prevFragment() {
+    const frags = getFragments(state.currentSlide);
+    if (state.currentFragment >= 0) {
+      frags[state.currentFragment].classList.remove('visible');
+      state.currentFragment--;
+      return true;
+    }
+    return false;
+  }
+
+  // ── UI Updates ──
+  function updateUI() {
+    document.getElementById('current-num').textContent = state.currentSlide + 1;
+    const pct = state.totalSlides > 1
+      ? (state.currentSlide / (state.totalSlides - 1)) * 100 : 0;
+    document.querySelector('.progress-fill').style.width = pct + '%';
+  }
+
+  function updateCounterColor() {
+    const slide = state.slides[state.currentSlide];
+    const isDark = slide.classList.contains('slide--cover') ||
+                   slide.classList.contains('slide--dark') ||
+                   slide.classList.contains('slide--end');
+    const counter = document.querySelector('.slide-counter');
+    const hint = document.getElementById('keyboard-hint');
+    counter.style.color = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
+    hint.style.color = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+  }
+
+  // ── Keyboard ──
+  function setupKeyboard() {
+    document.addEventListener('keydown', (e) => {
+      if (state.isOverview && e.key !== 'o' && e.key !== 'Escape') return;
+      const map = {
+        'ArrowRight': next, 'ArrowDown': next,
+        'ArrowLeft': prev, 'ArrowUp': prev,
+        ' ': () => { e.preventDefault(); next(); },
+        'PageDown': () => { e.preventDefault(); next(); },
+        'PageUp': () => { e.preventDefault(); prev(); },
+        'Home': () => goToSlide(0),
+        'End': () => goToSlide(state.totalSlides - 1),
+        'f': toggleFullscreen,
+        'Escape': () => {
+          if (state.isOverview) toggleOverview();
+          else if (document.fullscreenElement) document.exitFullscreen();
+        },
+        'o': toggleOverview,
+      };
+      const fn = map[e.key];
+      if (fn) fn();
+    });
+  }
+
+  // ── Touch ──
+  function setupTouch() {
+    let sx = 0, sy = 0;
+    document.addEventListener('touchstart', e => {
+      sx = e.touches[0].clientX;
+      sy = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - sx;
+      const dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+        dx < 0 ? next() : prev();
+      }
+    }, { passive: true });
+  }
+
+  // ── Wheel ──
+  function setupWheel() {
+    let wheelLock = false;
+    document.addEventListener('wheel', (e) => {
+      if (state.isOverview || wheelLock) return;
+      e.preventDefault();
+      wheelLock = true;
+      if (e.deltaY > 0) next(); else prev();
+      setTimeout(() => { wheelLock = false; }, 600);
+    }, { passive: false });
+  }
+
+  // ── Fullscreen ──
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      (document.documentElement.requestFullscreen ||
+       document.documentElement.webkitRequestFullscreen)
+        ?.call(document.documentElement);
+    } else {
+      (document.exitFullscreen ||
+       document.webkitExitFullscreen)
+        ?.call(document);
+    }
+  }
+
+  // ── Overview ──
+  function toggleOverview() {
+    state.isOverview = !state.isOverview;
+    document.body.classList.toggle('overview', state.isOverview);
+    if (!state.isOverview) goToSlide(state.currentSlide, true);
+  }
+
+  function setupOverviewClick() {
+    document.querySelector('.slides-container').addEventListener('click', (e) => {
+      if (!state.isOverview) return;
+      const slide = e.target.closest('section.slide');
+      if (slide) {
+        const idx = state.slides.indexOf(slide);
+        if (idx !== -1) { toggleOverview(); goToSlide(idx, true); }
+      }
+    });
+  }
+
+  // ── Hash Routing ──
+  window.addEventListener('hashchange', () => {
+    const h = parseInt(location.hash.replace('#slide-', ''), 10);
+    if (h >= 1 && h <= state.totalSlides) goToSlide(h - 1);
+  });
+
+  window.addEventListener('popstate', (e) => {
+    if (e.state && typeof e.state.slide === 'number') goToSlide(e.state.slide);
+  });
+
+  // ── Start ──
+  document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init)
+    : init();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSS Grid 강의</title>
+  <style>
+    /* ── 기본 리셋 & 변수 ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --accent:    #7c6af7;
+      --accent2:   #4fd1c5;
+      --text:      #e8eaf0;
+      --muted:     #8b91a8;
+      --code-bg:   #12141e;
+      --border:    #2a2e42;
+      --radius:    16px;
+      --slide-w:   900px;
+      --slide-h:   560px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 24px;
+      padding: 32px 16px;
+    }
+
+    /* ── 슬라이드 래퍼 ── */
+    .slides-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      width: 100%;
+      max-width: var(--slide-w);
+    }
+
+    .slide {
+      width: 100%;
+      min-height: var(--slide-h);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 52px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 슬라이드 번호 배지 */
+    .slide::before {
+      content: attr(data-num);
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* 상단 컬러 바 */
+    .slide::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    /* ── 타이포 ── */
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff 40%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 8px;
+    }
+
+    p, li {
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    ul { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+    li::marker { color: var(--accent); }
+
+    /* ── 코드 블록 ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      overflow-x: auto;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      color: #cdd6f4;
+    }
+
+    /* 구문 색 */
+    .kw  { color: #cba6f7; } /* 키워드 / 속성 */
+    .val { color: #a6e3a1; } /* 값 */
+    .sel { color: #89dceb; } /* 셀렉터 */
+    .cm  { color: #585b70; font-style: italic; } /* 주석 */
+    .num { color: #fab387; } /* 숫자/단위 */
+
+    /* ── 레이아웃 헬퍼 ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      margin-top: 12px;
+    }
+
+    .card {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+
+    /* ── 슬라이드 1: 타이틀 ── */
+    #s1 { background: radial-gradient(ellipse at 70% 30%, #251f4a 0%, var(--surface) 60%); }
+
+    .subtitle {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 36px;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    /* ── 슬라이드 2: 개념 ── */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .concept-card {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .concept-card .icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .concept-card h3 { font-size: 14px; margin-bottom: 4px; }
+    .concept-card p  { font-size: 13px; }
+
+    /* ── 슬라이드 3: 시각화 그리드 ── */
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .demo-cell {
+      background: linear-gradient(135deg, var(--accent) 0%, #9b8df8 100%);
+      border-radius: 6px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .demo-cell.wide { grid-column: span 2; }
+    .demo-cell.full { grid-column: span 3; background: linear-gradient(135deg, var(--accent2), #38a3a5); }
+
+    /* ── 슬라이드 4: grid-area ── */
+    .layout-demo {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      grid-template-rows: 40px 1fr 40px;
+      grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+      gap: 6px;
+      height: 160px;
+      margin-top: 8px;
+    }
+
+    .area-header  { grid-area: header;  background: var(--accent);  border-radius: 6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+    .area-sidebar { grid-area: sidebar; background: #2d2466; border-radius: 6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--muted); }
+    .area-main    { grid-area: main;    background: var(--code-bg); border-radius: 6px; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--muted); }
+    .area-footer  { grid-area: footer;  background: var(--accent2); border-radius: 6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color: var(--bg); }
+
+    /* ── 슬라이드 5: 마무리 ── */
+    #s5 { background: radial-gradient(ellipse at 30% 70%, #0d2e2b 0%, var(--surface) 60%); }
+
+    .checklist { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--muted);
+    }
+
+    .check-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 12px;
+      color: #fff;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .cta {
+      margin-top: 32px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      align-self: flex-start;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── 반응형 ── */
+    @media (max-width: 640px) {
+      .slide { padding: 36px 24px; }
+      h1 { font-size: 36px; }
+      h2 { font-size: 24px; }
+      .two-col, .concept-grid { grid-template-columns: 1fr; }
+      .layout-demo { grid-template-columns: 1fr; height: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="slides-wrapper">
+
+    <!-- ════════════════════════════════════
+         슬라이드 1 — 타이틀
+    ════════════════════════════════════ -->
+    <section class="slide" id="s1" data-num="01 / 05">
+      <span class="tag">CSS Layout Series</span>
+      <h1>CSS Grid<br>완전 정복</h1>
+      <p class="subtitle">2차원 레이아웃의 모든 것 — 행과 열을 자유자재로</p>
+      <div class="pill-row">
+        <span class="pill">grid-template</span>
+        <span class="pill">grid-area</span>
+        <span class="pill">fr 단위</span>
+        <span class="pill">명시적 / 암묵적 그리드</span>
+        <span class="pill">반응형 레이아웃</span>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         슬라이드 2 — Grid 기본 개념
+    ════════════════════════════════════ -->
+    <section class="slide" id="s2" data-num="02 / 05">
+      <h2>Grid 기본 개념</h2>
+      <p>CSS Grid는 <strong style="color:#fff">행(row)과 열(column)</strong>을 동시에 제어하는 <strong style="color:#fff">2차원 레이아웃</strong> 시스템입니다.<br>
+         Flexbox가 1차원(한 방향)이라면, Grid는 표처럼 전체 구조를 한 번에 설계합니다.</p>
+
+      <div class="concept-grid">
+        <div class="concept-card">
+          <div class="icon">&#9725;</div>
+          <h3>Grid Container</h3>
+          <p><code>display: grid</code>를 선언한 부모 요소. 이 안에 있는 자식이 Grid Item이 됩니다.</p>
+        </div>
+        <div class="concept-card">
+          <div class="icon">&#9726;</div>
+          <h3>Grid Item</h3>
+          <p>컨테이너의 직접 자식 요소. 행·열 교차점인 <strong style="color:#fff">셀(cell)</strong>에 배치됩니다.</p>
+        </div>
+        <div class="concept-card">
+          <div class="icon">&#9776;</div>
+          <h3>Grid Line / Track</h3>
+          <p>셀을 구분하는 선이 <strong style="color:#fff">Grid Line</strong>, 두 선 사이 공간이 <strong style="color:#fff">Track</strong>입니다.</p>
+        </div>
+      </div>
+
+      <pre style="margin-top:20px"><code><span class="sel">.container</span> {
+  <span class="kw">display</span>: <span class="val">grid</span>;                          <span class="cm">/* Grid 활성화 */</span>
+  <span class="kw">grid-template-columns</span>: <span class="num">1fr</span> <span class="num">1fr</span> <span class="num">1fr</span>;  <span class="cm">/* 3열 균등 분할 */</span>
+  <span class="kw">grid-template-rows</span>: <span class="num">100px</span> <span class="num">200px</span>;     <span class="cm">/* 2행 높이 지정 */</span>
+  <span class="kw">gap</span>: <span class="num">16px</span>;                           <span class="cm">/* 셀 간격 */</span>
+}</code></pre>
+    </section>
+
+    <!-- ════════════════════════════════════
+         슬라이드 3 — grid-template-columns
+    ════════════════════════════════════ -->
+    <section class="slide" id="s3" data-num="03 / 05">
+      <h2>grid-template-columns 예시</h2>
+
+      <div class="two-col">
+        <!-- 왼쪽: 코드 -->
+        <div>
+          <h3>repeat() + fr 단위</h3>
+          <pre><code><span class="cm">/* 균등 3열 */</span>
+<span class="kw">grid-template-columns</span>:
+  <span class="val">repeat</span>(<span class="num">3</span>, <span class="num">1fr</span>);
+
+<span class="cm">/* 2:1 비율 */</span>
+<span class="kw">grid-template-columns</span>:
+  <span class="num">2fr</span> <span class="num">1fr</span>;
+
+<span class="cm">/* auto-fill 반응형 */</span>
+<span class="kw">grid-template-columns</span>:
+  <span class="val">repeat</span>(<span class="val">auto-fill</span>,
+    <span class="val">minmax</span>(<span class="num">180px</span>, <span class="num">1fr</span>));
+
+<span class="cm">/* span으로 셀 병합 */</span>
+<span class="sel">.item-wide</span> {
+  <span class="kw">grid-column</span>: <span class="val">span</span> <span class="num">2</span>;
+}</code></pre>
+        </div>
+
+        <!-- 오른쪽: 시각화 -->
+        <div>
+          <h3>시각화 — repeat(3, 1fr)</h3>
+          <div class="demo-grid">
+            <div class="demo-cell">1</div>
+            <div class="demo-cell">2</div>
+            <div class="demo-cell">3</div>
+            <div class="demo-cell wide">span 2</div>
+            <div class="demo-cell">5</div>
+            <div class="demo-cell full">span 3 (full width)</div>
+          </div>
+
+          <h3 style="margin-top:16px">fr 단위란?</h3>
+          <p style="font-size:13px">사용 가능한 공간을 <strong style="color:#fff">비율</strong>로 나누는 단위.<br>
+          <code style="font-size:12px">1fr 2fr</code> = 전체를 3등분 후 1 : 2 배분</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         슬라이드 4 — grid-area 활용
+    ════════════════════════════════════ -->
+    <section class="slide" id="s4" data-num="04 / 05">
+      <h2>grid-area 활용</h2>
+      <p>이름을 붙여 레이아웃을 <strong style="color:#fff">지도처럼</strong> 설계합니다.<br>
+         복잡한 좌표 대신 <code>grid-template-areas</code>로 직관적으로 배치하세요.</p>
+
+      <div class="two-col" style="margin-top:20px">
+        <!-- 코드 -->
+        <pre><code><span class="sel">.layout</span> {
+  <span class="kw">display</span>: <span class="val">grid</span>;
+  <span class="kw">grid-template-columns</span>: <span class="num">160px</span> <span class="num">1fr</span>;
+  <span class="kw">grid-template-rows</span>:
+    <span class="num">40px</span> <span class="num">1fr</span> <span class="num">40px</span>;
+  <span class="kw">grid-template-areas</span>:
+    <span class="val">"header  header"</span>
+    <span class="val">"sidebar main"</span>
+    <span class="val">"footer  footer"</span>;
+  <span class="kw">gap</span>: <span class="num">6px</span>;
+}
+
+<span class="sel">header</span>  { <span class="kw">grid-area</span>: <span class="val">header</span>;  }
+<span class="sel">aside</span>   { <span class="kw">grid-area</span>: <span class="val">sidebar</span>; }
+<span class="sel">main</span>    { <span class="kw">grid-area</span>: <span class="val">main</span>;    }
+<span class="sel">footer</span>  { <span class="kw">grid-area</span>: <span class="val">footer</span>;  }</code></pre>
+
+        <!-- 시각화 -->
+        <div>
+          <h3>렌더링 결과</h3>
+          <div class="layout-demo">
+            <div class="area-header">header</div>
+            <div class="area-sidebar">sidebar</div>
+            <div class="area-main">main content</div>
+            <div class="area-footer">footer</div>
+          </div>
+          <p style="font-size:13px; margin-top:12px">
+            <span style="color:#fff; font-weight:700">팁:</span> 같은 이름을 나란히 쓰면 자동 병합.<br>
+            <code style="font-size:12px">"header header"</code> → 헤더가 2열을 차지
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════
+         슬라이드 5 — 마무리
+    ════════════════════════════════════ -->
+    <section class="slide" id="s5" data-num="05 / 05">
+      <span class="tag">Summary</span>
+      <h2>오늘 배운 것 정리</h2>
+
+      <div class="checklist">
+        <div class="check-item">
+          <div class="check-icon">1</div>
+          <span><strong style="color:#fff">Grid Container / Item</strong> — <code>display: grid</code>로 활성화, 직접 자식이 Item이 됩니다.</span>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">2</div>
+          <span><strong style="color:#fff">grid-template-columns</strong> — <code>fr</code>, <code>repeat()</code>, <code>minmax()</code>로 열 구조를 설계합니다.</span>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">3</div>
+          <span><strong style="color:#fff">grid-column / grid-row</strong> — 라인 번호나 <code>span</code>으로 셀을 병합할 수 있습니다.</span>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">4</div>
+          <span><strong style="color:#fff">grid-area + grid-template-areas</strong> — 이름 기반 배치로 전체 레이아웃을 지도처럼 선언합니다.</span>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">5</div>
+          <span><strong style="color:#fff">auto-fill + minmax()</strong> — 반응형 그리드를 미디어쿼리 없이 한 줄로 구현합니다.</span>
+        </div>
+      </div>
+
+      <button class="cta" onclick="window.scrollTo({top:0,behavior:'smooth'})">처음으로 돌아가기 ↑</button>
+    </section>
+
+  </div><!-- /slides-wrapper -->
+
+</body>
+</html>

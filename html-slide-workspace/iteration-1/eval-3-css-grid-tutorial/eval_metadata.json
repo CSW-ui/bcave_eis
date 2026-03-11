@@ -1,0 +1,15 @@
+{
+  "eval_id": 3,
+  "eval_name": "css-grid-tutorial",
+  "prompt": "HTML 슬라이드로 CSS Grid 강의 자료 만들어줘. 5장 정도로 짧게. 1장: 타이틀, 2장: Grid 기본 개념, 3장: grid-template-columns 예시, 4장: grid-area 활용, 5장: 마무리. 코드 블록도 넣어줘.",
+  "assertions": [
+    "Output is a single .html file",
+    "Contains exactly 5 slides",
+    "Has keyboard navigation",
+    "Has F key fullscreen toggle",
+    "Shows slide counter",
+    "Contains code examples (pre or code elements with CSS Grid syntax)",
+    "Has cover slide as first slide",
+    "Has end/thank-you slide as last slide"
+  ]
+}

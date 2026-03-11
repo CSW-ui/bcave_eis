@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>26SS 시즌 기획 — 와키윌리 패션 하우스</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── A. Design Tokens ── */
+    :root {
+      --c-ink: #1a1a2e;
+      --c-ink-light: #2d2d44;
+      --c-slate: #4a4a68;
+      --c-muted: #8888a4;
+      --c-border: #e2e2ee;
+      --c-surface: #f5f5fa;
+      --c-bg: #ffffff;
+      --c-white: #ffffff;
+
+      --c-accent: #e05278;
+      --c-accent-soft: rgba(224, 82, 120, 0.08);
+      --c-accent-light: rgba(224, 82, 120, 0.15);
+      --c-teal: #5b5fc7;
+      --c-teal-soft: rgba(91, 95, 199, 0.08);
+      --c-rose: #e05278;
+      --c-amber: #e09839;
+      --c-emerald: #22a06b;
+
+      --chart-1: #e05278;
+      --chart-2: #5b5fc7;
+      --chart-3: #0ea5a0;
+      --chart-4: #e09839;
+      --chart-5: #22a06b;
+      --chart-6: #8b5cf6;
+
+      --font-body: 'Noto Sans KR', 'Inter', sans-serif;
+      --font-heading: 'Noto Sans KR', 'Inter', sans-serif;
+      --font-en: 'Inter', sans-serif;
+
+      --fs-display: clamp(2rem, 4.5vw, 3.2rem);
+      --fs-h1: clamp(1.6rem, 3vw, 2.2rem);
+      --fs-h2: clamp(1.1rem, 2vw, 1.5rem);
+      --fs-body: clamp(0.85rem, 1.2vw, 1.05rem);
+      --fs-small: clamp(0.7rem, 0.9vw, 0.8rem);
+      --fs-tiny: clamp(0.6rem, 0.75vw, 0.7rem);
+
+      --content-max: 780px;
+      --slide-px: clamp(2rem, 5vw, 4rem);
+      --slide-py: clamp(2rem, 4vh, 3rem);
+      --gap: 1.25rem;
+
+      --t-speed: 0.45s;
+      --t-ease: cubic-bezier(0.4, 0, 0.15, 1);
+    }
+
+    /* ── B. Reset + Slide Engine ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: var(--font-body);
+      color: var(--c-ink);
+      background: var(--c-ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .slides-container { position: fixed; inset: 0; }
+
+    section.slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: var(--slide-py) var(--slide-px);
+      opacity: 0; visibility: hidden;
+      transform: translateY(24px);
+      transition: opacity var(--t-speed) var(--t-ease),
+                  transform var(--t-speed) var(--t-ease);
+      z-index: 0; overflow: hidden;
+    }
+
+    section.slide.active {
+      opacity: 1; visibility: visible;
+      transform: translateY(0); z-index: 2;
+    }
+
+    section.slide.prev {
+      opacity: 0; visibility: hidden;
+      transform: translateY(-24px); z-index: 1;
+    }
+
+    .content { width: 100%; max-width: var(--content-max); }
+
+    /* ── C. Slide Variants ── */
+
+    /* Cover */
+    .slide--cover {
+      background: linear-gradient(145deg, var(--c-ink) 0%, var(--c-ink-light) 100%);
+      color: var(--c-white);
+      text-align: center;
+    }
+    .slide--cover .content {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 1.2rem;
+    }
+    .slide--cover .tag {
+      display: inline-block;
+      font-family: var(--font-en);
+      font-size: var(--fs-tiny);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--c-accent);
+      background: var(--c-accent-light);
+      padding: 0.3em 0.9em;
+      border-radius: 100px;
+    }
+    .slide--cover h1 {
+      font-size: var(--fs-display);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .slide--cover .subtitle {
+      font-size: var(--fs-body);
+      color: var(--c-muted);
+      max-width: 460px;
+      line-height: 1.6;
+    }
+    .slide--cover .divider {
+      width: 48px; height: 2px;
+      background: var(--c-accent);
+      border-radius: 1px;
+    }
+    .cover-meta {
+      display: flex; gap: 2rem;
+      font-family: var(--font-en);
+      font-size: var(--fs-tiny);
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.06em;
+    }
+
+    /* Section */
+    .slide--section { background: var(--c-surface); }
+    .slide--section .content {
+      display: flex; align-items: flex-end; gap: 1.5rem;
+    }
+    .slide--section .section-num {
+      font-family: var(--font-en);
+      font-size: clamp(4rem, 10vw, 7rem);
+      font-weight: 700;
+      line-height: 0.85;
+      color: var(--c-accent);
+      opacity: 0.12;
+    }
+    .slide--section h2 {
+      font-size: var(--fs-display);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--c-ink);
+      letter-spacing: -0.02em;
+    }
+    .slide--section .section-sub {
+      font-size: var(--fs-small);
+      color: var(--c-muted);
+      margin-top: 0.4rem;
+    }
+
+    /* Content */
+    .slide--content { background: var(--c-bg); }
+    .slide--content h2 {
+      font-size: var(--fs-h1);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 0.4rem;
+      color: var(--c-ink);
+    }
+    .slide--content .lead {
+      font-size: var(--fs-small);
+      color: var(--c-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Dark */
+    .slide--dark { background: var(--c-ink); color: var(--c-white); }
+    .slide--dark h2 { color: var(--c-white); }
+    .slide--dark .lead { color: var(--c-muted); }
+
+    /* End */
+    .slide--end {
+      background: linear-gradient(145deg, var(--c-ink) 0%, var(--c-ink-light) 100%);
+      color: var(--c-white); text-align: center;
+    }
+    .slide--end .content {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 1rem;
+    }
+    .slide--end h2 {
+      font-size: var(--fs-display);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .slide--end .contact {
+      font-size: var(--fs-small);
+      color: var(--c-muted);
+      margin-top: 0.8rem;
+    }
+    .slide--end .divider {
+      width: 48px; height: 2px;
+      background: var(--c-accent);
+      border-radius: 1px;
+    }
+
+    /* ── D. Components ── */
+
+    /* Stat Cards */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+    }
+    .stat-card {
+      background: var(--c-surface);
+      border-radius: 10px;
+      padding: 1.2rem 1rem;
+      text-align: center;
+      border-left: 3px solid var(--c-accent);
+    }
+    .stat-card .num {
+      font-family: var(--font-en);
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      font-weight: 700;
+      color: var(--c-accent);
+      line-height: 1;
+    }
+    .stat-card .lbl {
+      font-size: var(--fs-tiny);
+      color: var(--c-slate);
+      margin-top: 0.35rem;
+      line-height: 1.35;
+    }
+    .slide--dark .stat-card {
+      background: rgba(255,255,255,0.05);
+      border-left-color: var(--c-teal);
+    }
+    .slide--dark .stat-card .num { color: var(--c-teal); }
+    .slide--dark .stat-card .lbl { color: var(--c-muted); }
+
+    /* Bar Chart */
+    .bar-chart { display: flex; flex-direction: column; gap: 0.55rem; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 52px;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: var(--fs-small);
+    }
+    .bar-row .bar-label {
+      text-align: right;
+      color: var(--c-slate);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bar-row .bar-track {
+      height: 22px;
+      background: var(--c-surface);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .bar-row .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.8s var(--t-ease);
+    }
+    .bar-row .bar-value {
+      font-family: var(--font-en);
+      font-weight: 600;
+      font-size: var(--fs-tiny);
+      color: var(--c-ink);
+    }
+    .slide--dark .bar-row .bar-label { color: var(--c-muted); }
+    .slide--dark .bar-row .bar-track { background: rgba(255,255,255,0.06); }
+    .slide--dark .bar-row .bar-value { color: rgba(255,255,255,0.7); }
+
+    /* Donut Chart */
+    .donut-chart { display: flex; align-items: center; gap: 1.5rem; }
+    .donut-chart svg { width: 130px; height: 130px; flex-shrink: 0; }
+    .donut-legend { display: flex; flex-direction: column; gap: 0.45rem; }
+    .donut-legend-item {
+      display: flex; align-items: center;
+      gap: 0.45rem;
+      font-size: var(--fs-small);
+      color: var(--c-slate);
+    }
+    .donut-legend-item .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .donut-legend-item .pct {
+      font-family: var(--font-en);
+      font-weight: 600;
+      margin-left: auto;
+      padding-left: 0.8rem;
+      color: var(--c-ink);
+    }
+
+    /* Timeline */
+    .timeline {
+      display: flex; flex-direction: column;
+      position: relative; padding-left: 1.2rem;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 3px; top: 6px; bottom: 6px;
+      width: 1.5px;
+      background: var(--c-border);
+    }
+    .tl-item {
+      display: flex; gap: 0.8rem;
+      padding: 0.5rem 0;
+      position: relative;
+    }
+    .tl-item::before {
+      content: '';
+      position: absolute;
+      left: -1.2rem; top: 0.7rem;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--c-accent);
+      border: 2px solid var(--c-bg);
+      z-index: 1;
+    }
+    .tl-item .tl-date {
+      font-family: var(--font-en);
+      font-size: var(--fs-tiny);
+      font-weight: 600;
+      color: var(--c-accent);
+      min-width: 56px; flex-shrink: 0;
+    }
+    .tl-item .tl-text {
+      font-size: var(--fs-small);
+      color: var(--c-slate);
+      line-height: 1.45;
+    }
+    .tl-item .tl-text strong { color: var(--c-ink); font-weight: 700; }
+
+    /* Metric Cards */
+    .metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .metric-card {
+      background: var(--c-surface);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      display: flex; flex-direction: column; gap: 0.3rem;
+    }
+    .metric-card .metric-title { font-size: var(--fs-tiny); color: var(--c-muted); }
+    .metric-card .metric-value {
+      font-family: var(--font-en);
+      font-size: clamp(1.2rem, 2vw, 1.6rem);
+      font-weight: 700; color: var(--c-ink);
+    }
+    .metric-card .metric-delta {
+      font-family: var(--font-en);
+      font-size: var(--fs-tiny);
+      font-weight: 600;
+    }
+    .metric-delta.up { color: var(--c-emerald); }
+    .metric-delta.down { color: var(--c-rose); }
+    .slide--dark .metric-card { background: rgba(255,255,255,0.05); }
+    .slide--dark .metric-card .metric-title { color: var(--c-muted); }
+    .slide--dark .metric-card .metric-value { color: var(--c-white); }
+
+    /* Item List */
+    .item-list { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .item-list li {
+      font-size: var(--fs-body);
+      line-height: 1.55;
+      padding-left: 1.1rem;
+      position: relative;
+      color: var(--c-ink);
+    }
+    .item-list li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0.55em;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--c-accent);
+    }
+    .slide--dark .item-list li { color: rgba(255,255,255,0.85); }
+    .slide--dark .item-list li::before { background: var(--c-teal); }
+
+    /* Two Column */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .two-col h3 {
+      font-size: var(--fs-h2); font-weight: 700; margin-bottom: 0.6rem;
+    }
+    .col-tag {
+      display: inline-block;
+      font-family: var(--font-en);
+      font-size: var(--fs-tiny); font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.2em 0.55em; border-radius: 4px; margin-bottom: 0.5rem;
+    }
+    .col-tag--a { background: var(--c-accent-soft); color: var(--c-accent); }
+    .col-tag--b { background: var(--c-teal-soft); color: var(--c-teal); }
+
+    /* Strategy Cards */
+    .strategy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+    }
+    .strategy-card {
+      background: var(--c-surface);
+      border-radius: 10px;
+      padding: 1rem 1.1rem;
+      border-top: 3px solid var(--c-accent);
+    }
+    .strategy-card:nth-child(2) { border-top-color: var(--c-teal); }
+    .strategy-card:nth-child(3) { border-top-color: var(--c-amber); }
+    .strategy-card:nth-child(4) { border-top-color: var(--c-emerald); }
+    .strategy-card:nth-child(5) { border-top-color: #8b5cf6; }
+    .strategy-card .sc-num {
+      font-family: var(--font-en);
+      font-size: var(--fs-tiny);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--c-muted);
+      margin-bottom: 0.3rem;
+    }
+    .strategy-card .sc-title {
+      font-size: var(--fs-small);
+      font-weight: 700;
+      color: var(--c-ink);
+      margin-bottom: 0.3rem;
+    }
+    .strategy-card .sc-desc {
+      font-size: var(--fs-tiny);
+      color: var(--c-slate);
+      line-height: 1.5;
+    }
+    .strategy-card.full-width {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, rgba(224,82,120,0.06), rgba(91,95,199,0.06));
+    }
+
+    /* ── E. UI Elements ── */
+    .fragment {
+      opacity: 0; transform: translateY(14px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .fragment.visible { opacity: 1; transform: translateY(0); }
+
+    .progress-bar {
+      position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 100;
+    }
+    .progress-fill {
+      height: 100%; background: var(--c-accent); transition: width 0.3s ease;
+    }
+
+    .slide-counter {
+      position: fixed; bottom: 16px; right: 24px;
+      font-family: var(--font-en); font-size: 0.65rem;
+      font-weight: 600; z-index: 100; pointer-events: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .keyboard-hint {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-en); font-size: 0.6rem;
+      z-index: 100; pointer-events: none;
+      transition: opacity 2s ease;
+    }
+    .keyboard-hint.hidden { opacity: 0; }
+
+    /* ── F. Overview + Print ── */
+    body.overview .slides-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px; padding: 16px;
+      position: fixed; inset: 0; overflow: auto;
+      background: var(--c-ink);
+    }
+    body.overview section.slide {
+      position: relative; opacity: 1; visibility: visible;
+      transform: none; height: auto; aspect-ratio: 16/9;
+      border-radius: 6px; cursor: pointer; font-size: 0.28rem;
+      border: 2px solid transparent;
+    }
+    body.overview section.slide:hover { border-color: var(--c-accent); }
+    body.overview section.slide.active { border-color: var(--c-accent); }
+    body.overview .progress-bar,
+    body.overview .slide-counter,
+    body.overview .keyboard-hint { display: none; }
+
+    @media print {
+      @page { size: 254mm 142.9mm; margin: 0; }
+      html, body { overflow: visible; background: white; }
+      .slides-container { position: static; }
+      section.slide {
+        position: relative !important; opacity: 1 !important;
+        visibility: visible !important; transform: none !important;
+        break-before: page; break-inside: avoid;
+      }
+      section.slide:first-child { break-before: auto; }
+      .fragment { opacity: 1 !important; transform: none !important; }
+      .progress-bar, .slide-counter, .keyboard-hint { display: none !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      section.slide, .fragment, .progress-fill, .bar-fill {
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Extra layout helpers */
+    .slide-body { margin-top: 1.2rem; }
+    .tag-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .pill {
+      display: inline-block;
+      font-family: var(--font-en); font-size: var(--fs-tiny); font-weight: 600;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 0.25em 0.75em; border-radius: 100px;
+      background: var(--c-accent-soft); color: var(--c-accent);
+    }
+    .pill--b { background: var(--c-teal-soft); color: var(--c-teal); }
+    .pill--c { background: rgba(224,152,57,0.1); color: var(--c-amber); }
+    .pill--d { background: rgba(34,160,107,0.1); color: var(--c-emerald); }
+
+    /* KPI highlight block */
+    .kpi-block {
+      display: flex; align-items: baseline; gap: 0.5rem;
+      margin: 0.4rem 0;
+    }
+    .kpi-block .kpi-val {
+      font-family: var(--font-en); font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 700; color: var(--c-accent); line-height: 1;
+    }
+    .kpi-block .kpi-label { font-size: var(--fs-small); color: var(--c-slate); }
+  </style>
+</head>
+<body>
+
+  <div class="slides-container">
+
+    <!-- ─── Slide 1: Cover ─── -->
+    <section class="slide slide--cover active" data-slide="1">
+      <div class="content">
+        <span class="tag">Wacky Willy Fashion House · Season 2026</span>
+        <div class="divider"></div>
+        <h1>26SS 시즌 기획<br>Season Plan</h1>
+        <p class="subtitle">Kitsch Street &amp; IP Universe — 2026 Spring/Summer 브랜드 전략 및 실행 계획</p>
+        <div class="cover-meta">
+          <span>2026.03.11</span>
+          <span>·</span>
+          <span>전략기획실 · 마케팅 쇼룸</span>
+          <span>·</span>
+          <span>CONFIDENTIAL</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 2: Brand Overview (Section) ─── -->
+    <section class="slide slide--section" data-slide="2">
+      <div class="content">
+        <div class="section-num">01</div>
+        <div>
+          <h2>브랜드 개요</h2>
+          <p class="section-sub">와키윌리의 DNA, 비전, 타겟을 한눈에</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 3: Brand Overview Content ─── -->
+    <section class="slide slide--content" data-slide="3">
+      <div class="content">
+        <h2>와키윌리 브랜드 개요</h2>
+        <p class="lead">Kitsch Street &amp; IP Universe — K-컬처 기반 글로벌 문화 브랜드</p>
+
+        <div class="two-col">
+          <div>
+            <span class="col-tag col-tag--a">BRAND DNA</span>
+            <ul class="item-list">
+              <li class="fragment" data-fragment="0"><strong>컨셉</strong> — Kitsch Street &amp; IP Universe</li>
+              <li class="fragment" data-fragment="1"><strong>코어 타겟</strong> — 18~25세 자유로운 트렌드리더</li>
+              <li class="fragment" data-fragment="2"><strong>뮤즈</strong> — 지젤 (글로벌 K-팝 아이콘)</li>
+              <li class="fragment" data-fragment="3"><strong>IP 히어로</strong> — 키키 + 11 캐릭터 유니버스</li>
+            </ul>
+          </div>
+          <div>
+            <span class="col-tag col-tag--b">2026 VISION</span>
+            <ul class="item-list">
+              <li class="fragment" data-fragment="4"><strong>비전</strong> — 2029 NO.1 K-Lifestyle Brand</li>
+              <li class="fragment" data-fragment="5"><strong>포지셔닝</strong> — 글로벌 K-컬처 스트리트웨어</li>
+              <li class="fragment" data-fragment="6"><strong>라인업</strong> — 유니 / 우먼스 / 용품 3축</li>
+              <li class="fragment" data-fragment="7"><strong>채널</strong> — 6채널 옴니채널 전략</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 4: KPI 목표 (Dark) ─── -->
+    <section class="slide slide--dark" data-slide="4">
+      <div class="content">
+        <h2>26SS KPI 목표</h2>
+        <p class="lead">5대 경영목표 기반 핵심 성과 지표</p>
+
+        <div class="stats-row" style="margin-bottom: 1.2rem;">
+          <div class="stat-card fragment" data-fragment="0">
+            <div class="num">≥50%</div>
+            <div class="lbl">히트상품 TOP20% 매출 기여</div>
+          </div>
+          <div class="stat-card fragment" data-fragment="1">
+            <div class="num">30%</div>
+            <div class="lbl">QR 매출 비중 목표</div>
+          </div>
+          <div class="stat-card fragment" data-fragment="2">
+            <div class="num">62%</div>
+            <div class="lbl">코어타겟(18~25세) 매출 비중</div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-card fragment" data-fragment="3">
+            <div class="metric-title">캠페인 ROAS 목표</div>
+            <div class="metric-value">4.5x</div>
+            <div class="metric-delta up">+1.2x vs 25FW</div>
+          </div>
+          <div class="metric-card fragment" data-fragment="4">
+            <div class="metric-title">우먼스 용품 비중</div>
+            <div class="metric-value">25%</div>
+            <div class="metric-delta up">+5%p 확대 목표</div>
+          </div>
+          <div class="metric-card fragment" data-fragment="5">
+            <div class="metric-title">글로벌 매출 달성률</div>
+            <div class="metric-value">110%</div>
+            <div class="metric-delta up">전년 대비 +10%</div>
+          </div>
+          <div class="metric-card fragment" data-fragment="6">
+            <div class="metric-title">인시즌 리드타임 단축</div>
+            <div class="metric-value">-30%</div>
+            <div class="metric-delta up">QR 프로세스 최적화</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 5: 채널별 매출 비중 (Section) ─── -->
+    <section class="slide slide--section" data-slide="5">
+      <div class="content">
+        <div class="section-num">02</div>
+        <div>
+          <h2>채널별 매출 비중</h2>
+          <p class="section-sub">6채널 옴니채널 전략 및 목표 비중</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 6: 채널별 매출 차트 ─── -->
+    <section class="slide slide--content" data-slide="6">
+      <div class="content">
+        <h2>채널별 매출 비중 목표</h2>
+        <p class="lead">26SS 채널 믹스 전략 — 자사몰 중심 + 글로벌 확장</p>
+
+        <div style="display: flex; gap: 2.5rem; align-items: flex-start;">
+          <div style="flex: 1;">
+            <div class="bar-chart">
+              <div class="bar-row fragment" data-fragment="0">
+                <span class="bar-label">자사몰</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:80%; background:var(--chart-1);"></div>
+                </div>
+                <span class="bar-value">36%</span>
+              </div>
+              <div class="bar-row fragment" data-fragment="1">
+                <span class="bar-label">무신사</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:58%; background:var(--chart-2);"></div>
+                </div>
+                <span class="bar-value">26%</span>
+              </div>
+              <div class="bar-row fragment" data-fragment="2">
+                <span class="bar-label">오프라인</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:38%; background:var(--chart-3);"></div>
+                </div>
+                <span class="bar-value">17%</span>
+              </div>
+              <div class="bar-row fragment" data-fragment="3">
+                <span class="bar-label">29CM</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:27%; background:var(--chart-4);"></div>
+                </div>
+                <span class="bar-value">12%</span>
+              </div>
+              <div class="bar-row fragment" data-fragment="4">
+                <span class="bar-label">글로벌</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:16%; background:var(--chart-5);"></div>
+                </div>
+                <span class="bar-value">7%</span>
+              </div>
+              <div class="bar-row fragment" data-fragment="5">
+                <span class="bar-label">기타</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:5%; background:var(--chart-6);"></div>
+                </div>
+                <span class="bar-value">2%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="fragment" data-fragment="6" style="flex-shrink: 0;">
+            <div class="donut-chart">
+              <svg viewBox="0 0 200 200">
+                <!-- Background ring -->
+                <circle cx="100" cy="100" r="70" stroke="rgba(0,0,0,0.05)" fill="none" stroke-width="24" />
+                <!-- 자사몰 36% → 440*0.36=158.4 -->
+                <circle cx="100" cy="100" r="70" stroke="var(--chart-1)"
+                  fill="none" stroke-width="24" stroke-linecap="butt"
+                  stroke-dasharray="158 282" stroke-dashoffset="0"
+                  transform="rotate(-90 100 100)" />
+                <!-- 무신사 26% → 440*0.26=114.4, offset=-158 -->
+                <circle cx="100" cy="100" r="70" stroke="var(--chart-2)"
+                  fill="none" stroke-width="24" stroke-linecap="butt"
+                  stroke-dasharray="114 326" stroke-dashoffset="-158"
+                  transform="rotate(-90 100 100)" />
+                <!-- 오프라인 17% → 440*0.17=74.8, offset=-272 -->
+                <circle cx="100" cy="100" r="70" stroke="var(--chart-3)"
+                  fill="none" stroke-width="24" stroke-linecap="butt"
+                  stroke-dasharray="75 365" stroke-dashoffset="-272"
+                  transform="rotate(-90 100 100)" />
+                <!-- 29CM 12% → 440*0.12=52.8, offset=-347 -->
+                <circle cx="100" cy="100" r="70" stroke="var(--chart-4)"
+                  fill="none" stroke-width="24" stroke-linecap="butt"
+                  stroke-dasharray="53 387" stroke-dashoffset="-347"
+                  transform="rotate(-90 100 100)" />
+                <!-- 글로벌 7% → 440*0.07=30.8, offset=-400 -->
+                <circle cx="100" cy="100" r="70" stroke="var(--chart-5)"
+                  fill="none" stroke-width="24" stroke-linecap="butt"
+                  stroke-dasharray="31 409" stroke-dashoffset="-400"
+                  transform="rotate(-90 100 100)" />
+                <!-- Center -->
+                <text x="100" y="95" text-anchor="middle" fill="#1a1a2e"
+                  font-family="Inter" font-size="18" font-weight="700">26SS</text>
+                <text x="100" y="112" text-anchor="middle" fill="#8888a4"
+                  font-family="Noto Sans KR" font-size="9">채널 믹스</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="donut-legend-item">
+                  <span class="dot" style="background:var(--chart-1)"></span>
+                  <span>자사몰</span>
+                  <span class="pct">36%</span>
+                </div>
+                <div class="donut-legend-item">
+                  <span class="dot" style="background:var(--chart-2)"></span>
+                  <span>무신사</span>
+                  <span class="pct">26%</span>
+                </div>
+                <div class="donut-legend-item">
+                  <span class="dot" style="background:var(--chart-3)"></span>
+                  <span>오프라인</span>
+                  <span class="pct">17%</span>
+                </div>
+                <div class="donut-legend-item">
+                  <span class="dot" style="background:var(--chart-4)"></span>
+                  <span>29CM</span>
+                  <span class="pct">12%</span>
+                </div>
+                <div class="donut-legend-item">
+                  <span class="dot" style="background:var(--chart-5)"></span>
+                  <span>글로벌</span>
+                  <span class="pct">7%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 7: 핵심 전략 (Section) ─── -->
+    <section class="slide slide--section" data-slide="7">
+      <div class="content">
+        <div class="section-num">03</div>
+        <div>
+          <h2>핵심 전략 5가지</h2>
+          <p class="section-sub">26SS 시즌을 이끌 5대 전략 방향</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 8: 핵심 전략 Cards ─── -->
+    <section class="slide slide--content" data-slide="8">
+      <div class="content">
+        <h2>26SS 핵심 전략 5가지</h2>
+        <p class="lead">브랜드 아이덴티티 강화부터 글로벌 대응까지</p>
+
+        <div class="strategy-grid">
+          <div class="strategy-card fragment" data-fragment="0">
+            <div class="sc-num">STRATEGY 01</div>
+            <div class="sc-title">히트상품 집중 육성</div>
+            <div class="sc-desc">IP 기반 그래픽 티 &amp; 후디를 26SS 핵심 상품으로 집중 투자. 상위 20% SKU에서 전체 매출 50% 이상 달성.</div>
+          </div>
+          <div class="strategy-card fragment" data-fragment="1">
+            <div class="sc-num">STRATEGY 02</div>
+            <div class="sc-title">IMC 캠페인 강화</div>
+            <div class="sc-desc">뮤즈 지젤 중심 통합 캠페인. 인스타·틱톡·유튜브 숏폼 시퀀스 + 인플루언서 콜라보로 ROAS 4.5x 목표.</div>
+          </div>
+          <div class="strategy-card fragment" data-fragment="2">
+            <div class="sc-num">STRATEGY 03</div>
+            <div class="sc-title">QR 비중 확대</div>
+            <div class="sc-desc">인시즌 QR(Quick Response) 프로세스 최적화. 리드타임 30% 단축, QR 매출 비중 30% 목표. 재고 리스크 최소화.</div>
+          </div>
+          <div class="strategy-card fragment" data-fragment="3">
+            <div class="sc-num">STRATEGY 04</div>
+            <div class="sc-title">우먼스 용품 경쟁력</div>
+            <div class="sc-desc">우먼스 용품 라인 신규 확대. 가방·모자·소품 카테고리 강화. 우먼스 용품 매출 비중 25% 달성.</div>
+          </div>
+          <div class="strategy-card full-width fragment" data-fragment="4">
+            <div class="sc-num">STRATEGY 05</div>
+            <div class="sc-title">글로벌 대응 강화 — 해외 채널 7% → 12% 성장</div>
+            <div class="sc-desc">일본·동남아 선도 시장 비치헤드 확보. 글로벌 재구매 비중 +15% 목표. K-팝 IP 콜라보로 해외 인지도 가속.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 9: 실행 로드맵 (Dark) ─── -->
+    <section class="slide slide--dark" data-slide="9">
+      <div class="content">
+        <h2>26SS 실행 로드맵</h2>
+        <p class="lead">Plan → Design → Do → Check → Act 전 사이클 일정</p>
+
+        <div class="timeline" style="margin-top: 0.8rem;">
+          <div class="tl-item fragment" data-fragment="0">
+            <span class="tl-date">MAR</span>
+            <span class="tl-text"><strong>Plan 완료</strong> — 트렌드 리서치, 브랜드 전략, 라인시트 확정. 26SS 컬렉션 방향 승인.</span>
+          </div>
+          <div class="tl-item fragment" data-fragment="1">
+            <span class="tl-date">APR</span>
+            <span class="tl-text"><strong>Design 착수</strong> — 무드보드 &amp; 디자인 스펙 완성. 샘플 오더. IP 그래픽 디자인 확정.</span>
+          </div>
+          <div class="tl-item fragment" data-fragment="2">
+            <span class="tl-date">MAY</span>
+            <span class="tl-text"><strong>Do — 생산 돌입</strong> — 테크팩 발행, 생산 발주. IMC 전략 수립, 화보 촬영 &amp; 콘텐츠 제작 착수.</span>
+          </div>
+          <div class="tl-item fragment" data-fragment="3">
+            <span class="tl-date">JUN</span>
+            <span class="tl-text"><strong>Pre-Launch</strong> — 최종 QC 검수, 물류 입고 완료. 바이럴 시퀀스 예열. 인플루언서 시딩.</span>
+          </div>
+          <div class="tl-item fragment" data-fragment="4">
+            <span class="tl-date">JUL</span>
+            <span class="tl-text"><strong>공식 런칭</strong> — 26SS 드롭 #1 (히트 아이템). 캠페인 풀 런칭. 자사몰·무신사·29CM 동시 오픈.</span>
+          </div>
+          <div class="tl-item fragment" data-fragment="5">
+            <span class="tl-date">AUG</span>
+            <span class="tl-text"><strong>Check &amp; QR</strong> — 판매 실적 분석, 인사이트 도출. 재고 부족 아이템 QR 발주. 성과 리뷰.</span>
+          </div>
+          <div class="tl-item fragment" data-fragment="6">
+            <span class="tl-date">SEP</span>
+            <span class="tl-text"><strong>Act — 시즌 클로즈</strong> — PDCA 이터레이션, 26FW 인풋 준비. 컴플리션 리포트 작성.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Slide 10: End ─── -->
+    <section class="slide slide--end" data-slide="10">
+      <div class="content">
+        <div class="divider"></div>
+        <h2>26SS<br>Let's Make It Happen</h2>
+        <p class="contact">와키윌리 패션 하우스 · 전략기획실 · 2026.03.11</p>
+        <div style="display:flex; gap:0.6rem; justify-content:center; margin-top:1rem;">
+          <span class="pill">Kitsch Street</span>
+          <span class="pill">IP Universe</span>
+          <span class="pill pill--b">K-Lifestyle 2029</span>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /.slides-container -->
+
+  <!-- Progress Bar -->
+  <div class="progress-bar"><div class="progress-fill"></div></div>
+
+  <!-- Slide Counter -->
+  <div class="slide-counter">
+    <span id="current-num">1</span> / <span id="total-num">10</span>
+  </div>
+
+  <!-- Keyboard Hint -->
+  <div class="keyboard-hint" id="keyboard-hint">
+    ← → Arrow Keys · Space Next · F Fullscreen · O Overview
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const state = {
+      currentSlide: 0,
+      currentFragment: -1,
+      slides: [],
+      totalSlides: 0,
+      isOverview: false,
+      transitioning: false,
+    };
+
+    // ── Init ──
+    function init() {
+      state.slides = Array.from(document.querySelectorAll('section.slide'));
+      state.totalSlides = state.slides.length;
+      document.getElementById('total-num').textContent = state.totalSlides;
+
+      const hash = parseInt(location.hash.replace('#slide-', ''), 10);
+      if (hash >= 1 && hash <= state.totalSlides) state.currentSlide = hash - 1;
+
+      goToSlide(state.currentSlide, true);
+      setupKeyboard();
+      setupTouch();
+      setupWheel();
+      setupOverviewClick();
+
+      document.addEventListener('keydown', hideHint, { once: true });
+      document.addEventListener('touchstart', hideHint, { once: true });
+    }
+
+    function hideHint() {
+      document.getElementById('keyboard-hint').classList.add('hidden');
+    }
+
+    // ── Navigation ──
+    function goToSlide(index, instant) {
+      index = Math.max(0, Math.min(index, state.totalSlides - 1));
+
+      if (instant) {
+        state.slides.forEach(s => { s.style.transition = 'none'; });
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            state.slides.forEach(s => { s.style.transition = ''; });
+          });
+        });
+      }
+
+      state.slides.forEach((slide, i) => {
+        slide.classList.remove('active', 'prev');
+        if (i < index) slide.classList.add('prev');
+        else if (i === index) slide.classList.add('active');
+      });
+
+      resetFragments(index);
+      state.currentSlide = index;
+      state.currentFragment = -1;
+
+      updateUI();
+      updateCounterColor();
+      history.replaceState({ slide: index }, '', `#slide-${index + 1}`);
+
+      state.transitioning = true;
+      setTimeout(() => { state.transitioning = false; }, instant ? 50 : 480);
+    }
+
+    function next() {
+      if (state.isOverview || state.transitioning) return;
+      if (!nextFragment()) {
+        if (state.currentSlide < state.totalSlides - 1) goToSlide(state.currentSlide + 1);
+      }
+    }
+
+    function prev() {
+      if (state.isOverview || state.transitioning) return;
+      if (!prevFragment()) {
+        if (state.currentSlide > 0) {
+          goToSlide(state.currentSlide - 1);
+          const frags = getFragments(state.currentSlide);
+          frags.forEach(f => f.classList.add('visible'));
+          state.currentFragment = frags.length - 1;
+        }
+      }
+    }
+
+    // ── Fragments ──
+    function getFragments(idx) {
+      return Array.from(state.slides[idx].querySelectorAll('.fragment'))
+        .sort((a, b) => (parseInt(a.dataset.fragment) || 0) - (parseInt(b.dataset.fragment) || 0));
+    }
+
+    function resetFragments(idx) {
+      getFragments(idx).forEach(f => f.classList.remove('visible'));
+    }
+
+    function nextFragment() {
+      const frags = getFragments(state.currentSlide);
+      if (state.currentFragment < frags.length - 1) {
+        state.currentFragment++;
+        frags[state.currentFragment].classList.add('visible');
+        return true;
+      }
+      return false;
+    }
+
+    function prevFragment() {
+      const frags = getFragments(state.currentSlide);
+      if (state.currentFragment >= 0) {
+        frags[state.currentFragment].classList.remove('visible');
+        state.currentFragment--;
+        return true;
+      }
+      return false;
+    }
+
+    // ── UI Updates ──
+    function updateUI() {
+      document.getElementById('current-num').textContent = state.currentSlide + 1;
+      const pct = state.totalSlides > 1
+        ? (state.currentSlide / (state.totalSlides - 1)) * 100 : 0;
+      document.querySelector('.progress-fill').style.width = pct + '%';
+    }
+
+    function updateCounterColor() {
+      const slide = state.slides[state.currentSlide];
+      const isDark = slide.classList.contains('slide--cover') ||
+                     slide.classList.contains('slide--dark') ||
+                     slide.classList.contains('slide--end');
+      const counter = document.querySelector('.slide-counter');
+      const hint = document.getElementById('keyboard-hint');
+      counter.style.color = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
+      hint.style.color = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+    }
+
+    // ── Keyboard ──
+    function setupKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        if (state.isOverview && e.key !== 'o' && e.key !== 'Escape') return;
+        const map = {
+          'ArrowRight': next, 'ArrowDown': next,
+          'ArrowLeft': prev, 'ArrowUp': prev,
+          ' ': () => { e.preventDefault(); next(); },
+          'PageDown': () => { e.preventDefault(); next(); },
+          'PageUp': () => { e.preventDefault(); prev(); },
+          'Home': () => goToSlide(0),
+          'End': () => goToSlide(state.totalSlides - 1),
+          'f': toggleFullscreen,
+          'Escape': () => {
+            if (state.isOverview) toggleOverview();
+            else if (document.fullscreenElement) document.exitFullscreen();
+          },
+          'o': toggleOverview,
+        };
+        const fn = map[e.key];
+        if (fn) fn();
+      });
+    }
+
+    // ── Touch ──
+    function setupTouch() {
+      let sx = 0, sy = 0;
+      document.addEventListener('touchstart', e => {
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+      }, { passive: true });
+      document.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - sx;
+        const dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+          dx < 0 ? next() : prev();
+        }
+      }, { passive: true });
+    }
+
+    // ── Wheel ──
+    function setupWheel() {
+      let wheelLock = false;
+      document.addEventListener('wheel', (e) => {
+        if (state.isOverview || wheelLock) return;
+        e.preventDefault();
+        wheelLock = true;
+        if (e.deltaY > 0) next(); else prev();
+        setTimeout(() => { wheelLock = false; }, 600);
+      }, { passive: false });
+    }
+
+    // ── Fullscreen ──
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        (document.documentElement.requestFullscreen ||
+         document.documentElement.webkitRequestFullscreen)
+          ?.call(document.documentElement);
+      } else {
+        (document.exitFullscreen ||
+         document.webkitExitFullscreen)
+          ?.call(document);
+      }
+    }
+
+    // ── Overview ──
+    function toggleOverview() {
+      state.isOverview = !state.isOverview;
+      document.body.classList.toggle('overview', state.isOverview);
+      if (!state.isOverview) goToSlide(state.currentSlide, true);
+    }
+
+    function setupOverviewClick() {
+      document.querySelector('.slides-container').addEventListener('click', (e) => {
+        if (!state.isOverview) return;
+        const slide = e.target.closest('section.slide');
+        if (slide) {
+          const idx = state.slides.indexOf(slide);
+          if (idx !== -1) { toggleOverview(); goToSlide(idx, true); }
+        }
+      });
+    }
+
+    // ── Hash Routing ──
+    window.addEventListener('hashchange', () => {
+      const h = parseInt(location.hash.replace('#slide-', ''), 10);
+      if (h >= 1 && h <= state.totalSlides) goToSlide(h - 1);
+    });
+
+    window.addEventListener('popstate', (e) => {
+      if (e.state && typeof e.state.slide === 'number') goToSlide(e.state.slide);
+    });
+
+    // ── Start ──
+    document.readyState === 'loading'
+      ? document.addEventListener('DOMContentLoaded', init)
+      : init();
+  })();
+  </script>
+</body>
+</html>

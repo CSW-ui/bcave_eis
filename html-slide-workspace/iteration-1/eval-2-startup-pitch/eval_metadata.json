@@ -1,0 +1,17 @@
+{
+  "eval_id": 2,
+  "eval_name": "startup-pitch",
+  "prompt": "Create an HTML slide presentation for a SaaS startup pitch deck. Include these slides: Cover with company name 'CloudSync', Problem (data silos in enterprises), Solution (unified data platform), Market Size (TAM/SAM/SOM with numbers), Business Model (subscription tiers), Traction (growth metrics with charts), Team (3 co-founders), and Thank You. Use English only, professional blue color theme.",
+  "assertions": [
+    "Output is a single .html file",
+    "Contains exactly 8 slides",
+    "All text content is in English",
+    "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+    "Has F key fullscreen toggle",
+    "Shows slide counter",
+    "Contains data visualization for market size or traction",
+    "Uses a blue-themed color palette",
+    "Has fragment elements for progressive reveal",
+    "Font stack does not require Noto Sans KR (English only)"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "expectations": [
+    {
+      "text": "Output is a single .html file",
+      "passed": true,
+      "evidence": "Output is a single HTML file"
+    },
+    {
+      "text": "Contains exactly 8 slides",
+      "passed": false,
+      "evidence": "Found 0 slides with data-slide attribute"
+    },
+    {
+      "text": "All text content is in English",
+      "passed": true,
+      "evidence": "Korean characters found: 0"
+    },
+    {
+      "text": "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+      "passed": true,
+      "evidence": "ArrowRight: True, keydown listener: True"
+    },
+    {
+      "text": "Has F key fullscreen toggle",
+      "passed": false,
+      "evidence": "F key handler with fullscreen: False"
+    },
+    {
+      "text": "Shows slide counter",
+      "passed": true,
+      "evidence": "Slide counter element found: True"
+    },
+    {
+      "text": "Contains data visualization for market size or traction",
+      "passed": true,
+      "evidence": "bar: True, stat: False, donut: True, chart: True"
+    },
+    {
+      "text": "Uses a blue-themed color palette",
+      "passed": true,
+      "evidence": "Blue color values present in CSS"
+    },
+    {
+      "text": "Has fragment elements for progressive reveal",
+      "passed": false,
+      "evidence": "Fragment elements found: False"
+    },
+    {
+      "text": "Font stack does not require Noto Sans KR (English only)",
+      "passed": false,
+      "evidence": "Noto Sans KR reference: False"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 4,
+    "total": 10,
+    "pass_rate": 0.6
+  }
+}

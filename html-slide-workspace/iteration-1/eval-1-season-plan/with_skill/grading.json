@@ -1,0 +1,65 @@
+{
+  "expectations": [
+    {
+      "text": "Output is a single .html file",
+      "passed": true,
+      "evidence": "Output is a single HTML file"
+    },
+    {
+      "text": "Contains at least 8 slides (section.slide elements)",
+      "passed": true,
+      "evidence": "Found 10 slides with data-slide attribute"
+    },
+    {
+      "text": "Has keyboard navigation (ArrowRight, ArrowLeft handlers)",
+      "passed": true,
+      "evidence": "ArrowRight: True, keydown listener: True"
+    },
+    {
+      "text": "Has F key fullscreen toggle",
+      "passed": true,
+      "evidence": "F key handler with fullscreen: True"
+    },
+    {
+      "text": "Shows slide counter (current / total)",
+      "passed": true,
+      "evidence": "Slide counter element found: True"
+    },
+    {
+      "text": "Contains CSS design tokens in :root",
+      "passed": true,
+      "evidence": ":root found: True, CSS variables: True"
+    },
+    {
+      "text": "Has at least one data visualization (bar chart, stat card, or donut chart)",
+      "passed": true,
+      "evidence": "bar: True, stat: True, donut: True, chart: True"
+    },
+    {
+      "text": "Contains fragment elements for progressive reveal",
+      "passed": true,
+      "evidence": "Fragment elements found: True"
+    },
+    {
+      "text": "Uses Noto Sans KR font for Korean text",
+      "passed": true,
+      "evidence": "Noto Sans KR reference: True"
+    },
+    {
+      "text": "Has progress bar at top",
+      "passed": true,
+      "evidence": "Progress bar found: True"
+    },
+    {
+      "text": "Has print/PDF media query",
+      "passed": true,
+      "evidence": "Print media query: True"
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "total": 11,
+    "pass_rate": 1.0
+  }
+}

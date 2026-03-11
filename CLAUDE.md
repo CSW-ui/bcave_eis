@@ -283,7 +283,7 @@ Claude 전용 훅/슬래시 명령은 유지하되, Codex에서는 아래 스크
 - `make status` → 현재 시즌/단계/산출물 상태 요약
 - `make sync-state` → `output/` 기준으로 `.fpof-state.json` 동기화
 - `make route-skill PROMPT="요청문"` → 키워드 라우팅 결과 확인
-- `make check-output INPUT="output/26SS/_season/plan_x.md"` → 산출물 체크리스트 확인
+- `make check-output INPUT="output/26SS/season-strategy/plan_trend-brief.md"` → 산출물 체크리스트 확인
 
 ## 온디맨드 태스크 에이전트 (PDCA 분리)
 아래 에이전트는 시즌 PDCA/브랜드 라우팅과 분리된 유틸리티 도구입니다.
@@ -297,30 +297,59 @@ Claude 전용 훅/슬래시 명령은 유지하되, Codex에서는 아래 스크
     - `./scripts/task-agent.sh format-converter --in input.pptx --out output.pdf`
 
 ## 산출물 저장 규칙
-- 위치: `output/[시즌코드]/[프로젝트명]/`
-- 파일명: `[PDCA단계]_[내용].확장자` — 단계가 파일명에 명시됨
-- `_season/` — 특정 아이템에 종속되지 않는 시즌 전체 문서
-- 프로젝트 폴더는 아이템이나 주제 단위로 자유롭게 생성
+> 상세 규칙: `docs/reference/file-naming-convention.md`
 
+### 폴더 구조 — 프로젝트 중심
+모든 산출물은 `output/[시즌]/[프로젝트]/` 아래 저장. 한 프로젝트의 모든 파일은 한 폴더에.
+
+| 프로젝트 유형 | 폴더명 패턴 | 예시 |
+|-------------|-----------|------|
+| 시즌 전략 | `season-strategy/` | 트렌드·브랜드·MD·라인시트 |
+| 아이템 | `[item-name]/` | `camp-kitsch/`, `oversized-hoodie/` |
+| 캠페인 | `campaign-[name]/` | `campaign-ss-launch/` |
+| 리테일 | `retail-[name]/` | `retail-seongsu-flagship/` |
+| 콜라보 | `collab-[partner]/` | `collab-sanrio/` |
+| 주간 운영 | `weekly/wNN/` | `weekly/w09/` (리뷰·회의·시트) |
+| 대시보드 | `dashboard/` | JSON 데이터·HTML 시각화 |
+
+### 파일명 규칙
+```
+프로젝트 산출물:  [pdca]_[description][_YYYY-MM-DD][_vN].[ext]
+주간 운영 산출물: [type]_[description][_YYYY-MM-DD][_vN].[ext]
+```
+- 세그먼트 구분: `_` (언더스코어) / 단어 구분: `-` (하이픈)
+- 날짜: `YYYY-MM-DD` / 주차: `wNN` (제로패딩)
+- 파일명 영문만, 소문자 (시즌코드 `26SS` 예외)
+- PDCA: `plan` | `design` | `do` | `check` | `act`
+- Type: `review` | `meeting` | `deck` | `board` | `sheet` | `report` | `data`
+
+### 구조 예시
 ```
 output/26SS/
-├── _season/                         ← 시즌 전체 문서
+├── season-strategy/                 ← 시즌 전략
 │   ├── plan_trend-brief.md
 │   ├── plan_brand-strategy.md
-│   ├── plan_line-sheet.xlsx
-│   ├── do_imc-strategy.md
-│   ├── check_sales-analysis.md
+│   ├── plan_strategy-summary.pptx
+│   ├── plan_market-intel-weekly_2026-03-10.md
 │   └── check_completion-report.md
-├── graphic-tee/                     ← 아이템 프로젝트
+├── camp-kitsch/                     ← 아이템 프로젝트
 │   ├── plan_category-brief.md
 │   ├── design_moodboard.md
-│   ├── design_spec.md
+│   ├── design_design-spec.md
 │   ├── do_techpack.md
 │   └── do_pdp-copy.md
-└── oversized-hoodie/                ← 아이템 프로젝트
-    ├── design_moodboard.md
-    ├── design_spec.md
-    └── do_techpack.md
+├── retail-seongsu-flagship/         ← 리테일 프로젝트
+│   ├── do_souvenir-zone-annual-plan.md
+│   └── check_opening-analysis.md
+├── weekly/                          ← 주간 운영
+│   └── w09/
+│       ├── review_exec-summary_2026-03-04.md
+│       ├── deck_exec-report_2026-03-04.pptx
+│       ├── meeting_imc-sync_2026-03-05.md
+│       └── sheet_product-master_w09.xlsx
+└── dashboard/                       ← 대시보드
+    ├── data_sales.json
+    └── board_sales.html
 ```
 
 ## 문서 (docs/)
@@ -328,6 +357,7 @@ output/26SS/
 - `quickstart-guide.md` — 퀵스타트 가이드 (5분 온보딩)
 - `codex-compat-guide.md` — Codex 호환 실행 가이드
 - `task-agents/format-converter/README.md` — 온디맨드 문서 변환 에이전트
+- `reference/file-naming-convention.md` — 파일 네이밍 & 폴더링 컨벤션
 - `reference/fpof-architecture.md` — 전체 시스템 아키텍처
 - `reference/brand-strategy.md` — 브랜드 전략 원문
 - `reference/ip-bible.md` — IP 캐릭터 세계관 원문

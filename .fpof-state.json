@@ -8,37 +8,23 @@
   "active_brand_path": "presets/wacky-willy/",
   "current_season": "26SS",
   "pdca": {
-    "current_phase": "design",
+    "current_phase": "plan",
     "cycle_count": 1,
     "phases": {
       "plan": {
-        "status": "completed",
-        "completion_pct": 100,
-        "artifacts": [
-          "output/26SS/_season/plan_brand-strategy_dark-romantic-vs-uniform-dressing.md",
-          "output/26SS/_season/plan_hit-item-collection.md",
-          "output/26SS/_season/plan_trend-brief.md",
-          "output/26SS/_season/plan_trend-snapshot-2026-02.md",
-          "output/26SS/_season/plan_strategy-summary.md",
-          "output/26SS/_season/strategy-summary-presentation.pptx",
-          "output/26SS/_season/plan_market-intel-weekly-2026-03-10.md"
-        ]
+        "status": "not_started",
+        "completion_pct": 0,
+        "artifacts": []
       },
       "design": {
-        "status": "in_progress",
-        "completion_pct": 15,
-        "artifacts": [
-          "output/26SS/_season/design_meeting-경영진통합회의-20260309.md",
-          "output/26SS/_season/design_consumer-insight-brief.md",
-          "output/26SS/_season/check_seongsu-flagship-opening-analysis.md"
-        ]
+        "status": "not_started",
+        "completion_pct": 0,
+        "artifacts": []
       },
       "do": {
-        "status": "in_progress",
-        "completion_pct": 5,
-        "artifacts": [
-          "output/26SS/_season/do_seongsu-souvenir-zone-annual-plan.md"
-        ]
+        "status": "not_started",
+        "completion_pct": 0,
+        "artifacts": []
       },
       "check": {
         "status": "not_started",
@@ -73,19 +59,7 @@
   "work_memory": {
     "current_plan": null,
     "context_notes": [
-      "2026-03-05: FPOF 시스템 개요 문서(README.md) 생성 완료",
-      "2026-03-05: 전체 스킬 구조 및 기능 파악 완료 (FPOF 21개 + Universal 19개 + Adapters 2개 + Bridges 1개)",
-      "2026-03-09: PM-Skills(phuryn/pm-skills) 통합 완료 — 71 skills, 38 commands, 자연어 라우팅 업그레이드",
-      "2026-03-09: 기존 FPOF 스킬 10개에 PM-Skills 프레임워크 보강 (SWOT, RICE, GTM, 감성분석, Pre-Mortem 등)",
-      "2026-03-09: 신규 PM-Skills 50개 설치 (pm-strategy/research/gtm/discovery/execution/analytics/marketing/toolkit)",
-      "2026-03-09: 6개 에이전시 README 업데이트 — 신규 스킬 경로 및 확장 팀원 추가",
-      "2026-03-09: CLAUDE.md 자연어 라우팅을 의도 기반 대화형 한국어로 전면 개편",
-      "2026-03-09: 에이전트 팀 토큰 절감 4대 전략 적용 (계획승인/모델믹싱/비용최적화/훅품질게이트)",
-      "2026-03-10: 마켓 인텔리전스 자동 리포트 생성 — output/26SS/_season/plan_market-intel-weekly-2026-03-10.md",
-      "2026-03-10: 마켓 인텔리전스 자동 리포트 생성 — output/26SS/_season/plan_market-intel-weekly-2026-03-10.md",
-      "2026-03-10: 마켓 인텔리전스 자동 리포트 생성 — output/26SS/_season/plan_market-intel-weekly-2026-03-10.md",
-      "2026-03-10: 성수 플래그십 오픈 반응 분석 — output/26SS/_season/check_seongsu-flagship-opening-analysis.md",
-      "2026-03-10: 성수 수버니어 존 연간 기획서 작성 — output/26SS/_season/do_seongsu-souvenir-zone-annual-plan.md"
+      "2026-03-11: 시즌 26SS 초기화 — 이전 산출물 기록 삭제, Plan 단계부터 새로 시작"
     ],
     "todo": [],
     "decisions_log": [

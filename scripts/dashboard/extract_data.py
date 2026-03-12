@@ -21,11 +21,14 @@ import openpyxl
 
 # ── 프로젝트 루트 ──
 ROOT = Path(__file__).resolve().parents[2]
-DASHBOARD_DIR = ROOT / "output" / "dashboard"
-SALES_DIR = DASHBOARD_DIR / "weekly sales"
-MASTER_DIR = DASHBOARD_DIR / "product master"
-TEMPLATE_HTML = DASHBOARD_DIR / "wacky-willy-dashboard.html"
-OUTPUT_HTML = DASHBOARD_DIR / "wacky-willy-dashboard.html"
+SEASON = "26SS"
+SEASON_DIR = ROOT / "output" / SEASON
+DASHBOARD_DIR = SEASON_DIR / "dashboard"
+DATA_DIR = SEASON_DIR / "weekly" / "data"
+SALES_DIR = DATA_DIR
+MASTER_DIR = DATA_DIR
+TEMPLATE_HTML = DASHBOARD_DIR / "board_sales.html"
+OUTPUT_HTML = DASHBOARD_DIR / "board_sales.html"
 
 BRAND_FILTER = "와키윌리"
 MULTI_BRANDS = ["와키윌리", "커버낫", "리"]
@@ -44,8 +47,18 @@ def safe_float(v):
 
 
 def detect_weeks(sales_dir):
-    """sales 디렉토리에서 사용 가능한 주차 파일 탐색"""
+    """sales 디렉토리에서 사용 가능한 주차 파일 탐색
+    새 컨벤션: sheet_sales-review_wNN.xlsx
+    레거시 호환: Weekly_Sales_Review_W*.xlsx"""
     weeks = []
+    # 새 컨벤션 우선
+    for f in sorted(Path(sales_dir).glob("sheet_sales-review_w*.xlsx")):
+        m = re.search(r"_w(\d+)\.", f.name)
+        if m:
+            weeks.append(int(m.group(1)))
+    if weeks:
+        return sorted(weeks)
+    # 레거시 폴백
     for f in sorted(Path(sales_dir).glob("Weekly_Sales_Review_W*.xlsx")):
         m = re.search(r"W(\d+)", f.name)
         if m:
@@ -70,11 +83,41 @@ def parse_season_from_style(style_code):
 # ═══════════════════════════════════════════
 # PART 1: Product Master 추출
 # ═══════════════════════════════════════════
+def resolve_sales_file(sales_dir, week):
+    """주차에 해당하는 sales 파일 경로 반환 (새 컨벤션 우선, 레거시 폴백)"""
+    new_path = Path(sales_dir) / f"sheet_sales-review_w{week:02d}.xlsx"
+    if new_path.exists():
+        return new_path
+    legacy_path = Path(sales_dir) / f"Weekly_Sales_Review_W{week}.xlsx"
+    if legacy_path.exists():
+        return legacy_path
+    return new_path  # 없으면 새 컨벤션 경로 반환 (에러 메시지용)
+
+
+def resolve_master_file(master_dir, week):
+    """주차에 해당하는 product master 파일 경로 반환 (새 컨벤션 우선, 레거시 폴백)"""
+    new_path = Path(master_dir) / f"sheet_product-master_w{week:02d}.xlsx"
+    if new_path.exists():
+        return new_path
+    legacy_path = Path(master_dir) / f"Weekly_Product_Master_W{week}.xlsx"
+    if legacy_path.exists():
+        return legacy_path
+    return new_path
+
+
+def resolve_master_glob(master_dir):
+    """모든 product master 파일 글로브 (새 컨벤션 우선, 레거시 폴백)"""
+    new_files = sorted(Path(master_dir).glob("sheet_product-master_w*.xlsx"))
+    if new_files:
+        return new_files
+    return sorted(Path(master_dir).glob("Weekly_Product_Master_W*.xlsx"))
+
+
 def build_spec_lookup(master_dir):
     """모든 Product Master 파일에서 item_code → specific_1~5 사전 구축.
     의류 아이템만 해당 (용품 카테고리는 속성 없음)."""
     spec = {}
-    for f in sorted(Path(master_dir).glob("Weekly_Product_Master_W*.xlsx")):
+    for f in resolve_master_glob(master_dir):
         if "~$" in f.name:
             continue
         wb = openpyxl.load_workbook(f, data_only=True)
@@ -112,7 +155,7 @@ def extract_product_master(master_file, master_dir=None):
     # 여러 파일에서 데이터 수집 (최신 파일 우선, 누락 시즌 보완)
     all_rows = []
     col = None
-    master_files = sorted(Path(master_dir).glob("Weekly_Product_Master_W*.xlsx"), reverse=True) if master_dir else [master_file]
+    master_files = list(reversed(resolve_master_glob(master_dir))) if master_dir else [master_file]
     seen_seasons = set()
     for mf in master_files:
         if "~$" in mf.name:
@@ -419,7 +462,7 @@ def extract_sales_data(sales_dir, weeks, latest_week):
     """모든 주차의 Sales 데이터를 추출하여 통합"""
     print(f"  [Sales] 주차: {weeks}, 최신: W{latest_week}")
 
-    latest_file = Path(sales_dir) / f"Weekly_Sales_Review_W{latest_week}.xlsx"
+    latest_file = resolve_sales_file(sales_dir, latest_week)
     print(f"  [Sales] Loading {latest_file.name}...")
     wb = openpyxl.load_workbook(latest_file, read_only=True, data_only=True)
 
@@ -436,7 +479,7 @@ def extract_sales_data(sales_dir, weeks, latest_week):
     wow_data = []
     prev_week = latest_week - 1
     if prev_week in weeks:
-        prev_file = Path(sales_dir) / f"Weekly_Sales_Review_W{prev_week}.xlsx"
+        prev_file = resolve_sales_file(sales_dir, prev_week)
         print(f"  [Sales] Loading W{prev_week} for WoW...")
         wb2 = openpyxl.load_workbook(prev_file, read_only=True, data_only=True)
         wow_data = extract_sales_sheet(wb2, "period_TY")
@@ -572,7 +615,7 @@ def extract_sales_data(sales_dir, weeks, latest_week):
     # ── 주차별 합계 (wt) ──
     wt = {}
     for w in weeks:
-        wf = Path(sales_dir) / f"Weekly_Sales_Review_W{w}.xlsx"
+        wf = resolve_sales_file(sales_dir, w)
         if not wf.exists():
             continue
         print(f"  [Sales] Loading W{w} for weekly totals...")
@@ -666,7 +709,7 @@ def extract_sales_data(sales_dir, weeks, latest_week):
         }
 
     # ── 멀티 브랜드 채널 데이터 (와키윌리/커버낫/리) ──
-    latest_file = Path(sales_dir) / f"Weekly_Sales_Review_W{latest_week}.xlsx"
+    latest_file = resolve_sales_file(sales_dir, latest_week)
     wb_mb = openpyxl.load_workbook(latest_file, read_only=True, data_only=True)
     all_cum_ty = extract_sales_sheet(wb_mb, "cum_TY", brand_filter=None)
     all_cum_ly = extract_sales_sheet(wb_mb, "cum_LY", brand_filter=None)
@@ -677,7 +720,7 @@ def extract_sales_data(sales_dir, weeks, latest_week):
     # WoW 멀티브랜드
     all_wow_data = []
     if prev_week in weeks:
-        prev_file = Path(sales_dir) / f"Weekly_Sales_Review_W{prev_week}.xlsx"
+        prev_file = resolve_sales_file(sales_dir, prev_week)
         wb_mb2 = openpyxl.load_workbook(prev_file, read_only=True, data_only=True)
         all_wow_data = extract_sales_sheet(wb_mb2, "period_TY", brand_filter=None)
         wb_mb2.close()
@@ -783,7 +826,7 @@ def extract_sales_data(sales_dir, weeks, latest_week):
         # 주차별 매출 추이
         b_wt = {}
         for w in weeks:
-            wf = Path(sales_dir) / f"Weekly_Sales_Review_W{w}.xlsx"
+            wf = resolve_sales_file(sales_dir, w)
             if not wf.exists():
                 continue
             wb_w = openpyxl.load_workbook(wf, read_only=True, data_only=True)
@@ -915,10 +958,10 @@ def main():
     print()
 
     # 1. Product Master 추출
-    master_file = master_dir / f"Weekly_Product_Master_W{latest_week}.xlsx"
+    master_file = resolve_master_file(master_dir, latest_week)
     if not master_file.exists():
         print(f"WARNING: {master_file} not found, trying latest available...")
-        available_masters = sorted(master_dir.glob("Weekly_Product_Master_W*.xlsx"))
+        available_masters = resolve_master_glob(master_dir)
         if available_masters:
             master_file = available_masters[-1]
         else:
@@ -933,14 +976,21 @@ def main():
     print(f"  → {len(sales_data['wt'])} weekly totals, {len(sales_data['styles'])} styles")
     print(f"  → {len(cum_detail)} cum details, {len(per_detail)} per details")
 
-    # 3. JSON 저장
+    # 3. JSON 저장 (새 컨벤션: data_[description].json + 주차 메타데이터)
     out_dir = DASHBOARD_DIR
-    json.dump(prod_data, open(out_dir / "product_status_data.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    json.dump(sales_data, open(out_dir / "sales_data.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    json.dump(per_styles, open(out_dir / "_per_styles_v2.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    json.dump(cum_detail, open(out_dir / "_cum_detail_v2.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    json.dump(per_detail, open(out_dir / "_per_detail_v2.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print(f"\n  ✓ JSON 파일 저장 완료 → {out_dir}")
+    week_tag = f"w{latest_week:02d}"
+    meta = {"week": week_tag, "updated": __import__("datetime").date.today().isoformat(), "season": SEASON}
+
+    # 메타데이터를 각 JSON에 삽입
+    prod_data["_meta"] = meta
+    sales_data["_meta"] = meta
+
+    json.dump(prod_data, open(out_dir / "data_product-status.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump(sales_data, open(out_dir / "data_sales.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump(per_styles, open(out_dir / "data_per-styles.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump(cum_detail, open(out_dir / "data_cum-detail.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    json.dump(per_detail, open(out_dir / "data_per-detail.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    print(f"\n  ✓ JSON 파일 저장 완료 → {out_dir} ({week_tag} 기준)")
 
     if args.json_only:
         print("  (--json-only: HTML 빌드 스킵)")

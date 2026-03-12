@@ -12,8 +12,8 @@
 #   ./scripts/dashboard/update-dashboard.sh --open        # 완료 후 브라우저 열기
 #
 # 새 주차 데이터 업로드 후 실행 절차:
-#   1. Weekly_Sales_Review_W{N}.xlsx → output/dashboard/weekly sales/
-#   2. Weekly_Product_Master_W{N}.xlsx → output/dashboard/product master/
+#   1. sheet_sales-review_wNN.xlsx → output/26SS/weekly/data/
+#   2. sheet_product-master_wNN.xlsx → output/26SS/weekly/data/
 #   3. ./scripts/dashboard/update-dashboard.sh
 #
 
@@ -21,7 +21,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DASHBOARD_DIR="$ROOT_DIR/output/dashboard"
+SEASON="26SS"
+DATA_DIR="$ROOT_DIR/output/$SEASON/weekly/data"
+DASHBOARD_DIR="$ROOT_DIR/output/$SEASON/dashboard"
 
 # 색상 정의
 GREEN='\033[0;32m'
@@ -60,17 +62,17 @@ echo ""
 
 # 새 주차 파일 감지
 echo -e "${YELLOW}[1/4] 주차 데이터 감지...${NC}"
-SALES_FILES=$(ls "$DASHBOARD_DIR/weekly sales"/Weekly_Sales_Review_W*.xlsx 2>/dev/null | sort)
-MASTER_FILES=$(ls "$DASHBOARD_DIR/product master"/Weekly_Product_Master_W*.xlsx 2>/dev/null | sort)
+SALES_FILES=$(ls "$DATA_DIR"/sheet_sales-review_w*.xlsx 2>/dev/null | sort)
+MASTER_FILES=$(ls "$DATA_DIR"/sheet_product-master_w*.xlsx 2>/dev/null | sort)
 
 if [ -z "$SALES_FILES" ]; then
     echo -e "${RED}  ERROR: Weekly Sales 파일을 찾을 수 없습니다.${NC}"
-    echo "  위치: $DASHBOARD_DIR/weekly sales/"
+    echo "  위치: $DATA_DIR/"
     exit 1
 fi
 
 LATEST_SALES=$(echo "$SALES_FILES" | tail -1)
-LATEST_WEEK=$(echo "$LATEST_SALES" | grep -oE 'W[0-9]+' | tail -1)
+LATEST_WEEK=$(echo "$LATEST_SALES" | grep -oE 'w[0-9]+' | tail -1)
 echo -e "${GREEN}  ✓ Sales: $(echo "$SALES_FILES" | wc -l | tr -d ' ')개 주차 감지${NC}"
 echo -e "${GREEN}  ✓ 최신 주차: $LATEST_WEEK${NC}"
 
@@ -92,8 +94,8 @@ fi
 
 # 빌드 확인
 echo -e "${YELLOW}[3/4] 빌드 확인...${NC}"
-if [ -f "$DASHBOARD_DIR/wacky-willy-dashboard.html" ]; then
-    FILE_SIZE=$(du -h "$DASHBOARD_DIR/wacky-willy-dashboard.html" | cut -f1)
+if [ -f "$DASHBOARD_DIR/board_sales.html" ]; then
+    FILE_SIZE=$(du -h "$DASHBOARD_DIR/board_sales.html" | cut -f1)
     echo -e "${GREEN}  ✓ 대시보드 HTML: $FILE_SIZE${NC}"
 else
     echo -e "${RED}  ERROR: 대시보드 HTML을 찾을 수 없습니다.${NC}"
@@ -110,9 +112,9 @@ fi
 # 브라우저 열기
 if [ "$OPEN_BROWSER" = true ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        open "$DASHBOARD_DIR/wacky-willy-dashboard.html"
+        open "$DASHBOARD_DIR/board_sales.html"
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        xdg-open "$DASHBOARD_DIR/wacky-willy-dashboard.html"
+        xdg-open "$DASHBOARD_DIR/board_sales.html"
     fi
 fi
 

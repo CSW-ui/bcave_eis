@@ -1,7 +1,7 @@
 {
   "framework": {
     "name": "FPOF",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "initialized_at": "2026-02-23T00:00:00Z"
   },
   "active_brand": "wacky-willy",
@@ -38,32 +38,102 @@
       }
     },
     "quality_gates": {
-      "QG1": {
-        "status": "pending",
-        "result": null
-      },
-      "QG2": {
-        "status": "pending",
-        "result": null
-      },
-      "QG3": {
-        "status": "pending",
-        "result": null
-      },
-      "QG4": {
-        "status": "pending",
-        "result": null
+      "QG1": { "status": "pending", "result": null },
+      "QG2": { "status": "pending", "result": null },
+      "QG3": { "status": "pending", "result": null },
+      "QG4": { "status": "pending", "result": null }
+    }
+  },
+  "projects": {
+    "camp-kitsch": {
+      "type": "item",
+      "pdca_phase": "design",
+      "artifacts": [
+        "output/26SS/camp-kitsch/design_item-brief.md"
+      ]
+    },
+    "text-hip-graphic": {
+      "type": "item",
+      "pdca_phase": "design",
+      "artifacts": [
+        "output/26SS/text-hip-graphic/design_item-brief.md"
+      ]
+    },
+    "retail-seongsu-flagship": {
+      "type": "retail",
+      "pdca_phase": "check",
+      "artifacts": [
+        "output/26SS/retail-seongsu-flagship/do_souvenir-zone-annual-plan.md",
+        "output/26SS/retail-seongsu-flagship/do_souvenir-zone-annual-plan.pptx",
+        "output/26SS/retail-seongsu-flagship/check_opening-analysis.md"
+      ]
+    }
+  },
+  "operational": {
+    "description": "PDCA와 독립적인 일상 운영 산출물 — 주간 리뷰, 회의록, 대시보드 등",
+    "weekly": {
+      "latest_week": "w10",
+      "data_weeks": ["w06", "w07", "w08", "w09"],
+      "weeks": {
+        "w09": {
+          "artifacts": [
+            "output/26SS/weekly/w09/review_dept-summary_2026-03-04.md",
+            "output/26SS/weekly/w09/review_dept-summary_2026-03-05.md",
+            "output/26SS/weekly/w09/review_exec-raw_2026-03-04.md",
+            "output/26SS/weekly/w09/review_exec-summary_2026-03-05.md",
+            "output/26SS/weekly/w09/review_full-raw_2026-03-05.md",
+            "output/26SS/weekly/w09/deck_exec-report_2026-03-04.pptx",
+            "output/26SS/weekly/w09/deck_sales-report_2026-03-05.pptx",
+            "output/26SS/weekly/w09/report_exec_2026-03-04.pdf",
+            "output/26SS/weekly/w09/board_dashboard_2026-03-04.html",
+            "output/26SS/weekly/w09/board_dashboard_2026-03-04_v2.html",
+            "output/26SS/weekly/w09/board_dashboard_2026-03-05.html",
+            "output/26SS/weekly/w09/meeting_imc-sync_2026-03-05.md",
+            "output/26SS/weekly/w09/meeting_imc-sync-ceo-deck_2026-03-05.md",
+            "output/26SS/weekly/w09/meeting_sourcing-interview-summary.md"
+          ]
+        },
+        "w10": {
+          "artifacts": [
+            "output/26SS/weekly/w10/board_dashboard_w10.html",
+            "output/26SS/weekly/w10/meeting_exec-review_2026-03-09.md",
+            "output/26SS/weekly/w10/review_board-summary_w10.md"
+          ]
+        }
       }
+    },
+    "dashboard": {
+      "refresh_cycle": "weekly",
+      "latest_data_week": "w09",
+      "artifacts": [
+        "output/26SS/dashboard/board_sales.html",
+        "output/26SS/dashboard/board_product-status.html",
+        "output/26SS/dashboard/data_sales.json",
+        "output/26SS/dashboard/data_product-status.json",
+        "output/26SS/dashboard/data_per-detail.json",
+        "output/26SS/dashboard/data_per-styles.json",
+        "output/26SS/dashboard/data_cum-detail.json"
+      ]
+    },
+    "season_strategy": {
+      "artifacts": [
+        "output/26SS/season-strategy/plan_strategy-summary.md",
+        "output/26SS/season-strategy/plan_strategy-summary.pptx",
+        "output/26SS/season-strategy/plan_market-intel-weekly_2026-03-10.md",
+        "output/26SS/season-strategy/design_consumer-insight-brief.md"
+      ]
     }
   },
   "work_memory": {
     "current_plan": null,
     "context_notes": [
-      "2026-03-11: 시즌 26SS 초기화 — 이전 산출물 기록 삭제, Plan 단계부터 새로 시작"
+      "2026-03-11: 시즌 26SS 초기화 — 이전 산출물 기록 삭제, Plan 단계부터 새로 시작",
+      "2026-03-12: PDCA/운영 분리 — 시즌 PDCA는 전략 마일스톤만 추적, 일상 운영(weekly/dashboard/프로젝트)은 operational 섹션에서 독립 관리"
     ],
     "todo": [],
     "decisions_log": [
-      "2026-03-09: PM-Skills 통합 방침 — 중복 영역은 기존 스킬에 '(PM-Skills 통합)' 섹션으로 보강, 비중복 영역은 FPOF 포맷으로 커스터마이징하여 신규 설치"
+      "2026-03-09: PM-Skills 통합 방침 — 중복 영역은 기존 스킬에 '(PM-Skills 통합)' 섹션으로 보강, 비중복 영역은 FPOF 포맷으로 커스터마이징하여 신규 설치",
+      "2026-03-12: 산출물 이중 트래킹 구조 도입 — pdca(시즌 전략 마일스톤) + operational(일상 운영) + projects(개별 프로젝트 자체 PDCA)"
     ]
   },
   "history": []

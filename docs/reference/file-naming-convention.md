@@ -63,7 +63,7 @@
 
 ### 2-2. 파일명 구조
 
-#### 시즌 산출물 (`output/[SEASON]/`)
+#### PDCA 산출물 — 시즌 전략 + 개별 프로젝트 (`season-strategy/`, `[project]/`)
 ```
 [pdca]_[content-description][_YYYY-MM-DD][_vN].[ext]
 ```
@@ -77,6 +77,7 @@
 | `ext` | 필수 | `md`, `pptx`, `xlsx`, `pdf`, `html` | `.md` |
 
 > *반복 생성 문서(주간 인텔, 리뷰 등)는 날짜 필수. 일회성 문서는 생략 가능.
+> **PDCA 접두사는 시즌 전략과 프로젝트 산출물에만 사용합니다.**
 
 **예시:**
 ```
@@ -85,13 +86,13 @@ plan_strategy-summary.md
 plan_strategy-summary.pptx          ← 동일 내용 다른 포맷
 plan_market-intel-weekly_2026-03-10.md
 design_consumer-insight-brief.md
-design_exec-meeting_2026-03-09.md
+design_item-brief.md                ← 아이템 프로젝트 브리프
 do_souvenir-zone-annual-plan.md
 do_souvenir-zone-annual-plan.pptx
-check_flagship-opening-analysis.md
+check_opening-analysis.md
 ```
 
-#### 운영 산출물 (`output/weekly-review/`, `output/meeting/`, `output/dashboard/`)
+#### 운영 산출물 — 주간/대시보드 (`weekly/wNN/`, `dashboard/`)
 ```
 [doc-type]_[content-description][_YYYY-MM-DD][_vN].[ext]
 ```
@@ -232,8 +233,8 @@ output/
     │       ├── review_exec-summary_2026-03-11.md
     │       └── board_dashboard_w10.html
     │
-    ├── dashboard/                           # 📊 대시보드 (시즌 공용)
-    │   ├── data_sales.json
+    ├── dashboard/                           # 📊 대시보드 (매주 갱신, PDCA 무관)
+    │   ├── data_sales.json                 # _meta.week로 기준 주차 확인
     │   ├── data_product-status.json
     │   ├── data_per-detail.json
     │   ├── data_per-styles.json
@@ -310,7 +311,21 @@ check_  opening-analysis.md      ← 오프닝 분석
 sheet_  product-master_wNN.xlsx  ← 프로덕트 마스터 (매주 업로드)
         sales-review_wNN.xlsx    ← 매출 리뷰 (매주 업로드)
 ```
-> `weekly/data/`의 원본 데이터가 업데이트되면 `dashboard/`의 시각화·JSON이 갱신됩니다.
+> `weekly/data/`의 원본 데이터가 업데이트되면 `dashboard/`의 시각화·JSON이 자동 갱신됩니다.
+> 갱신 명령: `./scripts/dashboard/update-dashboard.sh`
+
+#### 대시보드 (`dashboard/`)
+```
+data_   sales.json               ← 매출 데이터 (JSON 내 _meta.week으로 기준 주차 표시)
+        product-status.json      ← 상품 현황
+        per-detail.json          ← 주간 스타일 상세
+        per-styles.json          ← 주간 스타일 Top
+        cum-detail.json          ← 누적 스타일 상세
+
+board_  sales.html               ← 매출 대시보드
+        product-status.html      ← 상품 현황 보드
+```
+> 대시보드는 PDCA 단계와 무관하게 **매주** 갱신됩니다. JSON 파일 내 `_meta` 필드로 기준 주차를 확인합니다.
 
 #### 주간 산출물 (`weekly/wNN/`)
 ```
@@ -333,7 +348,7 @@ meeting_[topic]_*.md             ← 회의록
 |---|------|------|
 | 1 | **프로젝트 = 폴더** | 새 프로젝트가 시작되면 해당 시즌 아래 폴더 생성 |
 | 2 | **한 프로젝트 안에 모든 포맷** | md·pptx·xlsx·pdf·html 같은 폴더에 공존 |
-| 3 | **PDCA가 파일명에** | 폴더 안에서 `plan_` → `design_` → `do_` → `check_` 순으로 자연 정렬 |
+| 3 | **PDCA는 전략/프로젝트에만** | `plan_`~`act_` 접두사는 `season-strategy/`와 프로젝트 폴더에만 사용. `weekly/`와 `dashboard/`에는 doc-type 접두사 사용 |
 | 4 | **주간 회의록은 `weekly/wNN/`에** | 프로젝트 회의가 아닌 정기 회의록은 해당 주차 폴더에 저장 |
 | 5 | **원본 데이터는 `weekly/data/`에** | 매주 업로드하는 엑셀 원본은 data/ 폴더에 누적 관리 |
 | 6 | **`data/` → `dashboard/` 흐름** | data/의 원본 데이터가 갱신되면 dashboard/의 시각화·JSON이 업데이트 |

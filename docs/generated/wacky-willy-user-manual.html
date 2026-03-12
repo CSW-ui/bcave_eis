@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>와키윌리 FPOF 시스템 사용 매뉴얼</title>
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@400,500,700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===========================================
+           CSS CUSTOM PROPERTIES (WACKY WILLY THEME)
+           Kitsch Street & IP Universe — Neon + Bold
+           =========================================== */
+        :root {
+            /* Colors — Wacky Willy Brand */
+            --bg-primary: #0a0a14;
+            --bg-secondary: #12121f;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0c0;
+            --accent-blue: #0066FF;
+            --accent-orange: #FF6B35;
+            --accent-purple: #8B5CF6;
+            --accent-cyan: #00E5CC;
+            --accent-pink: #FF3CAC;
+            --gradient-main: linear-gradient(135deg, #FF6B35, #FF3CAC, #8B5CF6);
+            --gradient-blue: linear-gradient(135deg, #0066FF, #00E5CC);
+            --gradient-warm: linear-gradient(135deg, #FF6B35, #FF3CAC);
+
+            /* Typography */
+            --font-display: 'Clash Display', 'Noto Sans KR', sans-serif;
+            --font-body: 'Satoshi', 'Noto Sans KR', sans-serif;
+            --title-size: clamp(2rem, 6vw, 4.5rem);
+            --h2-size: clamp(1.5rem, 4vw, 3rem);
+            --h3-size: clamp(1.1rem, 2.5vw, 1.75rem);
+            --body-size: clamp(0.75rem, 1.4vw, 1.05rem);
+            --small-size: clamp(0.65rem, 1vw, 0.85rem);
+            --code-size: clamp(0.65rem, 1.1vw, 0.9rem);
+
+            /* Spacing */
+            --slide-padding: clamp(1.5rem, 4vw, 4rem);
+            --content-gap: clamp(0.75rem, 2vw, 2rem);
+            --element-gap: clamp(0.3rem, 1vw, 0.75rem);
+
+            /* Animation */
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --duration-normal: 0.6s;
+        }
+
+        /* ===========================================
+           BASE STYLES
+           =========================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            height: 100%;
+            line-height: 1.5;
+        }
+
+        /* ===========================================
+           SLIDE CONTAINER
+           =========================================== */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            padding: var(--slide-padding);
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 100%;
+            overflow: hidden;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ===========================================
+           BACKGROUNDS
+           =========================================== */
+        .bg-grid {
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .bg-glow::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            right: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(ellipse, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .bg-glow-orange::before {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -15%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(255, 107, 53, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .bg-glow-blue::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: -10%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(0, 102, 255, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        h1 {
+            font-family: var(--font-display);
+            font-size: var(--title-size);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: var(--h2-size);
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+        }
+
+        h3 {
+            font-family: var(--font-display);
+            font-size: var(--h3-size);
+            font-weight: 500;
+            line-height: 1.3;
+        }
+
+        p, li {
+            font-size: var(--body-size);
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .gradient-text {
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .accent-blue { color: var(--accent-blue); }
+        .accent-orange { color: var(--accent-orange); }
+        .accent-purple { color: var(--accent-purple); }
+        .accent-cyan { color: var(--accent-cyan); }
+
+        /* ===========================================
+           COMPONENTS
+           =========================================== */
+        .tag {
+            display: inline-block;
+            padding: clamp(0.2rem, 0.5vw, 0.35rem) clamp(0.5rem, 1vw, 0.8rem);
+            border-radius: 100px;
+            font-size: var(--small-size);
+            font-weight: 500;
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .tag.orange {
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--accent-orange);
+            border-color: rgba(255, 107, 53, 0.2);
+        }
+
+        .tag.blue {
+            background: rgba(0, 102, 255, 0.15);
+            color: var(--accent-blue);
+            border-color: rgba(0, 102, 255, 0.2);
+        }
+
+        .tag.cyan {
+            background: rgba(0, 229, 204, 0.15);
+            color: var(--accent-cyan);
+            border-color: rgba(0, 229, 204, 0.2);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: clamp(8px, 1.5vw, 16px);
+            padding: clamp(0.75rem, 2vw, 1.5rem);
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.2);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: clamp(0.5rem, 1.5vw, 1rem);
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: clamp(0.5rem, 1.5vw, 1rem);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: var(--code-size);
+            color: var(--accent-cyan);
+            overflow: hidden;
+        }
+
+        .code-block .comment { color: #666; }
+        .code-block .keyword { color: var(--accent-purple); }
+
+        .divider {
+            width: 60px;
+            height: 3px;
+            background: var(--gradient-main);
+            border-radius: 2px;
+            margin: clamp(0.5rem, 1vw, 1rem) 0;
+        }
+
+        .chapter-num {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 10vw, 8rem);
+            font-weight: 700;
+            opacity: 0.06;
+            position: absolute;
+            right: var(--slide-padding);
+            bottom: var(--slide-padding);
+            line-height: 1;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: clamp(1.5rem, 3vw, 2rem);
+            height: clamp(1.5rem, 3vw, 2rem);
+            border-radius: 50%;
+            background: var(--gradient-main);
+            color: white;
+            font-size: var(--small-size);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: clamp(0.5rem, 1vw, 0.75rem);
+        }
+
+        .step-item p { flex: 1; }
+
+        .icon-card {
+            text-align: center;
+        }
+
+        .icon-card .icon {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            margin-bottom: clamp(0.3rem, 0.7vw, 0.5rem);
+        }
+
+        .icon-card h3 {
+            font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+            margin-bottom: clamp(0.2rem, 0.5vw, 0.35rem);
+        }
+
+        .icon-card p {
+            font-size: var(--small-size);
+        }
+
+        .pdca-flow {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.3rem, 1vw, 0.75rem);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pdca-item {
+            padding: clamp(0.4rem, 1vw, 0.75rem) clamp(0.8rem, 2vw, 1.5rem);
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: var(--small-size);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .pdca-item.plan { background: rgba(0, 102, 255, 0.2); color: var(--accent-blue); border: 1px solid rgba(0, 102, 255, 0.3); }
+        .pdca-item.design { background: rgba(139, 92, 246, 0.2); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+        .pdca-item.do { background: rgba(255, 107, 53, 0.2); color: var(--accent-orange); border: 1px solid rgba(255, 107, 53, 0.3); }
+        .pdca-item.check { background: rgba(0, 229, 204, 0.2); color: var(--accent-cyan); border: 1px solid rgba(0, 229, 204, 0.3); }
+        .pdca-item.act { background: rgba(255, 60, 172, 0.2); color: var(--accent-pink); border: 1px solid rgba(255, 60, 172, 0.3); }
+
+        .pdca-arrow {
+            color: rgba(255,255,255,0.2);
+            font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+        }
+
+        .command-row {
+            display: flex;
+            align-items: center;
+            gap: clamp(0.5rem, 1vw, 0.75rem);
+            padding: clamp(0.3rem, 0.7vw, 0.5rem) 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .command-row code {
+            font-family: 'SF Mono', monospace;
+            font-size: var(--code-size);
+            color: var(--accent-cyan);
+            background: rgba(0, 229, 204, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .command-row span {
+            font-size: var(--small-size);
+            color: var(--text-secondary);
+        }
+
+        .compare-box {
+            padding: clamp(0.5rem, 1.5vw, 1rem);
+            border-radius: 8px;
+        }
+        .compare-box.good {
+            background: rgba(0, 229, 204, 0.06);
+            border: 1px solid rgba(0, 229, 204, 0.15);
+        }
+        .compare-box.bad {
+            background: rgba(255, 60, 80, 0.06);
+            border: 1px solid rgba(255, 60, 80, 0.15);
+        }
+        .compare-box .label {
+            font-size: var(--small-size);
+            font-weight: 600;
+            margin-bottom: clamp(0.2rem, 0.5vw, 0.4rem);
+        }
+        .compare-box.good .label { color: var(--accent-cyan); }
+        .compare-box.bad .label { color: #ff3c50; }
+
+        .team-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: var(--small-size);
+            font-weight: 500;
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(25px);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .reveal:nth-child(2) { transition-delay: 0.12s; }
+        .reveal:nth-child(3) { transition-delay: 0.19s; }
+        .reveal:nth-child(4) { transition-delay: 0.26s; }
+        .reveal:nth-child(5) { transition-delay: 0.33s; }
+        .reveal:nth-child(6) { transition-delay: 0.40s; }
+        .reveal:nth-child(7) { transition-delay: 0.47s; }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity var(--duration-normal) var(--ease-out-expo),
+                        transform var(--duration-normal) var(--ease-out-expo);
+        }
+
+        .slide.visible .reveal-scale {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* ===========================================
+           PROGRESS BAR
+           =========================================== */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--gradient-main);
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        /* ===========================================
+           NAVIGATION DOTS
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: clamp(0.5rem, 1.5vw, 1.5rem);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 90;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+
+        .nav-dot.active {
+            background: var(--accent-purple);
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+            transform: scale(1.3);
+        }
+
+        .nav-dot:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* ===========================================
+           SLIDE COUNTER
+           =========================================== */
+        .slide-counter {
+            position: fixed;
+            bottom: clamp(0.5rem, 1.5vw, 1.5rem);
+            right: clamp(0.5rem, 1.5vw, 1.5rem);
+            font-family: var(--font-display);
+            font-size: var(--small-size);
+            color: rgba(255, 255, 255, 0.3);
+            z-index: 90;
+        }
+
+        /* ===========================================
+           RESPONSIVE BREAKPOINTS
+           =========================================== */
+        @media (max-height: 700px) {
+            :root {
+                --slide-padding: clamp(1rem, 3vw, 2.5rem);
+                --content-gap: clamp(0.5rem, 1.5vw, 1rem);
+                --title-size: clamp(1.5rem, 5vw, 3rem);
+                --h2-size: clamp(1.25rem, 3.5vw, 2rem);
+            }
+        }
+
+        @media (max-height: 600px) {
+            :root {
+                --slide-padding: clamp(0.75rem, 2.5vw, 1.5rem);
+                --content-gap: clamp(0.4rem, 1vw, 0.75rem);
+                --title-size: clamp(1.25rem, 4.5vw, 2.5rem);
+                --body-size: clamp(0.7rem, 1.2vw, 0.9rem);
+            }
+            .nav-dots, .chapter-num { display: none; }
+        }
+
+        @media (max-height: 500px) {
+            :root {
+                --slide-padding: clamp(0.5rem, 2vw, 1rem);
+                --title-size: clamp(1rem, 3.5vw, 1.5rem);
+                --h2-size: clamp(0.9rem, 2.5vw, 1.25rem);
+                --body-size: clamp(0.65rem, 1vw, 0.85rem);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .grid-4 { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            :root {
+                --title-size: clamp(1.5rem, 8vw, 2.5rem);
+            }
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .pdca-flow { gap: 0.3rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.2s !important;
+            }
+            html { scroll-behavior: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Navigation Dots -->
+    <nav class="nav-dots" id="navDots"></nav>
+
+    <!-- Slide Counter -->
+    <div class="slide-counter" id="slideCounter">01 / 30</div>
+
+    <!-- =============================================
+         SLIDE 1: TITLE
+         ============================================= -->
+    <section class="slide bg-grid" style="justify-content: center; align-items: center; text-align: center;">
+        <div class="slide-content" style="align-items: center; text-align: center;">
+            <div class="reveal" style="margin-bottom: clamp(0.5rem, 1vw, 1rem);">
+                <span class="tag">FPOF System</span>
+            </div>
+            <h1 class="reveal" style="margin-bottom: clamp(0.5rem, 1.5vw, 1.5rem);">
+                <span class="gradient-text">와키윌리</span><br>
+                FPOF 사용 매뉴얼
+            </h1>
+            <p class="reveal" style="font-size: var(--h3-size); color: var(--text-secondary); max-width: 600px;">
+                비개발자를 위한 완벽 가이드
+            </p>
+            <div class="divider reveal" style="margin: clamp(0.5rem, 1.5vw, 1.5rem) auto;"></div>
+            <p class="reveal" style="font-size: var(--small-size); color: rgba(255,255,255,0.3);">
+                ↓ 스크롤 또는 방향키로 이동
+            </p>
+        </div>
+        <div style="position:absolute;top:-30%;left:-20%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(255,107,53,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-30%;right:-20%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(139,92,246,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 2: TABLE OF CONTENTS
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <span class="tag reveal">Overview</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">목차</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="color:var(--accent-blue);font-size:var(--body-size);">1장 — 시작하기</h3>
+                    <p>시스템 소개, 로그인, 첫 화면</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-purple);font-size:var(--body-size);">2장 — 기본 사용법</h3>
+                    <p>자연어 요청, 상태 확인, 산출물</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-orange);font-size:var(--body-size);">3장 — PDCA 단계별</h3>
+                    <p>Plan → Design → Do → Check → Act</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-cyan);font-size:var(--body-size);">4장 — 슬래시 명령어</h3>
+                    <p>상태, 산출물, 품질 명령어</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-pink);font-size:var(--body-size);">5장 — 실전 시나리오</h3>
+                    <p>시즌 기획, 히트상품, 실패 분석</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--text-secondary);font-size:var(--body-size);">6장 — FAQ</h3>
+                    <p>자주 묻는 질문, 문제 해결</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">00</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 3: WHAT IS FPOF
+         ============================================= -->
+    <section class="slide bg-glow-orange">
+        <div class="slide-content">
+            <span class="tag blue reveal">1장 — 시작하기</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0;">FPOF란?</h2>
+            <div class="divider reveal"></div>
+            <p class="reveal" style="font-size: var(--h3-size); color: var(--text-primary); max-width: 800px; margin: var(--content-gap) 0;">
+                <strong style="color:var(--accent-orange);">Fashion PDCA Orchestration Framework</strong>
+            </p>
+            <div class="card reveal" style="border-left: 3px solid var(--accent-purple); max-width: 700px;">
+                <p style="color: var(--text-primary); font-size: var(--body-size);">
+                    당신이 <strong style="color:var(--accent-cyan);">"무드보드 만들어줘"</strong>라고 말하면,<br>
+                    AI가 알아서 크리에이티브 디렉터를 불러와서<br>
+                    무드보드를 만들어 주는 시스템입니다.
+                </p>
+            </div>
+        </div>
+        <div class="chapter-num">01</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 4: 3 KEY FEATURES
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <span class="tag blue reveal">1장 — 시작하기</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">3가지 핵심 기능</h2>
+            <div class="grid-3 reveal-scale">
+                <div class="card icon-card">
+                    <div class="icon">💬</div>
+                    <h3>자연어 커뮤니케이션</h3>
+                    <p>복잡한 명령어 없이 평소 말하듯 요청하면 AI가 이해하고 실행</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">🤖</div>
+                    <h3>자동 전문가 배정</h3>
+                    <p>20명의 AI 전문가가 대기 중. 내용에 따라 자동으로 적합한 전문가 배정</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">🎨</div>
+                    <h3>브랜드 보이스 보장</h3>
+                    <p>와키윌리 DNA, 톤앤매너가 사전 세팅. 모든 결과물이 브랜드에 맞음</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">01</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 5: GETTING STARTED
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <span class="tag blue reveal">1장 — 시작하기</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">로그인 & 첫 화면</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-cyan);margin-bottom:var(--element-gap);">Claude Code 시작</h3>
+                    <div class="code-block">
+                        <span class="comment"># 프로젝트 폴더로 이동</span><br>
+                        cd "FPOF V2.2 Claude"<br><br>
+                        <span class="comment"># Claude Code 시작</span><br>
+                        <span class="keyword">claude</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">첫 화면 응답</h3>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        📊 현재 시즌: 26SS<br>
+                        🔄 현재 단계: Plan<br>
+                        📁 산출물 위치: output/26SS/<br><br>
+                        💡 "지금 어디까지 진행됐어?"
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">01</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 6: NATURAL LANGUAGE
+         ============================================= -->
+    <section class="slide bg-glow-orange">
+        <div class="slide-content">
+            <span class="tag orange reveal">2장 — 기본 사용법</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">자연어로 말하는 법</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="compare-box good">
+                    <div class="label">✅ 잘하는 방법</div>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        "그래픽 티 무드보드 만들어줘"<br>
+                        "오버핏 후디 디자인 스펙 작성해줘"<br>
+                        "이번 시즌 트렌드 분석해줘"
+                    </div>
+                </div>
+                <div class="compare-box bad">
+                    <div class="label">❌ 피해야 할 방법</div>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        "알아서 해" → 너무 모호함<br>
+                        "그거 만들어" → 무엇인지 모름<br>
+                        "뭐 할까?" → 스스로 결정 안 함
+                    </div>
+                </div>
+            </div>
+            <div class="card reveal" style="margin-top:var(--content-gap);border-left:3px solid var(--accent-cyan);">
+                <p style="font-size:var(--small-size);">
+                    <strong style="color:var(--accent-cyan);">Tip:</strong> 구체적으로 말할수록 좋습니다 — "키키 캐릭터를 활용한 유니섹스 그래픽 티셔츠 디자인해줘. 타겟은 18~22세, 스트리트 감성으로"
+                </p>
+            </div>
+        </div>
+        <div class="chapter-num">02</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 7: ADVANCED REQUESTS
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <span class="tag orange reveal">2장 — 기본 사용법</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">전문가 지명 & 참조</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-purple);margin-bottom:var(--element-gap);">특정 전문가 지명하기</h3>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        "패션 에디터한테 PDP 카피 맡길게"<br>
+                        "마케팅 디렉터가 GTM 계획 세워줘"<br>
+                        "시장 리서처한테 경쟁사 분석 시켜줘"
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">이전 산출물 참조하기</h3>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        "아까 만든 무드보드 기반으로<br>
+                        디자인 스펙 작성해줘"<br><br>
+                        "트렌드 브리프에서 뽑은<br>
+                        키워드로 시즌 테마 잡아줘"
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">02</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 8: STATUS & DELIVERABLES
+         ============================================= -->
+    <section class="slide bg-glow-blue">
+        <div class="slide-content">
+            <span class="tag orange reveal">2장 — 기본 사용법</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">상태 확인 & 산출물 요청</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-blue);margin-bottom:var(--element-gap);">상태 확인</h3>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        "지금 어디까지 진행됐어?"<br>
+                        또는<br>
+                        <span class="keyword">/status</span>
+                    </div>
+                    <p style="font-size:var(--small-size);margin-top:var(--element-gap);">시즌, PDCA 단계, 진행률, 완료/진행중 산출물 확인</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">산출물 요청 패턴</h3>
+                    <div class="code-block" style="font-size:var(--small-size);">
+                        "[산출물 유형] [대상] 만들어줘"<br><br>
+                        "무드보드 그래픽 티 만들어줘"<br>
+                        "디자인 스펙 오버핏 후디 작성해줘"<br>
+                        "테크팩 룩북 상품 만들어줘"
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">02</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 9: PDCA OVERVIEW
+         ============================================= -->
+    <section class="slide bg-grid" style="text-align:center;">
+        <div class="slide-content" style="align-items:center;">
+            <span class="tag reveal">3장 — PDCA 단계별 사용법</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">PDCA 사이클</h2>
+            <div class="pdca-flow reveal">
+                <div class="pdca-item plan">Plan</div>
+                <span class="pdca-arrow">→</span>
+                <div class="pdca-item design">Design</div>
+                <span class="pdca-arrow">→</span>
+                <div class="pdca-item do">Do</div>
+                <span class="pdca-arrow">→</span>
+                <div class="pdca-item check">Check</div>
+                <span class="pdca-arrow">→</span>
+                <div class="pdca-item act">Act</div>
+            </div>
+            <div class="grid-3 reveal-scale" style="margin-top:var(--content-gap);text-align:left;">
+                <div class="card" style="border-top:2px solid var(--accent-blue);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-blue);">Plan — 시즌 기획</h3>
+                    <p style="font-size:var(--small-size);">전략기획실: 트렌드 → 테마 → MD → 라인시트</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-purple);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-purple);">Design — 크리에이티브</h3>
+                    <p style="font-size:var(--small-size);">크리에이티브 스튜디오 + 프로덕트 랩</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-orange);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-orange);">Do — 상품화 & 런칭</h3>
+                    <p style="font-size:var(--small-size);">프로덕트 랩 + 마케팅 쇼룸</p>
+                </div>
+            </div>
+            <div class="grid-2 reveal-scale" style="margin-top:var(--element-gap);text-align:left;max-width:700px;">
+                <div class="card" style="border-top:2px solid var(--accent-cyan);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-cyan);">Check — 성과 분석</h3>
+                    <p style="font-size:var(--small-size);">데이터 인텔리전스 + QC 본부</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-pink);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-pink);">Act — 개선 반복</h3>
+                    <p style="font-size:var(--small-size);">QC 본부 PDCA 이터레이터</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 10: PLAN STAGE - OVERVIEW
+         ============================================= -->
+    <section class="slide bg-glow-blue">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag blue">Plan</span>
+                <span class="team-badge" style="background:rgba(0,102,255,0.1);color:var(--accent-blue);">전략기획실</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">Plan 단계: 시즌 기획</h2>
+            <div class="reveal" style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                <div class="step-item">
+                    <span class="step-number">1</span>
+                    <div>
+                        <h3 style="font-size:var(--body-size);">트렌드 분석</h3>
+                        <p style="font-size:var(--small-size);">"26SS 트렌드 분석해줘" → Macro/Micro 트렌드, 경쟁사 동향</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">2</span>
+                    <div>
+                        <h3 style="font-size:var(--body-size);">시즌 테마 수립</h3>
+                        <p style="font-size:var(--small-size);">"26SS 시즌 테마 제안해줘" → 비주얼 톤, 경영목표 연결</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">3</span>
+                    <div>
+                        <h3 style="font-size:var(--body-size);">MD 전략</h3>
+                        <p style="font-size:var(--small-size);">"카테고리 믹스랑 챔피언 상품 전략 짜줘" → 가격대, SKU</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">4</span>
+                    <div>
+                        <h3 style="font-size:var(--body-size);">라인시트</h3>
+                        <p style="font-size:var(--small-size);">"라인시트 만들어줘" → SKU 목록, OTB, 사이즈/컬러</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">5</span>
+                    <div>
+                        <h3 style="font-size:var(--body-size);">검수 & 전환</h3>
+                        <p style="font-size:var(--small-size);">"Plan 단계 검수해줘" → QG1 PASS → Design 단계로</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 11: PLAN - TREND EXAMPLE
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag blue">Plan</span>
+                <span style="font-size:var(--small-size);color:var(--text-secondary);">Step 1: 트렌드 분석</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">AI 응답 예시</h2>
+            <div class="card reveal-scale" style="border-left:3px solid var(--accent-blue);">
+                <p style="font-size:var(--small-size);color:var(--accent-blue);margin-bottom:var(--element-gap);">[AI: 시장 리서처가 작업을 시작합니다...]</p>
+                <div class="grid-3" style="margin-bottom:var(--element-gap);">
+                    <div>
+                        <h3 style="font-size:var(--small-size);color:var(--accent-orange);">🌍 Macro Trend</h3>
+                        <p style="font-size:var(--small-size);">Y2K Renaissance<br>Genderless Fashion<br>Digital Nomad</p>
+                    </div>
+                    <div>
+                        <h3 style="font-size:var(--small-size);color:var(--accent-purple);">📱 Micro Trend</h3>
+                        <p style="font-size:var(--small-size);">TikTok Cottagecore<br>Instagram Barbiecore<br>YouTube Y2K Haul</p>
+                    </div>
+                    <div>
+                        <h3 style="font-size:var(--small-size);color:var(--accent-cyan);">🔍 경쟁사 분석</h3>
+                        <p style="font-size:var(--small-size);">Brand A: Y2K +20%<br>Brand B: Genderless<br>Brand C: 디지털 노마드</p>
+                    </div>
+                </div>
+                <p style="font-size:var(--small-size);color:var(--text-secondary);">📁 output/26SS/season-strategy/plan_trend-brief.md</p>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 12: PLAN - MD STRATEGY EXAMPLE
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag blue">Plan</span>
+                <span style="font-size:var(--small-size);color:var(--text-secondary);">Step 3: MD 전략</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">카테고리 믹스 & 챔피언 상품</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-blue);margin-bottom:var(--element-gap);">📊 카테고리 믹스</h3>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div style="flex:1;height:8px;background:rgba(0,102,255,0.2);border-radius:4px;overflow:hidden;"><div style="width:50%;height:100%;background:var(--accent-blue);border-radius:4px;"></div></div>
+                            <span style="font-size:var(--small-size);white-space:nowrap;">유니섹스 50%</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div style="flex:1;height:8px;background:rgba(139,92,246,0.2);border-radius:4px;overflow:hidden;"><div style="width:30%;height:100%;background:var(--accent-purple);border-radius:4px;"></div></div>
+                            <span style="font-size:var(--small-size);white-space:nowrap;">우먼스 30%</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div style="flex:1;height:8px;background:rgba(255,107,53,0.2);border-radius:4px;overflow:hidden;"><div style="width:20%;height:100%;background:var(--accent-orange);border-radius:4px;"></div></div>
+                            <span style="font-size:var(--small-size);white-space:nowrap;">용품 20%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">🏆 챔피언 상품</h3>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div class="command-row"><code>1</code><span>키키 그래픽 티 (Carry-over)</span></div>
+                        <div class="command-row"><code>2</code><span>오버핏 후디 (Carry-over)</span></div>
+                        <div class="command-row"><code>3</code><span>크로스백 (New)</span></div>
+                    </div>
+                    <p style="font-size:var(--small-size);margin-top:var(--element-gap);color:var(--text-secondary);">Core: 39K~79K / Premium: 89K~159K</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 13: DESIGN STAGE
+         ============================================= -->
+    <section class="slide bg-glow-orange">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border-color:rgba(139,92,246,0.2);">Design</span>
+                <span class="team-badge" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);">크리에이티브 스튜디오 + 프로덕트 랩</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">Design 단계: 크리에이티브 개발</h2>
+            <div class="grid-4 reveal-scale">
+                <div class="card icon-card">
+                    <div class="icon">🎨</div>
+                    <h3>무드보드</h3>
+                    <p>"키키 그래픽 티 무드보드 만들어줘"<br>비주얼 톤, 컬러 팔레트, 레퍼런스</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">📐</div>
+                    <h3>디자인 스펙</h3>
+                    <p>"디자인 스펙 작성해줘"<br>실루엣, 소재, 그래픽, 사이즈</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">🖼️</div>
+                    <h3>비주얼 생성</h3>
+                    <p>"룩북 이미지 생성해줘"<br>플랫/디테일/스타일링 이미지</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">💰</div>
+                    <h3>원가 검증</h3>
+                    <p>"이 디자인 원가 맞아?"<br>BOM 산출, VE 제안</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 14: DESIGN - MOODBOARD EXAMPLE
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border-color:rgba(139,92,246,0.2);">Design</span>
+                <span style="font-size:var(--small-size);color:var(--text-secondary);">무드보드 & 원가 검증</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">AI 응답 예시</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card" style="border-left:3px solid var(--accent-purple);">
+                    <p style="font-size:var(--small-size);color:var(--accent-purple);margin-bottom:var(--element-gap);">📋 무드보드: 키키 그래픽 티</p>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div>
+                            <span style="font-size:var(--small-size);color:var(--accent-cyan);">🎨 비주얼 톤</span>
+                            <p style="font-size:var(--small-size);">Street Grunge · Y2K Aesthetic</p>
+                        </div>
+                        <div>
+                            <span style="font-size:var(--small-size);color:var(--accent-orange);">🌈 컬러 팔레트</span>
+                            <div style="display:flex;gap:0.3rem;margin-top:0.2rem;">
+                                <div style="width:20px;height:20px;border-radius:4px;background:#FF6B35;" title="Neon Orange"></div>
+                                <div style="width:20px;height:20px;border-radius:4px;background:#0066FF;" title="Electric Blue"></div>
+                                <div style="width:20px;height:20px;border-radius:4px;background:#000000;border:1px solid rgba(255,255,255,0.1);" title="Black"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" style="border-left:3px solid var(--accent-cyan);">
+                    <p style="font-size:var(--small-size);color:var(--accent-cyan);margin-bottom:var(--element-gap);">💰 원가 계산 결과</p>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div class="command-row"><span>메인 원단</span><code>8,500원</code></div>
+                        <div class="command-row"><span>프린트</span><code>3,000원</code></div>
+                        <div class="command-row"><span>부자재</span><code>2,000원</code></div>
+                        <div class="command-row"><span>봉제</span><code>4,000원</code></div>
+                        <div style="display:flex;justify-content:space-between;padding-top:var(--element-gap);border-top:2px solid rgba(0,229,204,0.2);">
+                            <span style="font-size:var(--body-size);font-weight:600;color:var(--accent-cyan);">총 원가</span>
+                            <span style="font-size:var(--body-size);font-weight:600;color:var(--accent-cyan);">17,500원 ✅</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 15: DO STAGE
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag orange">Do</span>
+                <span class="team-badge" style="background:rgba(255,107,53,0.1);color:var(--accent-orange);">프로덕트 랩 + 마케팅 쇼룸</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">Do 단계: 상품화 & 런칭</h2>
+            <div class="grid-3 reveal-scale">
+                <div class="card icon-card">
+                    <div class="icon">📋</div>
+                    <h3>테크팩</h3>
+                    <p>"테크팩 만들어줘"<br>디자인/소재/패턴/봉제 스펙</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">📢</div>
+                    <h3>IMC 전략</h3>
+                    <p>"26SS IMC 전략 짜줘"<br>캠페인 타임라인, 채널 믹스</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">📝</div>
+                    <h3>카피라이팅</h3>
+                    <p>"PDP 카피 써줘"<br>헤드라인, 상품 설명, 특징</p>
+                </div>
+            </div>
+            <div class="grid-2 reveal-scale" style="margin-top:var(--element-gap);max-width:700px;">
+                <div class="card icon-card">
+                    <div class="icon">📸</div>
+                    <h3>콘텐츠 기획</h3>
+                    <p>"화보 기획해줘" — 촬영 콘셉트, 모델, 샷 리스트</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">🌐</div>
+                    <h3>소셜 전략</h3>
+                    <p>"인플루언서 매핑해줘" — 타겟팅, 협업, 예산</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 16: DO - IMC EXAMPLE
+         ============================================= -->
+    <section class="slide bg-glow-orange">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag orange">Do</span>
+                <span style="font-size:var(--small-size);color:var(--text-secondary);">IMC 전략 예시</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">캠페인 타임라인 & 채널 믹스</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">📅 캠페인 타임라인</h3>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div class="command-row"><code>W1-2</code><span>Teasing (유튜브 쇼츠)</span></div>
+                        <div class="command-row"><code>W3-4</code><span>Main Launch (인스타+틱톡)</span></div>
+                        <div class="command-row"><code>W5-8</code><span>Sustain (유튜브 롱폼)</span></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-purple);margin-bottom:var(--element-gap);">📱 채널 믹스</h3>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div style="flex:1;height:8px;background:rgba(255,107,53,0.2);border-radius:4px;overflow:hidden;"><div style="width:40%;height:100%;background:var(--accent-orange);border-radius:4px;"></div></div>
+                            <span style="font-size:var(--small-size);white-space:nowrap;">YouTube 40%</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div style="flex:1;height:8px;background:rgba(139,92,246,0.2);border-radius:4px;overflow:hidden;"><div style="width:30%;height:100%;background:var(--accent-purple);border-radius:4px;"></div></div>
+                            <span style="font-size:var(--small-size);white-space:nowrap;">Instagram 30%</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <div style="flex:1;height:8px;background:rgba(0,229,204,0.2);border-radius:4px;overflow:hidden;"><div style="width:30%;height:100%;background:var(--accent-cyan);border-radius:4px;"></div></div>
+                            <span style="font-size:var(--small-size);white-space:nowrap;">TikTok 30%</span>
+                        </div>
+                    </div>
+                    <p style="font-size:var(--small-size);margin-top:var(--element-gap);color:var(--text-secondary);">💰 총 예산: 5억원</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 17: CHECK STAGE
+         ============================================= -->
+    <section class="slide bg-glow-blue">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag cyan">Check</span>
+                <span class="team-badge" style="background:rgba(0,229,204,0.1);color:var(--accent-cyan);">데이터 인텔리전스 + QC 본부</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">Check 단계: 성과 분석</h2>
+            <div class="grid-3 reveal-scale">
+                <div class="card icon-card">
+                    <div class="icon">📊</div>
+                    <h3>매출 분석</h3>
+                    <p>"매출 분석해줘"<br>채널별/카테고리별 매출, TOP 상품</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">💡</div>
+                    <h3>인사이트 도출</h3>
+                    <p>"왜 잘 팔렸어?"<br>성공/실패 요인, 플레이북</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">📉</div>
+                    <h3>갭 분석</h3>
+                    <p>"갭 분석해줘"<br>기획 vs 실적 Match Rate</p>
+                </div>
+            </div>
+            <div class="card reveal" style="margin-top:var(--content-gap);border-left:3px solid var(--accent-cyan);">
+                <p style="font-size:var(--small-size);color:var(--text-primary);">
+                    <strong style="color:var(--accent-cyan);">Match Rate</strong>: 기획 대비 실행 정합도.
+                    <strong>90% 이상</strong>이면 시즌 완료, 미달 시 → Act 단계에서 자동 개선 루프
+                </p>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 18: CHECK - SALES EXAMPLE
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag cyan">Check</span>
+                <span style="font-size:var(--small-size);color:var(--text-secondary);">매출 분석 예시</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">26SS 매출 분석</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--element-gap);">
+                        <h3 style="font-size:var(--body-size);color:var(--accent-cyan);">총 매출</h3>
+                        <span style="font-size:var(--h3-size);font-weight:700;color:var(--text-primary);">8.5억</span>
+                    </div>
+                    <p style="font-size:var(--small-size);">목표 대비 85% 달성</p>
+                    <div style="margin-top:var(--element-gap);display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div class="command-row"><span>온라인 스토어</span><code>53%</code></div>
+                        <div class="command-row"><span>오프라인 매장</span><code>35%</code></div>
+                        <div class="command-row"><span>글로벌</span><code>12%</code></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">🏆 TOP 상품</h3>
+                    <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                        <div class="command-row"><code>1</code><span>키키 그래픽 티 — 1.5억 (18%)</span></div>
+                        <div class="command-row"><code>2</code><span>오버핏 후디 — 1.2억 (14%)</span></div>
+                        <div class="command-row"><code>3</code><span>크로스백 — 0.8억 (9%)</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 19: ACT STAGE
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <div class="reveal" style="display:flex;align-items:center;gap:0.5rem;">
+                <span class="tag" style="background:rgba(255,60,172,0.15);color:var(--accent-pink);border-color:rgba(255,60,172,0.2);">Act</span>
+                <span class="team-badge" style="background:rgba(255,60,172,0.1);color:var(--accent-pink);">QC 본부 — PDCA 이터레이터</span>
+            </div>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">Act 단계: 자동 개선 루프</h2>
+            <div class="card reveal-scale" style="border-left:3px solid var(--accent-pink);">
+                <p style="font-size:var(--small-size);color:var(--accent-pink);margin-bottom:var(--content-gap);">Match Rate &lt; 90% → 자동 개선 실행</p>
+                <div style="display:flex;flex-direction:column;gap:var(--content-gap);">
+                    <div style="display:flex;align-items:center;gap:var(--element-gap);">
+                        <div class="step-number" style="background:rgba(255,60,172,0.3);font-size:var(--small-size);">1</div>
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:var(--body-size);font-weight:500;">1회차 개선</span>
+                                <span style="font-size:var(--body-size);color:var(--accent-orange);">78% → 82%</span>
+                            </div>
+                            <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:0.3rem;"><div style="width:82%;height:100%;background:var(--accent-orange);border-radius:2px;"></div></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:var(--element-gap);">
+                        <div class="step-number" style="background:rgba(255,60,172,0.3);font-size:var(--small-size);">2</div>
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:var(--body-size);font-weight:500;">2회차 개선</span>
+                                <span style="font-size:var(--body-size);color:var(--accent-purple);">82% → 88%</span>
+                            </div>
+                            <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:0.3rem;"><div style="width:88%;height:100%;background:var(--accent-purple);border-radius:2px;"></div></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:var(--element-gap);">
+                        <div class="step-number" style="background:rgba(255,60,172,0.3);font-size:var(--small-size);">3</div>
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <span style="font-size:var(--body-size);font-weight:500;">3회차 개선</span>
+                                <span style="font-size:var(--body-size);color:var(--accent-cyan);">88% → 91% ✅</span>
+                            </div>
+                            <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;margin-top:0.3rem;"><div style="width:91%;height:100%;background:var(--accent-cyan);border-radius:2px;"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">03</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 20: SLASH COMMANDS - STATUS
+         ============================================= -->
+    <section class="slide bg-glow-blue">
+        <div class="slide-content">
+            <span class="tag cyan reveal">4장 — 슬래시 명령어</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">상태 관리 명령어</h2>
+            <div class="grid-3 reveal-scale">
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/status</span></div>
+                    <h3 style="font-size:var(--body-size);">현재 상태 확인</h3>
+                    <p style="font-size:var(--small-size);">시즌, PDCA 단계, 진행률, 완료/진행중 산출물</p>
+                </div>
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/next</span></div>
+                    <h3 style="font-size:var(--body-size);">다음 단계 전환</h3>
+                    <p style="font-size:var(--small-size);">QG 자동 실행 → PASS 시 다음 단계로 전환</p>
+                </div>
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/team</span></div>
+                    <h3 style="font-size:var(--body-size);">팀 현황 조회</h3>
+                    <p style="font-size:var(--small-size);">6개 에이전시, 20명 전문가 현황</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">04</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 21: SLASH COMMANDS - OUTPUT
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <span class="tag cyan reveal">4장 — 슬래시 명령어</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">산출물 생성 명령어</h2>
+            <div class="grid-4 reveal-scale">
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/brief</span> [유형]</div>
+                    <p style="font-size:var(--small-size);">산출물 문서 작성<br>trend-brief, moodboard, techpack</p>
+                </div>
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/deck</span> [유형]</div>
+                    <p style="font-size:var(--small-size);">프레젠테이션 PPTX 생성<br>trend, lookbook, buyer, campaign</p>
+                </div>
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/pdf</span> [유형]</div>
+                    <p style="font-size:var(--small-size);">PDF 보고서 생성<br>season-book, techpack, press-kit</p>
+                </div>
+                <div class="card">
+                    <div class="code-block" style="margin-bottom:var(--element-gap);text-align:center;"><span class="keyword">/sheet</span> [유형]</div>
+                    <p style="font-size:var(--small-size);">엑셀 시트 생성<br>line-sheet, otb, kpi-tracker</p>
+                </div>
+            </div>
+            <div class="card reveal" style="margin-top:var(--element-gap);">
+                <div style="display:flex;gap:var(--content-gap);flex-wrap:wrap;">
+                    <div><div class="code-block" style="display:inline-block;"><span class="keyword">/doc</span> [유형]</div><span style="font-size:var(--small-size);margin-left:0.5rem;">워드 문서</span></div>
+                    <div><div class="code-block" style="display:inline-block;"><span class="keyword">/review</span></div><span style="font-size:var(--small-size);margin-left:0.5rem;">품질 검수</span></div>
+                    <div><div class="code-block" style="display:inline-block;"><span class="keyword">/export</span></div><span style="font-size:var(--small-size);margin-left:0.5rem;">산출물 정리</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">04</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 22: TEAM OVERVIEW
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <span class="tag reveal">팀 현황</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">6개 에이전시 · 20명의 AI 전문가</h2>
+            <div class="grid-3 reveal-scale">
+                <div class="card" style="border-top:2px solid var(--accent-blue);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-blue);">🏢 전략기획실</h3>
+                    <p style="font-size:var(--small-size);">시장 리서처 · 브랜드 전략가<br>수석 MD · 컬렉션 플래너</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-purple);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-purple);">🎨 크리에이티브 스튜디오</h3>
+                    <p style="font-size:var(--small-size);">크리에이티브 디렉터<br>패션 디자이너 · 아트 디렉터</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-orange);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);">🔧 프로덕트 랩</h3>
+                    <p style="font-size:var(--small-size);">프로덕션 매니저 x3<br>(테크팩 · 원가 · QR)</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-pink);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-pink);">📢 마케팅 쇼룸</h3>
+                    <p style="font-size:var(--small-size);">마케팅 디렉터 · 콘텐츠 디렉터<br>패션 에디터 · 소셜 전략가</p>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-cyan);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-cyan);">📊 데이터 인텔리전스</h3>
+                    <p style="font-size:var(--small-size);">트렌드 애널리스트<br>인사이트 아키텍트</p>
+                </div>
+                <div class="card" style="border-top:2px solid rgba(255,255,255,0.2);">
+                    <h3 style="font-size:var(--body-size);">✅ QC 본부</h3>
+                    <p style="font-size:var(--small-size);">품질 검증관 · 갭 디텍터<br>리포트 제너레이터 · 이터레이터</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 23: SCENARIO 1 - SEASON PLANNING
+         ============================================= -->
+    <section class="slide bg-glow-orange">
+        <div class="slide-content">
+            <span class="tag" style="background:rgba(255,60,172,0.15);color:var(--accent-pink);border-color:rgba(255,60,172,0.2);" class="reveal">5장 — 실전 시나리오</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0;">시나리오 1: 26SS 시즌 기획 전체</h2>
+            <div class="divider reveal"></div>
+            <div class="reveal" style="display:flex;flex-direction:column;gap:var(--element-gap);margin-top:var(--content-gap);">
+                <div class="step-item">
+                    <span class="step-number">1</span>
+                    <div>
+                        <p style="font-size:var(--body-size);color:var(--text-primary);"><code style="color:var(--accent-cyan);background:rgba(0,229,204,0.1);padding:0.1rem 0.4rem;border-radius:3px;">/status</code> 로 현재 상태 확인</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">2</span>
+                    <div><p style="font-size:var(--body-size);color:var(--text-primary);">"26SS 트렌드 분석해줘" → plan_trend-brief.md</p></div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">3</span>
+                    <div><p style="font-size:var(--body-size);color:var(--text-primary);">"26SS 시즌 테마 제안해줘" → plan_brand-strategy.md</p></div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">4</span>
+                    <div><p style="font-size:var(--body-size);color:var(--text-primary);">"카테고리 믹스랑 챔피언 상품 전략 짜줘" → plan_md-plan.md</p></div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">5</span>
+                    <div><p style="font-size:var(--body-size);color:var(--text-primary);">"라인시트 만들어줘" → plan_line-sheet.xlsx</p></div>
+                </div>
+                <div class="step-item">
+                    <span class="step-number">6</span>
+                    <div><p style="font-size:var(--body-size);color:var(--text-primary);">"Plan 단계 검수해줘" → QG1 PASS → <code style="color:var(--accent-cyan);background:rgba(0,229,204,0.1);padding:0.1rem 0.4rem;border-radius:3px;">/next</code></p></div>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">05</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 24: SCENARIO 2 - HIT PRODUCT
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <span class="tag" style="background:rgba(255,60,172,0.15);color:var(--accent-pink);border-color:rgba(255,60,172,0.2);" class="reveal">5장 — 실전 시나리오</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">시나리오 2: 히트상품 개발 → 런칭</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card" style="border-top:2px solid var(--accent-purple);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-purple);margin-bottom:var(--element-gap);">Design 단계</h3>
+                    <div style="display:flex;flex-direction:column;gap:0.3rem;">
+                        <p style="font-size:var(--small-size);">1. 무드보드 → design_moodboard.md</p>
+                        <p style="font-size:var(--small-size);">2. 디자인 스펙 → design_spec.md</p>
+                        <p style="font-size:var(--small-size);">3. 비주얼 생성 → design_visual/</p>
+                        <p style="font-size:var(--small-size);">4. 원가 검증 → design_costing.md</p>
+                    </div>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-orange);">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">Do 단계</h3>
+                    <div style="display:flex;flex-direction:column;gap:0.3rem;">
+                        <p style="font-size:var(--small-size);">5. 테크팩 → do_techpack.md</p>
+                        <p style="font-size:var(--small-size);">6. IMC 전략 → do_imc-strategy.md</p>
+                        <p style="font-size:var(--small-size);">7. PDP 카피 → do_pdp-copy.md</p>
+                        <p style="font-size:var(--small-size);">8. 소셜 전략 → do_social-strategy.md</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card reveal" style="margin-top:var(--element-gap);text-align:center;border:1px solid rgba(0,229,204,0.2);">
+                <p style="font-size:var(--body-size);color:var(--accent-cyan);">QG2 PASS → QG3 PASS → 런칭 준비 완료! 🚀</p>
+            </div>
+        </div>
+        <div class="chapter-num">05</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 25: SCENARIO 3 - FAILURE ANALYSIS
+         ============================================= -->
+    <section class="slide bg-glow">
+        <div class="slide-content">
+            <span class="tag" style="background:rgba(255,60,172,0.15);color:var(--accent-pink);border-color:rgba(255,60,172,0.2);" class="reveal">5장 — 실전 시나리오</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">시나리오 3: 실패 분석 & 개선</h2>
+            <div class="card reveal-scale" style="border-left:3px solid #ff3c50;">
+                <p style="font-size:var(--body-size);color:#ff3c50;margin-bottom:var(--element-gap);">❌ 실패 요인: 오버핏 후디</p>
+                <div class="grid-3">
+                    <div>
+                        <h3 style="font-size:var(--small-size);color:var(--accent-orange);">트렌드 부합성</h3>
+                        <p style="font-size:var(--small-size);">Oversized → Slim Fit 전환 시점<br>"너무 커서 입기 애매"</p>
+                    </div>
+                    <div>
+                        <h3 style="font-size:var(--small-size);color:var(--accent-purple);">컬러 비충족</h3>
+                        <p style="font-size:var(--small-size);">Pastel 트렌드 vs Black/Gray만<br>"색상이 너무 진해"</p>
+                    </div>
+                    <div>
+                        <h3 style="font-size:var(--small-size);color:var(--accent-cyan);">가격 민감도</h3>
+                        <p style="font-size:var(--small-size);">경쟁사 49K vs 우리 69K<br>"비싸다"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card reveal" style="margin-top:var(--element-gap);border-left:3px solid var(--accent-cyan);">
+                <p style="font-size:var(--body-size);color:var(--accent-cyan);margin-bottom:var(--element-gap);">🔧 개선안</p>
+                <p style="font-size:var(--small-size);">실루엣 조정 (10cm→5cm 오버핏) · Pastel 컬러 추가 (Lilac, Mint) · 가격 조정 (69K→59K)</p>
+            </div>
+        </div>
+        <div class="chapter-num">05</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 26: FAQ HIGHLIGHTS
+         ============================================= -->
+    <section class="slide bg-glow-orange">
+        <div class="slide-content">
+            <span class="tag reveal">6장 — FAQ</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">자주 묻는 질문</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);">브랜드와 안 맞는 결과?</h3>
+                    <p style="font-size:var(--small-size);">더 구체적인 프롬프트 사용. "와키윌리의 Kitsch Street 감성으로 무드보드 만들어줘"</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-blue);">단계를 건너뛰고 싶어요</h3>
+                    <p style="font-size:var(--small-size);">"강제 통과해줘"로 가능하지만 권장하지 않음. 빠진 부분 직접 보완 필요</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-purple);">산출물이 마음에 안 들어요</h3>
+                    <p style="font-size:var(--small-size);">바로 수정 요청. "여기 수정해줘: 컬러를 Blue로 바꿔" 또는 "다시 만들어줘"</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-cyan);">QG에서 계속 FAIL</h3>
+                    <p style="font-size:var(--small-size);">누락된 항목 확인 → 해당 항목 생성 요청 → 재검수</p>
+                </div>
+            </div>
+        </div>
+        <div class="chapter-num">06</div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 27: QUICK REFERENCE - TOP REQUESTS
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <span class="tag reveal">퀵 레퍼런스</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">자주 쓰는 요청 TOP 20</h2>
+            <div class="grid-2 reveal-scale">
+                <div class="card" style="border-top:2px solid var(--accent-blue);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-blue);margin-bottom:var(--element-gap);">기획 & 디자인</h3>
+                    <div style="display:flex;flex-direction:column;gap:0.2rem;font-size:var(--small-size);">
+                        <p>"26SS 트렌드 분석해줘"</p>
+                        <p>"이번 시즌 테마 제안해줘"</p>
+                        <p>"카테고리 믹스 짜줘"</p>
+                        <p>"라인시트 만들어줘"</p>
+                        <p>"그래픽 티 무드보드 만들어줘"</p>
+                        <p>"디자인 스펙 작성해줘"</p>
+                        <p>"룩북 이미지 생성해줘"</p>
+                    </div>
+                </div>
+                <div class="card" style="border-top:2px solid var(--accent-orange);">
+                    <h3 style="font-size:var(--small-size);color:var(--accent-orange);margin-bottom:var(--element-gap);">생산 & 마케팅 & 분석</h3>
+                    <div style="display:flex;flex-direction:column;gap:0.2rem;font-size:var(--small-size);">
+                        <p>"원가 계산해줘"</p>
+                        <p>"테크팩 만들어줘"</p>
+                        <p>"IMC 전략 짜줘"</p>
+                        <p>"인스타용 카피 써줘"</p>
+                        <p>"인플루언서 매핑해줘"</p>
+                        <p>"매출 분석해줘"</p>
+                        <p>"왜 이 상품이 잘 팔렸어?"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 28: QUICK REFERENCE - COMMANDS
+         ============================================= -->
+    <section class="slide bg-glow-blue">
+        <div class="slide-content">
+            <span class="tag reveal">퀵 레퍼런스</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">슬래시 명령어 총정리</h2>
+            <div class="grid-2 reveal-scale">
+                <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                    <div class="command-row"><code>/status</code><span>상태 확인</span></div>
+                    <div class="command-row"><code>/brief [유형]</code><span>산출물 문서 작성</span></div>
+                    <div class="command-row"><code>/review</code><span>품질 검수</span></div>
+                    <div class="command-row"><code>/next</code><span>다음 단계 전환</span></div>
+                    <div class="command-row"><code>/team</code><span>팀 현황 조회</span></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:var(--element-gap);">
+                    <div class="command-row"><code>/export</code><span>산출물 정리</span></div>
+                    <div class="command-row"><code>/deck [유형]</code><span>프레젠테이션 생성</span></div>
+                    <div class="command-row"><code>/pdf [유형]</code><span>PDF 보고서 생성</span></div>
+                    <div class="command-row"><code>/sheet [유형]</code><span>엑셀 시트 생성</span></div>
+                    <div class="command-row"><code>/doc [유형]</code><span>워드 문서 생성</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 29: GLOSSARY
+         ============================================= -->
+    <section class="slide bg-grid">
+        <div class="slide-content">
+            <span class="tag reveal">부록</span>
+            <h2 class="reveal" style="margin: var(--element-gap) 0 var(--content-gap);">용어 사전</h2>
+            <div class="grid-3 reveal-scale">
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-purple);">FPOF</h3>
+                    <p style="font-size:var(--small-size);">Fashion PDCA Orchestration Framework</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-blue);">PDCA</h3>
+                    <p style="font-size:var(--small-size);">Plan → Design → Do → Check → Act</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-cyan);">Quality Gate</h3>
+                    <p style="font-size:var(--small-size);">단계 전환 시 자동 품질 검증</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-orange);">Match Rate</h3>
+                    <p style="font-size:var(--small-size);">기획 vs 실행 정합도 (목표 90%+)</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);color:var(--accent-pink);">OTB</h3>
+                    <p style="font-size:var(--small-size);">Open-to-Buy: 총 구매 가능 예산</p>
+                </div>
+                <div class="card">
+                    <h3 style="font-size:var(--body-size);">VE</h3>
+                    <p style="font-size:var(--small-size);">Value Engineering: 품질 유지 비용 절감</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =============================================
+         SLIDE 30: CLOSING
+         ============================================= -->
+    <section class="slide bg-grid" style="text-align:center;">
+        <div class="slide-content" style="align-items:center;">
+            <h2 class="reveal" style="margin-bottom:var(--content-gap);">
+                <span class="gradient-text">와키윌리 FPOF</span>와 함께<br>성공적인 시즌을 보내세요!
+            </h2>
+            <div class="divider reveal" style="margin:0 auto var(--content-gap);"></div>
+            <div class="grid-3 reveal-scale" style="max-width:800px;">
+                <div class="card icon-card">
+                    <div class="icon">💬</div>
+                    <h3>자연어로 말하기</h3>
+                    <p>평소 말하듯 AI에게 요청</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">📊</div>
+                    <h3>체계적 진행</h3>
+                    <p>PDCA 사이클로 관리</p>
+                </div>
+                <div class="card icon-card">
+                    <div class="icon">✅</div>
+                    <h3>품질 보장</h3>
+                    <p>검수와 갭 분석으로 완성도 확보</p>
+                </div>
+            </div>
+            <p class="reveal" style="margin-top:var(--content-gap);font-size:var(--small-size);color:rgba(255,255,255,0.3);">
+                Wacky Willy Fashion House — Kitsch Street & IP Universe
+            </p>
+        </div>
+        <div style="position:absolute;top:-30%;left:-20%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(255,107,53,0.06) 0%,transparent 70%);pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-30%;right:-20%;width:60%;height:60%;background:radial-gradient(ellipse,rgba(139,92,246,0.06) 0%,transparent 70%);pointer-events:none;"></div>
+    </section>
+
+    <!-- ===========================================
+         JAVASCRIPT: PRESENTATION CONTROLLER
+         =========================================== -->
+    <script>
+        class SlidePresentation {
+            constructor() {
+                this.slides = document.querySelectorAll('.slide');
+                this.currentSlide = 0;
+                this.totalSlides = this.slides.length;
+                this.isScrolling = false;
+
+                this.init();
+            }
+
+            init() {
+                this.createNavDots();
+                this.setupIntersectionObserver();
+                this.setupKeyboardNav();
+                this.setupTouchNav();
+                this.updateSlideCounter(0);
+            }
+
+            /* Navigation Dots */
+            createNavDots() {
+                const nav = document.getElementById('navDots');
+                this.slides.forEach((_, i) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                    dot.setAttribute('aria-label', `Slide ${i + 1}`);
+                    dot.addEventListener('click', () => this.goToSlide(i));
+                    nav.appendChild(dot);
+                });
+                this.dots = nav.querySelectorAll('.nav-dot');
+            }
+
+            /* Intersection Observer for scroll-triggered animations */
+            setupIntersectionObserver() {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            const index = Array.from(this.slides).indexOf(entry.target);
+                            this.updateActiveSlide(index);
+                        }
+                    });
+                }, { threshold: 0.5 });
+
+                this.slides.forEach(slide => observer.observe(slide));
+            }
+
+            /* Keyboard navigation */
+            setupKeyboardNav() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                        e.preventDefault();
+                        this.nextSlide();
+                    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.prevSlide();
+                    } else if (e.key === 'Home') {
+                        e.preventDefault();
+                        this.goToSlide(0);
+                    } else if (e.key === 'End') {
+                        e.preventDefault();
+                        this.goToSlide(this.totalSlides - 1);
+                    }
+                });
+            }
+
+            /* Touch/Swipe navigation */
+            setupTouchNav() {
+                let startY = 0;
+                document.addEventListener('touchstart', (e) => {
+                    startY = e.touches[0].clientY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', (e) => {
+                    const diff = startY - e.changedTouches[0].clientY;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) this.nextSlide();
+                        else this.prevSlide();
+                    }
+                }, { passive: true });
+            }
+
+            goToSlide(index) {
+                if (index >= 0 && index < this.totalSlides) {
+                    this.slides[index].scrollIntoView({ behavior: 'smooth' });
+                    this.updateActiveSlide(index);
+                }
+            }
+
+            nextSlide() {
+                if (this.currentSlide < this.totalSlides - 1) {
+                    this.goToSlide(this.currentSlide + 1);
+                }
+            }
+
+            prevSlide() {
+                if (this.currentSlide > 0) {
+                    this.goToSlide(this.currentSlide - 1);
+                }
+            }
+
+            updateActiveSlide(index) {
+                this.currentSlide = index;
+
+                /* Update dots */
+                this.dots.forEach((dot, i) => {
+                    dot.classList.toggle('active', i === index);
+                });
+
+                /* Update progress bar */
+                const progress = ((index + 1) / this.totalSlides) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+
+                /* Update counter */
+                this.updateSlideCounter(index);
+            }
+
+            updateSlideCounter(index) {
+                const current = String(index + 1).padStart(2, '0');
+                const total = String(this.totalSlides).padStart(2, '0');
+                document.getElementById('slideCounter').textContent = `${current} / ${total}`;
+            }
+        }
+
+        /* Initialize */
+        document.addEventListener('DOMContentLoaded', () => {
+            new SlidePresentation();
+        });
+    </script>
+</body>
+</html>

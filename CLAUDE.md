@@ -163,7 +163,19 @@
 | "개인정보처리방침 만들어줘" | `privacy-policy` |
 | "이력서 봐줘", "지원자 서류 검토" | `review-resume` |
 
-## 시즌 사이클 (PDCA)
+## 시즌 사이클 (PDCA) vs 일상 운영
+
+### 이중 트래킹 구조
+`.fpof-state.json`은 **PDCA**(시즌 전략 마일스톤)와 **operational**(일상 운영)을 분리 관리합니다.
+
+| 구분 | 추적 위치 | 파일 접두사 | 설명 |
+|------|----------|-----------|------|
+| **시즌 PDCA** | `pdca.phases` | `plan_` `design_` `do_` `check_` `act_` | 시즌 전략 마일스톤 (trend-brief → brand-strategy → … → completion-report) |
+| **프로젝트 PDCA** | `projects.[name]` | `plan_` `design_` `do_` `check_` `act_` | 개별 아이템/캠페인/리테일 프로젝트 — 자체 PDCA 단계 보유 |
+| **일상 운영** | `operational.weekly` | `review_` `meeting_` `deck_` `board_` `sheet_` `report_` `data_` | 주간 리뷰, 회의록, 대시보드 — PDCA 단계와 무관하게 진행 |
+| **대시보드** | `operational.dashboard` | `data_` `board_` | `weekly/data/` 기반 시각화 — 매주 갱신 |
+
+### 시즌 PDCA 단계
 현재 시즌의 단계를 `.fpof-state.json` → `pdca.current_phase`에서 확인.
 
 | 단계 | 에이전시 | 스킬 |
@@ -173,6 +185,16 @@
 | **Do** | 프로덕트 랩 + 마케팅 쇼룸 | `techpack` · `qr-process` + `imc-strategy` → `visual-content` → `copywriting` → `social-viral` |
 | **Check** | 데이터 인텔리전스 + QC 본부 | `sales-analysis` → `insight-archiving` + `gap-analysis` → `completion-report` |
 | **Act** | QC 본부 | `pdca-iteration` (Match Rate < 90% 시 자동 루프) |
+
+### 일상 운영 (PDCA와 독립)
+아래 작업은 시즌 PDCA 단계와 무관하게 **항상** 실행 가능합니다.
+
+| 작업 | 저장 위치 | 갱신 주기 |
+|------|----------|----------|
+| 주간 리뷰/회의록 | `weekly/wNN/` | 매주 |
+| 대시보드 데이터 | `dashboard/` | 매주 (`weekly/data/` 기반) |
+| 마켓 인텔리전스 | `season-strategy/` | 수시 |
+| 개별 프로젝트 작업 | `[project]/` | 프로젝트 자체 PDCA |
 
 ## 슬래시 명령어 (.claude/commands/)
 패션 하우스 전용 단축 명령어입니다. `/명령어`로 실행합니다.
@@ -311,18 +333,19 @@ Claude 전용 훅/슬래시 명령은 유지하되, Codex에서는 아래 스크
 | 콜라보 | `collab-[partner]/` | `collab-sanrio/` |
 | 주간 데이터 | `weekly/data/` | 매주 업로드하는 원본 엑셀 (→ dashboard 갱신) |
 | 주간 산출물 | `weekly/wNN/` | `weekly/w09/` (리뷰·회의·대시보드) |
-| 대시보드 | `dashboard/` | `weekly/data/` 기반 시각화·JSON |
+| 대시보드 | `dashboard/` | `weekly/data/` 기반 시각화·JSON (매주 갱신) |
 
 ### 파일명 규칙
 ```
-프로젝트 산출물:  [pdca]_[description][_YYYY-MM-DD][_vN].[ext]
-주간 운영 산출물: [type]_[description][_YYYY-MM-DD][_vN].[ext]
+PDCA 산출물 (시즌 전략 + 프로젝트):  [pdca]_[description][_YYYY-MM-DD][_vN].[ext]
+운영 산출물 (주간/대시보드):          [type]_[description][_YYYY-MM-DD][_vN].[ext]
 ```
 - 세그먼트 구분: `_` (언더스코어) / 단어 구분: `-` (하이픈)
 - 날짜: `YYYY-MM-DD` / 주차: `wNN` (제로패딩)
 - 파일명 영문만, 소문자 (시즌코드 `26SS` 예외)
-- PDCA: `plan` | `design` | `do` | `check` | `act`
-- Type: `review` | `meeting` | `deck` | `board` | `sheet` | `report` | `data`
+- PDCA 접두사: `plan` | `design` | `do` | `check` | `act` — 시즌 전략/프로젝트에만 사용
+- 운영 접두사: `review` | `meeting` | `deck` | `board` | `sheet` | `report` | `data` — 주간/대시보드에만 사용
+- **주의**: 주간 운영 산출물에 PDCA 접두사를 붙이지 말 것 (예: ~~plan_weekly-review.md~~ → `review_exec-summary_2026-03-04.md`)
 
 ### 구조 예시
 ```
@@ -366,6 +389,7 @@ output/26SS/
 - `reference/ip-bible.md` — IP 캐릭터 세계관 원문
 - `reference/core-target.md` — 코어 타겟 정의 원문
 - `reference/business-goals.md` — 5대 경영목표 원문
+- `generated/` — 빌드 스크립트로 생성된 문서 (PDF, PPTX, HTML 등)
 - `external/` — 외부 참고 자료 (AI 방법론 등)
 
 ## PM-Skills 통합 (pm-skills by Paweł Huryn, MIT License)

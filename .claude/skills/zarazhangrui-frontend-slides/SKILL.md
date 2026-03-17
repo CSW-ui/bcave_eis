@@ -14,6 +14,7 @@ Create zero-dependency, animation-rich HTML presentations that run entirely in t
 3. **Distinctive Design** — Avoid generic "AI slop" aesthetics. Every presentation should feel custom-crafted.
 4. **Production Quality** — Code should be well-commented, accessible, and performant.
 5. **Viewport Fitting (CRITICAL)** — Every slide MUST fit exactly within the viewport. No scrolling within slides, ever. This is non-negotiable.
+6. **Light Mode Default** — Unless the user explicitly requests dark mode, all presentations MUST use a light background (white/off-white) color scheme. Light mode is the default for readability, projector compatibility, and professional presentation contexts.
 
 ---
 

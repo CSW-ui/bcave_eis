@@ -9,15 +9,15 @@
 
 ### Step 1: 컨텍스트 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 포지셔닝, 경쟁 구도
-3. `presets/wacky-willy/categories.json` 참조 — 카테고리별 경쟁 환경
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 포지셔닝, 경쟁 구도
+3. `system/presets/wacky-willy/categories.json` 참조 — 카테고리별 경쟁 환경
 4. 사용자에게 확인:
    - 분석 대상 (특정 경쟁사 / 카테고리 전체 / 시장 전체)
    - 분석 렌즈 (기능 비교 / 포지셔닝 / 가격 / GTM)
    - 활용 목적 (전략 수립 / 세일즈 지원 / 로드맵)
 
 ### Step 2: 경쟁사 식별 및 분석
-`skills/pm-gtm/competitive-battlecard.md` + `skills/strategy/trend-research.md` (경쟁사 파트) 참조:
+`system/skills/pm-gtm/competitive-battlecard.md` + `system/skills/strategy/trend-research.md` (경쟁사 파트) 참조:
 - 직접 경쟁사 5개 식별 (동일 카테고리, 동일 타겟)
 - 간접 경쟁사 2~3개 식별 (다른 접근, 같은 JTBD)
 - 각 경쟁사 분석:
@@ -33,7 +33,7 @@
 - 전략 권고 (강화할 영역 / 따라잡을 영역 / 무시할 영역)
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_competitive-analysis.md`에 저장한다.
+산출물을 `workspace/_season/plan_competitive-analysis.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

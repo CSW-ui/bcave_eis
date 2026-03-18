@@ -9,7 +9,7 @@
 
 ### Step 1: 컨텍스트 수집
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 5대 경영목표, 로드맵
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 5대 경영목표, 로드맵
 3. 사용자에게 확인:
    - OKR 대상 팀/영역
    - 기간 (분기 / 시즌 / 연간)
@@ -18,7 +18,7 @@
    - 알려진 제약이나 우선순위
 
 ### Step 2: OKR 생성
-`skills/pm-execution/brainstorm-okrs.md` 참조:
+`system/skills/pm-execution/brainstorm-okrs.md` 참조:
 - 3개 OKR 세트 (목표 + 핵심결과 3~5개)
 - **목표(Objective)**: 정성적, 영감적, 야심적이지만 달성 가능, 행동 지향적
 - **핵심결과(Key Result)**: 정량적, 측정 가능, 시간 한정, 담당자 명확
@@ -32,7 +32,7 @@
 - 게이밍 가능한 KR은 없는지 (카운터 메트릭 제안)
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_okrs.md`에 저장한다.
+산출물을 `workspace/_season/plan_okrs.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

@@ -9,15 +9,15 @@
 
 ### Step 1: 컨텍스트 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/channels.json` 참조 — 채널별 매출/성장률
-3. `presets/wacky-willy/personas.json` 참조 — 타겟 고객 특성
+2. `system/presets/wacky-willy/channels.json` 참조 — 채널별 매출/성장률
+3. `system/presets/wacky-willy/personas.json` 참조 — 타겟 고객 특성
 4. 사용자에게 확인:
    - 현재 성장 지표 (고객 수, 매출, 성장률, 주요 채널)
    - 잘 되고 있는 것 / 안 되고 있는 것
    - 성장 목표와 리소스 (팀, 예산)
 
 ### Step 2: 5가지 그로스 루프 평가
-`skills/marketing/social-viral.md` (그로스 루프 내장) 참조:
+`system/skills/marketing/social-viral.md` (그로스 루프 내장) 참조:
 
 1. **바이럴 루프**: 제품 사용 중 자연스럽게 타인을 초대
 2. **사용 루프**: 사용할수록 가치가 증가하여 재방문
@@ -28,7 +28,7 @@
 각 루프별: 메커니즘, 적합성, 예상 임팩트, 구현 난이도 평가.
 
 ### Step 3: 7가지 GTM 모션 평가
-`skills/marketing/imc-strategy.md` (GTM 전략 내장) 참조:
+`system/skills/marketing/imc-strategy.md` (GTM 전략 내장) 참조:
 
 1. **인바운드**: 콘텐츠, SEO, 소셜 미디어
 2. **아웃바운드**: 영업, 콜드 아웃리치
@@ -48,7 +48,7 @@
 - 90일 그로스 플랜 (월별 포커스)
 
 ### Step 5: 산출물 저장
-산출물을 `output/[시즌]/_season/do_growth-strategy.md`에 저장한다.
+산출물을 `workspace/_season/do_growth-strategy.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 6: 다음 단계 제안

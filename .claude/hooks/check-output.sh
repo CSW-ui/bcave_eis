@@ -1,16 +1,16 @@
 #!/bin/bash
 # ============================================================
 # FPOF 완료 후 체크 장치 (Post-Completion Check Hook)
-# PostToolUse(Write) → output/ 경로 감지 → 체크리스트 리마인더
+# PostToolUse(Write) → workspace/ 경로 감지 → 체크리스트 리마인더
 # 파일명 규칙: [PDCA단계]_[내용].확장자
 # ============================================================
 
 TOOL_INPUT="$1"
 
-# output/ 경로에서 파일명 추출
-FILE_PATH=$(echo "$TOOL_INPUT" | grep -oE 'output/[^ "]+' | head -1)
+# workspace/ 경로에서 파일명 추출
+FILE_PATH=$(echo "$TOOL_INPUT" | grep -oE 'workspace/[^ "]+' | head -1)
 
-# output/ 경로가 아니면 조용히 종료
+# workspace/ 경로가 아니면 조용히 종료
 if [ -z "$FILE_PATH" ]; then
   exit 0
 fi

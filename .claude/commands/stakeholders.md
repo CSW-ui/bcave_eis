@@ -16,7 +16,7 @@
    - 정치적으로 민감한 요소 유무
 
 ### Step 2: 이해관계자 식별
-`skills/pm-execution/stakeholder-map.md` 참조:
+`system/skills/pm-execution/stakeholder-map.md` 참조:
 - **내부**: 디자인, 생산, 마케팅, 영업, 경영진, 재무, 법무
 - **외부**: 고객, 파트너, 유통사, 인플루언서
 - **놓치기 쉬운**: CS팀, 물류팀, 홍보팀, 문서팀
@@ -35,7 +35,7 @@
 - RACI 매트릭스
 
 ### Step 5: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_stakeholder-map.md`에 저장한다.
+산출물을 `workspace/_season/plan_stakeholder-map.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 6: 다음 단계 제안

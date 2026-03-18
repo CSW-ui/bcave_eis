@@ -9,16 +9,16 @@
 
 ### Step 1: 컨텍스트 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — DNA, 비전, 포지셔닝
-3. `presets/wacky-willy/personas.json` 참조 — 타겟 세그먼트
-4. `presets/wacky-willy/categories.json` 참조 — 카테고리 전략
+2. `system/presets/wacky-willy/brand.config.json` 참조 — DNA, 비전, 포지셔닝
+3. `system/presets/wacky-willy/personas.json` 참조 — 타겟 세그먼트
+4. `system/presets/wacky-willy/categories.json` 참조 — 카테고리 전략
 5. 사용자에게 확인:
    - 전략 대상 (브랜드 전체 / 특정 라인 / 신규 카테고리)
    - 현재 단계 (아이디어 / MVP / 성장 / 성숙)
    - 전략 문서 용도 (시즌 기획 / 경영 보고 / 신규 사업)
 
 ### Step 2: 9개 섹션 전략 캔버스 작성
-`skills/pm-strategy/product-strategy-canvas.md` + `skills/pm-strategy/product-vision.md` 참조:
+`system/skills/pm-strategy/product-strategy-canvas.md` + `system/skills/pm-strategy/product-vision.md` 참조:
 
 1. **비전**: 팀을 동기부여하는 영감적 방향성
 2. **타겟 세그먼트**: 누구를 위한 것인지 (누구를 위하지 않는지)
@@ -34,7 +34,7 @@
 전략을 무효화할 수 있는 Top 3 리스크와 대응 방향 정리.
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_strategy-canvas.md`에 저장한다.
+산출물을 `workspace/_season/plan_strategy-canvas.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

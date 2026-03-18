@@ -13,7 +13,7 @@
 1. `.fpof-state.json`에서 현재 시즌 확인
 2. `config/market-intel-config.json` 참조 — 현재 추적 키워드 목록 확인
 3. 인자가 `config`이면 설정 파일 내용만 보여주고 종료
-4. 인자가 `last`이면 가장 최근 `output/[시즌]/_season/plan_market-intel-weekly-*.md`를 읽어 요약 후 종료
+4. 인자가 `last`이면 가장 최근 `workspace/_season/plan_market-intel-weekly-*.md`를 읽어 요약 후 종료
 
 ### Step 2: 사전 확인
 사용자에게 확인 (옵션):
@@ -41,6 +41,6 @@
 산출물이 `.fpof-state.json`에 등록되었는지 확인하고, 미등록 시 직접 추가한다.
 
 ## 참조 스킬
-- `skills/data/market-intelligence.md` — 스킬 상세 매뉴얼
-- `skills/strategy/trend-research.md` — 트렌드 리서치 (보완 관계)
-- `skills/strategy/md-planning.md` — MD 기획 (액션 연계)
+- `system/skills/data/market-intelligence.md` — 스킬 상세 매뉴얼
+- `system/skills/strategy/trend-research.md` — 트렌드 리서치 (보완 관계)
+- `system/skills/strategy/md-planning.md` — MD 기획 (액션 연계)

@@ -9,14 +9,14 @@
 
 ### Step 1: 피드백 데이터 수집
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/personas.json` 참조 — 세그먼트 기준
+2. `system/presets/wacky-willy/personas.json` 참조 — 세그먼트 기준
 3. 사용자에게 확인:
    - 피드백 유형 (리뷰 / CS 데이터 / 설문 / SNS 댓글 / NPS)
    - 세그먼트별 분석 필요 여부 (채널별 / 고객 등급별 / 지역별)
    - 분석 목적 (전체 트렌드 / 특정 이슈 / 시간에 따른 변화)
 
 ### Step 2: 감성 분석
-`skills/data/insight-archiving.md` (감성 분석 내장) 참조:
+`system/skills/data/insight-archiving.md` (감성 분석 내장) 참조:
 - **감성 스코어링**: 각 피드백을 긍정/중립/부정으로 분류
 - **테마 추출**: 반복되는 주제를 식별하고 관련 피드백을 클러스터링
 - **빈도 분석**: 각 테마의 출현 빈도
@@ -31,7 +31,7 @@
 - 실행 가능한 인사이트 리스트
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/check_feedback-analysis.md`에 저장한다.
+산출물을 `workspace/_season/check_feedback-analysis.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

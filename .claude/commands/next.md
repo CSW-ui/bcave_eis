@@ -5,8 +5,8 @@
 ## 절차
 
 1. `.fpof-state.json`에서 현재 단계(`pdca.current_phase`) 확인
-2. 해당 단계의 Quality Gate 스킬(`skills/quality/quality-gate.md`) 실행:
-   - 필수 산출물 존재 여부 확인 (`output/[시즌]/`)
+2. 해당 단계의 Quality Gate 스킬(`system/skills/quality/quality-gate.md`) 실행:
+   - 필수 산출물 존재 여부 확인 (`workspace/`)
    - 각 산출물의 필수 항목 완전성 검증
 3. QG 결과 보고:
    - **PASS** → 다음 단계로 전환, `.fpof-state.json` 업데이트

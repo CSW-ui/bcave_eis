@@ -28,15 +28,15 @@
 ## 절차
 
 1. `.fpof-state.json`에서 현재 시즌 확인
-2. `presets/wacky-willy/categories.json`, `channels.json` 참조
-3. `output/[시즌]/`에서 기존 산출물 데이터 참조
+2. `system/presets/wacky-willy/categories.json`, `channels.json` 참조
+3. `workspace/`에서 기존 산출물 데이터 참조
 4. XLSX 스킬을 사용하여 스프레드시트 생성:
    - 시트 탭 구조: 요약 → 상세 데이터 → 차트 데이터
    - 컬럼 헤더에 필터 적용
    - 합계/소계 수식 자동 삽입
    - 조건부 서식 (달성률 색상 코딩 등)
    - 인쇄 영역 설정
-5. `output/[시즌]/[프로젝트]/` 에 XLSX 파일 저장
+5. `workspace/[프로젝트]/` 에 XLSX 파일 저장
 
 ## 시트 디자인 원칙
 - 헤더 행: 브랜드 컬러 배경, 흰색 텍스트

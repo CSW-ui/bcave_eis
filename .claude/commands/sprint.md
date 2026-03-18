@@ -19,14 +19,14 @@
 5. 이전 스프린트 캐리오버, 예정된 방해 요소
 
 #### Step 2: 캐패시티 산정 및 스토리 선정
-`skills/pm-execution/sprint-plan.md` 참조:
+`system/skills/pm-execution/sprint-plan.md` 참조:
 - 가용 시간/포인트 계산 (회의, 온콜, PTO 차감)
 - 이론적 캐패시티의 70% 적용 (또는 과거 벨로시티)
 - 캐패시티 내 스토리 선정 및 시퀀싱
 - 의존성, 리스크, 미정의 스토리 식별
 
 #### Step 3: 산출물 저장
-산출물을 `output/[시즌]/_season/do_sprint-plan.md`에 저장한다.
+산출물을 `workspace/_season/do_sprint-plan.md`에 저장한다.
 
 ---
 
@@ -38,13 +38,13 @@
 - 회고 포맷 선택: Start/Stop/Continue | 4Ls | Sailboat
 
 #### Step 2: 분석 및 구조화
-`skills/pm-execution/retro.md` 참조:
+`system/skills/pm-execution/retro.md` 참조:
 - 선택한 프레임워크로 카테고리화
 - 테마와 패턴 식별, 증상과 근본 원인 분리
 - 축하할 성과 강조
 
 #### Step 3: 산출물 저장
-산출물을 `output/[시즌]/_season/check_sprint-retro.md`에 저장한다.
+산출물을 `workspace/_season/check_sprint-retro.md`에 저장한다.
 
 ---
 
@@ -54,13 +54,13 @@
 - 티켓, 체인지로그, PRD, 커밋 메시지 등
 
 #### Step 2: 사용자 관점으로 변환
-`skills/pm-execution/release-notes.md` 참조:
+`system/skills/pm-execution/release-notes.md` 참조:
 - 기술 언어 → 사용자 혜택으로 번역
 - New Features / Improvements / Bug Fixes 분류
-- `presets/wacky-willy/tone-manner.json` 참조하여 브랜드 보이스 적용
+- `system/presets/wacky-willy/tone-manner.json` 참조하여 브랜드 보이스 적용
 
 #### Step 3: 산출물 저장
-산출물을 `output/[시즌]/_season/do_release-notes.md`에 저장한다.
+산출물을 `workspace/_season/do_release-notes.md`에 저장한다.
 
 ---
 

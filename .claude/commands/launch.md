@@ -9,15 +9,15 @@
 
 ### Step 1: 런칭 컨텍스트 파악
 1. `.fpof-state.json`에서 현재 시즌과 PDCA 단계 확인
-2. `presets/wacky-willy/channels.json` 참조 — 채널별 전략
-3. `presets/wacky-willy/personas.json` 참조 — 타겟 고객
+2. `system/presets/wacky-willy/channels.json` 참조 — 채널별 전략
+3. `system/presets/wacky-willy/personas.json` 참조 — 타겟 고객
 4. 사용자에게 확인:
    - 런칭 대상 (신상품 / 신규 라인 / 시즌 컬렉션 / 채널 확장)
    - 현재 단계 (기획 / 프리런칭 / 런칭 임박 / 런칭 후 최적화)
    - 타임라인과 예산 제약
 
 ### Step 2: 비치헤드 세그먼트 정의
-`skills/pm-gtm/beachhead-segment.md` 참조:
+`system/skills/pm-gtm/beachhead-segment.md` 참조:
 - 후보 세그먼트를 4개 기준으로 평가:
   - 절실한 니즈 (얼마나 급한지)
   - 지불 의향 (예산과 구매 권한)
@@ -27,12 +27,12 @@
 - 비치헤드 확보 후 확장할 인접 세그먼트 매핑
 
 ### Step 3: 이상적 고객 프로필(ICP) 정의
-`skills/pm-gtm/ideal-customer-profile.md` 참조:
+`system/skills/pm-gtm/ideal-customer-profile.md` 참조:
 - 인구통계, 행동 패턴, JTBD, 현재 대안, 자격 기준
 - 30초 안에 식별 가능한 구체적 프로필
 
 ### Step 4: GTM 전략 수립
-`skills/marketing/imc-strategy.md` 참조:
+`system/skills/marketing/imc-strategy.md` 참조:
 - **포지셔닝**: 타겟 세그먼트에게 자신을 어떻게 설명할 것인지
 - **메시징**: 이해관계자별 핵심 메시지 (구매자, 사용자, 인플루언서)
 - **채널 전략**: ICP 도달 채널 (ROI 기준 우선순위)
@@ -40,7 +40,7 @@
 - **성공 지표**: 30일/90일 목표
 
 ### Step 5: 산출물 저장
-산출물을 `output/[시즌]/_season/do_launch-plan.md`에 저장한다.
+산출물을 `workspace/_season/do_launch-plan.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 6: 다음 단계 제안

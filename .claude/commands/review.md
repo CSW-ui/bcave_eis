@@ -5,15 +5,15 @@
 ## 절차
 
 ### Step 1: 산출물 완전성 체크 (Design Validator)
-`skills/quality/quality-gate.md` 참조:
-- `output/[시즌]/[현재단계]/` 에 필수 산출물이 모두 존재하는지 확인
+`system/skills/quality/quality-gate.md` 참조:
+- `workspace/[현재단계]/` 에 필수 산출물이 모두 존재하는지 확인
 - 각 산출물의 필수 항목(해당 스킬의 체크리스트)이 빠짐없이 작성되었는지 검증
 - 누락 항목이 있으면 리스트로 제시
 
 ### Step 2: 정합성 체크 (Gap Detector)
-`skills/quality/gap-analysis.md` 참조:
+`system/skills/quality/gap-analysis.md` 참조:
 - 산출물이 기획 문서(Plan 단계 산출물)와 일치하는지 비교
-- 브랜드 프리셋(`presets/wacky-willy/`)과의 일관성 확인
+- 브랜드 프리셋(`system/presets/wacky-willy/`)과의 일관성 확인
 - 카테고리별 Match Rate 산출
 
 ### Step 3: 결과 보고

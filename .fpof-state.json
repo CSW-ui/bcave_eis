@@ -49,78 +49,104 @@
       "type": "item",
       "pdca_phase": "design",
       "artifacts": [
-        "output/26SS/camp-kitsch/design_item-brief.md"
+        "workspace/26SS/camp-kitsch/design_item-brief.md"
       ]
     },
     "text-hip-graphic": {
       "type": "item",
       "pdca_phase": "design",
       "artifacts": [
-        "output/26SS/text-hip-graphic/design_item-brief.md"
+        "workspace/26SS/text-hip-graphic/design_item-brief.md"
       ]
     },
     "retail-seongsu-flagship": {
       "type": "retail",
       "pdca_phase": "check",
       "artifacts": [
-        "output/26SS/retail-seongsu-flagship/do_souvenir-zone-annual-plan.md",
-        "output/26SS/retail-seongsu-flagship/do_souvenir-zone-annual-plan.pptx",
-        "output/26SS/retail-seongsu-flagship/check_opening-analysis.md"
+        "workspace/26SS/retail-seongsu-flagship/do_souvenir-zone-annual-plan.md",
+        "workspace/26SS/retail-seongsu-flagship/do_souvenir-zone-annual-plan.pptx",
+        "workspace/26SS/retail-seongsu-flagship/check_opening-analysis.md"
       ]
+    },
+    "new-basic-sweat": {
+      "type": "item",
+      "pdca_phase": "plan",
+      "description": "뉴 베이직 스웻 라인업 재설계 — UNI(Soft Unisex) + WOMEN'S(Wacky Feminine) 이원화",
+      "artifacts": [
+        "workspace/26SS/new-basic-sweat/plan_trend-research.md",
+        "workspace/26SS/new-basic-sweat/plan_competitor-benchmark.md",
+        "workspace/26SS/new-basic-sweat/plan_category-brief.md",
+        "workspace/26SS/new-basic-sweat/plan_launch-strategy.md"
+      ],
+      "notes": "2026-03-17: 통합 런칭 전략서 완성 — MVP 8STY(맨투맨+후드티×UNI/W×2색) → Phase1 20STY(셋업+집업+3rd컬러) → Phase2 30+STY(A/B+악센트+한정가공). UNI=KIKY/젠더뉴트럴큐트, W=LILLY/페미닌전용설계"
     }
   },
   "operational": {
     "description": "PDCA와 독립적인 일상 운영 산출물 — 주간 리뷰, 회의록, 대시보드 등",
     "weekly": {
       "latest_week": "w10",
-      "data_weeks": ["w06", "w07", "w08", "w09"],
+      "data_weeks": ["w06", "w07", "w08", "w09", "w10"],
       "weeks": {
         "w09": {
           "artifacts": [
-            "output/26SS/weekly/w09/review_dept-summary_2026-03-04.md",
-            "output/26SS/weekly/w09/review_dept-summary_2026-03-05.md",
-            "output/26SS/weekly/w09/review_exec-raw_2026-03-04.md",
-            "output/26SS/weekly/w09/review_exec-summary_2026-03-05.md",
-            "output/26SS/weekly/w09/review_full-raw_2026-03-05.md",
-            "output/26SS/weekly/w09/deck_exec-report_2026-03-04.pptx",
-            "output/26SS/weekly/w09/deck_sales-report_2026-03-05.pptx",
-            "output/26SS/weekly/w09/report_exec_2026-03-04.pdf",
-            "output/26SS/weekly/w09/board_dashboard_2026-03-04.html",
-            "output/26SS/weekly/w09/board_dashboard_2026-03-04_v2.html",
-            "output/26SS/weekly/w09/board_dashboard_2026-03-05.html",
-            "output/26SS/weekly/w09/meeting_imc-sync_2026-03-05.md",
-            "output/26SS/weekly/w09/meeting_imc-sync-ceo-deck_2026-03-05.md",
-            "output/26SS/weekly/w09/meeting_sourcing-interview-summary.md"
+            "workspace/26SS/weekly/w09/review_dept-summary_2026-03-04.md",
+            "workspace/26SS/weekly/w09/review_dept-summary_2026-03-05.md",
+            "workspace/26SS/weekly/w09/review_exec-raw_2026-03-04.md",
+            "workspace/26SS/weekly/w09/review_exec-summary_2026-03-05.md",
+            "workspace/26SS/weekly/w09/review_full-raw_2026-03-05.md",
+            "workspace/26SS/weekly/w09/deck_exec-report_2026-03-04.pptx",
+            "workspace/26SS/weekly/w09/deck_sales-report_2026-03-05.pptx",
+            "workspace/26SS/weekly/w09/report_exec_2026-03-04.pdf",
+            "workspace/26SS/weekly/w09/board_dashboard_2026-03-04.html",
+            "workspace/26SS/weekly/w09/board_dashboard_2026-03-04_v2.html",
+            "workspace/26SS/weekly/w09/board_dashboard_2026-03-05.html",
+            "workspace/26SS/weekly/w09/meeting_imc-sync_2026-03-05.md",
+            "workspace/26SS/weekly/w09/meeting_imc-sync-ceo-deck_2026-03-05.md",
+            "workspace/26SS/weekly/w09/meeting_sourcing-interview-summary.md"
           ]
         },
         "w10": {
           "artifacts": [
-            "output/26SS/weekly/w10/board_dashboard_w10.html",
-            "output/26SS/weekly/w10/meeting_exec-review_2026-03-09.md",
-            "output/26SS/weekly/w10/review_board-summary_w10.md"
+            "workspace/26SS/weekly/w10/board_dashboard_w10.html",
+            "workspace/26SS/weekly/w10/meeting_exec-review_2026-03-09.md",
+            "workspace/26SS/weekly/w10/review_board-summary_w10.md"
           ]
         }
       }
     },
     "dashboard": {
       "refresh_cycle": "weekly",
-      "latest_data_week": "w09",
+      "latest_data_week": "w10",
       "artifacts": [
-        "output/26SS/dashboard/board_sales.html",
-        "output/26SS/dashboard/board_product-status.html",
-        "output/26SS/dashboard/data_sales.json",
-        "output/26SS/dashboard/data_product-status.json",
-        "output/26SS/dashboard/data_per-detail.json",
-        "output/26SS/dashboard/data_per-styles.json",
-        "output/26SS/dashboard/data_cum-detail.json"
+        "workspace/26SS/dashboard/board_sales.html",
+        "workspace/26SS/dashboard/board_product-detail.html",
+        "workspace/26SS/dashboard/board_master-review.html",
+        "workspace/26SS/dashboard/data_sales.json",
+        "workspace/26SS/dashboard/data_product-status.json",
+        "workspace/26SS/dashboard/data_per-detail.json",
+        "workspace/26SS/dashboard/data_per-styles.json",
+        "workspace/26SS/dashboard/data_cum-detail.json",
+        "workspace/26SS/dashboard/data_w10_full.json"
       ]
     },
     "season_strategy": {
       "artifacts": [
-        "output/26SS/season-strategy/plan_strategy-summary.md",
-        "output/26SS/season-strategy/plan_strategy-summary.pptx",
-        "output/26SS/season-strategy/plan_market-intel-weekly_2026-03-10.md",
-        "output/26SS/season-strategy/design_consumer-insight-brief.md"
+        "workspace/26SS/season-strategy/plan_strategy-summary.md",
+        "workspace/26SS/season-strategy/plan_strategy-summary.pptx",
+        "workspace/26SS/season-strategy/plan_market-intel-weekly_2026-03-10.md",
+        "workspace/26SS/season-strategy/design_consumer-insight-brief.md",
+        "workspace/26SS/season-strategy/plan_hat-category-rebuild-research.md",
+        "workspace/26SS/season-strategy/plan_hat-category-rebuild.md",
+        "workspace/26SS/season-strategy/plan_wellness-market-research.md",
+        "workspace/26SS/season-strategy/plan_wellness-target-deep-dive.md",
+        "workspace/26SS/season-strategy/plan_wellness-influencer-analysis.md",
+        "workspace/26SS/season-strategy/plan_wellness-entry-strategy.md",
+        "workspace/26SS/season-strategy/plan_wellness-entry-strategy_v2.md",
+        "workspace/26SS/season-strategy/plan_wellness-seasonal-capsule.md",
+        "workspace/26SS/season-strategy/plan_wellness-travel-kit.md",
+        "workspace/26SS/season-strategy/plan_wellness-sauna-day.md",
+        "workspace/26SS/season-strategy/plan_wellness-local-collab.md",
+        "workspace/26SS/season-strategy/plan_wellness-influencer-collab-strategy.md"
       ]
     }
   },

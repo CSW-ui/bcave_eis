@@ -5,7 +5,7 @@
 
 ## 세션 시작 시 반드시
 1. `.fpof-state.json` 읽기 — 현재 시즌, PDCA 단계, 진행 상황 파악
-2. `presets/bcave/` 전사 가이드라인 숙지 — BTA 전략, 사업부 업무 가이드, AX 전략 (브랜드 공통 필수)
+2. `system/presets/bcave/` 전사 가이드라인 숙지 — BTA 전략, 사업부 업무 가이드, AX 전략 (브랜드 공통 필수)
 3. 현재 단계에 맞는 브랜드 프리셋 파일 참조
 
 ## 핵심 원칙
@@ -17,7 +17,7 @@
 6. **참고자료가 진실** — 브랜드 정보를 지어내지 말 것. 프리셋 JSON 기반으로만.
 7. **토큰 비용 절감** — 에이전트 팀/서브에이전트 사용 시 아래 "에이전트 팀 운영 규칙" 반드시 준수.
 
-## 비케이브 전사 가이드라인 (presets/bcave/) — 브랜드 공통 필수 준수
+## 비케이브 전사 가이드라인 (system/presets/bcave/) — 브랜드 공통 필수 준수
 
 > 아래 지침은 와키윌리를 포함한 **모든 비케이브 브랜드**에 공통 적용됩니다.
 > 브랜드별 프리셋보다 상위 레벨이며, 브랜드가 바뀌어도 반드시 준수해야 합니다.
@@ -61,7 +61,7 @@
 - **비전**: K-컬처 기반 글로벌 문화 브랜드 (2029 NO.1 K-Lifestyle Brand)
 - **뮤즈**: 지젤
 
-## 브랜드 지식 베이스 (presets/wacky-willy/)
+## 브랜드 지식 베이스 (system/presets/wacky-willy/)
 | 파일 | 내용 | 언제 참조 |
 |------|------|----------|
 | `brand.config.json` | DNA, 비전, 포지셔닝, 5대 경영목표, 로드맵 | 전략/기획 작업 시 |
@@ -72,7 +72,7 @@
 | `channels.json` | 6개 채널 매출/목표/성장률 | 유통/마케팅 전략 시 |
 | `ip-bible.json` | 키키+11 캐릭터, 그룹(A/B/C), 관계도 | IP/캐릭터 활용 시 |
 
-## 패션 하우스 에이전시 (agents/)
+## 패션 하우스 에이전시 (system/agents/)
 실무자의 자연어 요청을 해석하여 적합한 에이전시와 담당자가 작업합니다.
 
 | 에이전시 | 팀원 (역할 → 스킬) |
@@ -291,8 +291,8 @@
 - 리드가 계획을 검토·승인한 후에만 구현(코드 수정/파일 생성)을 시작한다.
 - 리드가 거절하면 피드백을 반영하여 계획을 수정하고 재제출한다.
 - **자동 판단 기준 (리드가 적용)**:
-  - 전사 가이드라인(`presets/bcave/`)을 준수하지 않는 계획 → 거절 (BTA 구성, 3B 금지, B.A.M.P 등)
-  - 브랜드 프리셋(`presets/wacky-willy/`)을 참조하지 않는 계획 → 거절
+  - 전사 가이드라인(`system/presets/bcave/`)을 준수하지 않는 계획 → 거절 (BTA 구성, 3B 금지, B.A.M.P 등)
+  - 브랜드 프리셋(`system/presets/wacky-willy/`)을 참조하지 않는 계획 → 거절
   - 현재 PDCA 단계와 무관한 작업이 포함된 계획 → 거절
   - `.fpof-state.json` 업데이트 계획이 누락된 경우 → 보완 요청
 
@@ -343,26 +343,26 @@
 Claude 전용 훅/슬래시 명령은 유지하되, Codex에서는 아래 스크립트로 동일 흐름을 수동 실행합니다.
 
 - `make status` → 현재 시즌/단계/산출물 상태 요약
-- `make sync-state` → `output/` 기준으로 `.fpof-state.json` 동기화
+- `make sync-state` → `workspace/` 기준으로 `.fpof-state.json` 동기화
 - `make route-skill PROMPT="요청문"` → 키워드 라우팅 결과 확인
-- `make check-output INPUT="output/26SS/season-strategy/plan_trend-brief.md"` → 산출물 체크리스트 확인
+- `make check-output INPUT="workspace/26SS/season-strategy/plan_trend-brief.md"` → 산출물 체크리스트 확인
 
 ## 온디맨드 태스크 에이전트 (PDCA 분리)
 아래 에이전트는 시즌 PDCA/브랜드 라우팅과 분리된 유틸리티 도구입니다.
 
 - `format-converter` (문서 포맷 변환)
-  - skill: `skills/task/format-conversion.md`
-  - entrypoint: `scripts/task-agent.sh format-converter`
+  - skill: `system/skills/task/format-conversion.md`
+  - entrypoint: `system/scripts/task-agent.sh format-converter`
   - manual-only: 자동 라우팅 훅(`route-skill.sh`)에 연결하지 않음
   - 예시:
     - `make convert IN=input.docx OUT=output.pdf`
-    - `./scripts/task-agent.sh format-converter --in input.pptx --out output.pdf`
+    - `./system/scripts/task-agent.sh format-converter --in input.pptx --out output.pdf`
 
 ## 산출물 저장 규칙
 > 상세 규칙: `docs/reference/file-naming-convention.md`
 
 ### 폴더 구조 — 프로젝트 중심
-모든 산출물은 `output/[시즌]/[프로젝트]/` 아래 저장. 한 프로젝트의 모든 파일은 한 폴더에.
+모든 산출물은 `workspace/[프로젝트]/` 아래 저장. 한 프로젝트의 모든 파일은 한 폴더에.
 
 | 프로젝트 유형 | 폴더명 패턴 | 예시 |
 |-------------|-----------|------|
@@ -389,7 +389,7 @@ PDCA 산출물 (시즌 전략 + 프로젝트):  [pdca]_[description][_YYYY-MM-DD
 
 ### 구조 예시
 ```
-output/26SS/
+workspace/26SS/
 ├── season-strategy/                 ← 시즌 전략
 │   ├── plan_trend-brief.md
 │   ├── plan_brand-strategy.md
@@ -452,14 +452,14 @@ output/26SS/
 ### 신규 스킬 카테고리
 | 폴더 | 스킬 수 | 대표 스킬 |
 |------|---------|----------|
-| skills/pm-strategy/ | 10 | PESTLE, Porter's 5 Forces, Ansoff, BMC, Lean Canvas, Value Proposition |
-| skills/pm-research/ | 4 | Customer Journey Map, Market Segments, User Personas, Segmentation |
-| skills/pm-gtm/ | 3 | Beachhead Segment, Competitive Battlecard, ICP |
-| skills/pm-discovery/ | 12 | OST, Brainstorm Ideas/Experiments, Assumptions, Interview, Prioritize |
-| skills/pm-execution/ | 13 | OKRs, PRD, Roadmap, Stakeholder Map, Sprint, Retro, User Stories |
-| skills/pm-analytics/ | 3 | A/B Test, Cohort Analysis, SQL Queries |
-| skills/pm-marketing/ | 1 | Product Name |
-| skills/pm-toolkit/ | 4 | Grammar Check, NDA, Privacy Policy, Resume Review |
+| system/skills/pm-strategy/ | 10 | PESTLE, Porter's 5 Forces, Ansoff, BMC, Lean Canvas, Value Proposition |
+| system/skills/pm-research/ | 4 | Customer Journey Map, Market Segments, User Personas, Segmentation |
+| system/skills/pm-gtm/ | 3 | Beachhead Segment, Competitive Battlecard, ICP |
+| system/skills/pm-discovery/ | 12 | OST, Brainstorm Ideas/Experiments, Assumptions, Interview, Prioritize |
+| system/skills/pm-execution/ | 13 | OKRs, PRD, Roadmap, Stakeholder Map, Sprint, Retro, User Stories |
+| system/skills/pm-analytics/ | 3 | A/B Test, Cohort Analysis, SQL Queries |
+| system/skills/pm-marketing/ | 1 | Product Name |
+| system/skills/pm-toolkit/ | 4 | Grammar Check, NDA, Privacy Policy, Resume Review |
 
 ## 5대 경영목표 (2026)
 1. 브랜드 아이덴티티 정립 — 코어타겟 매출 비중, 인지도/선호도

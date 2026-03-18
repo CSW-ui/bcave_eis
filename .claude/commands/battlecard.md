@@ -9,15 +9,15 @@
 
 ### Step 1: 매치업 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 포지셔닝, 차별점
-3. `presets/wacky-willy/channels.json` 참조 — 채널별 경쟁 상황
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 포지셔닝, 차별점
+3. `system/presets/wacky-willy/channels.json` 참조 — 채널별 경쟁 상황
 4. 사용자에게 확인:
    - 비교 대상 경쟁사
    - 고객 유형 (어떤 고객이 두 브랜드를 비교하는지)
    - 승/패 데이터 또는 세일즈 피드백 유무
 
 ### Step 2: 경쟁사 리서치 및 배틀카드 작성
-`skills/pm-gtm/competitive-battlecard.md` 참조:
+`system/skills/pm-gtm/competitive-battlecard.md` 참조:
 
 배틀카드 구성:
 - **퀵 서머리**: 우리가 이기는 상황 / 지는 상황 / 핵심 차별점
@@ -31,7 +31,7 @@
 - **대화 시작점**: 경쟁사 사용 중인 고객 / 동시 평가 고객별 접근법
 
 ### Step 3: 산출물 저장
-산출물을 `output/[시즌]/_season/do_battlecard-[경쟁사명].md`에 저장한다.
+산출물을 `workspace/_season/do_battlecard-[경쟁사명].md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 4: 다음 단계 제안

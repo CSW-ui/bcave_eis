@@ -16,7 +16,7 @@
    - 복수 입력 (트랜스크립트 + 개인 메모)
 
 ### Step 2: 구조화된 추출
-`skills/pm-execution/summarize-meeting.md` 참조:
+`system/skills/pm-execution/summarize-meeting.md` 참조:
 - **참석자**: 이름/역할 식별
 - **논의 주제**: 주요 안건별 정리
 - **결정 사항**: 명확한 합의나 결론
@@ -32,7 +32,7 @@
 - 미해결 질문 및 다음 단계
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/do_meeting-notes.md`에 저장한다.
+산출물을 `workspace/_season/do_meeting-notes.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

@@ -9,10 +9,10 @@
 
 ### Step 1: 텍스트 수집
 1. 입력 수용: 텍스트 붙여넣기, 문서 업로드 (DOCX, PDF, MD), 이메일 초안
-2. 고객 대면 콘텐츠인 경우 `presets/wacky-willy/tone-manner.json` 참조하여 브랜드 보이스 기준도 확인
+2. 고객 대면 콘텐츠인 경우 `system/presets/wacky-willy/tone-manner.json` 참조하여 브랜드 보이스 기준도 확인
 
 ### Step 2: 3가지 카테고리 분석
-`skills/pm-toolkit/grammar-check.md` 참조:
+`system/skills/pm-toolkit/grammar-check.md` 참조:
 
 **문법(Grammar)**: 맞춤법, 띄어쓰기, 주술 호응, 시제 일관성, 조사 사용
 **논리(Logic)**: 모순, 근거 없는 주장, 순환 논법, 불명확한 참조

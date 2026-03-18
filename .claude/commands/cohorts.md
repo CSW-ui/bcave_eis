@@ -9,7 +9,7 @@
 
 ### Step 1: 데이터 또는 분석 정의
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/channels.json` 참조 — 채널별 고객 데이터 기준
+2. `system/presets/wacky-willy/channels.json` 참조 — 채널별 고객 데이터 기준
 3. 두 가지 경로:
    - **데이터 있음**: CSV/스프레드시트 업로드 (user_id, 가입일, 활동일, 이벤트 등)
    - **데이터 없음**: 분석 프레임워크 + SQL 쿼리 설계
@@ -20,7 +20,7 @@
    - 분석 기간
 
 ### Step 2: 코호트 분석 실행
-`skills/pm-analytics/cohort-analysis.md` 참조:
+`system/skills/pm-analytics/cohort-analysis.md` 참조:
 
 **데이터 제공 시**:
 - Python(pandas)으로 코호트 테이블 생성
@@ -41,7 +41,7 @@
 - 권고 사항 및 후속 쿼리
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/check_cohort-analysis.md`에 저장한다.
+산출물을 `workspace/_season/check_cohort-analysis.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

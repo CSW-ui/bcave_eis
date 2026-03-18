@@ -9,8 +9,8 @@
 
 ### Step 1: 상품 이해
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 비전, 경영목표
-3. `presets/wacky-willy/channels.json` 참조 — 매출 구조
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 비전, 경영목표
+3. `system/presets/wacky-willy/channels.json` 참조 — 매출 구조
 4. 사용자에게 확인:
    - 대상 상품/비즈니스
    - 비즈니스 모델 (거래 / 구독 / 광고 / 마켓플레이스)
@@ -18,7 +18,7 @@
    - 필요 계기 (신규 / 기존 메트릭 부적합 / 팀 정렬)
 
 ### Step 2: 비즈니스 게임 분류
-`skills/data/sales-analysis.md` (NSM 내장) 참조:
+`system/skills/data/sales-analysis.md` (NSM 내장) 참조:
 - **어텐션**: 사용자 시간/참여에서 수익 (미디어, 소셜)
 - **트랜잭션**: 구매에서 수익 (이커머스, 마켓플레이스)
 - **프로덕티비티**: 효율 향상에서 수익 (SaaS, 도구)
@@ -45,7 +45,7 @@
 - DAU, 매출 등 흔하지만 결함 있는 메트릭을 선택하지 않은 이유
 
 ### Step 6: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_north-star.md`에 저장한다.
+산출물을 `workspace/_season/plan_north-star.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 7: 다음 단계 제안

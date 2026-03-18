@@ -13,7 +13,7 @@
 
 #### Step 1: 리서치 목표 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/personas.json` 참조 — 타겟 페르소나
+2. `system/presets/wacky-willy/personas.json` 참조 — 타겟 페르소나
 3. 사용자에게 확인:
    - 알고 싶은 것 (구체적 리서치 질문)
    - 인터뷰 대상 (세그먼트, 역할)
@@ -21,14 +21,14 @@
    - 이 리서치가 영향을 미칠 의사결정
 
 #### Step 2: 인터뷰 스크립트 생성
-`skills/pm-discovery/interview-script.md` 참조:
+`system/skills/pm-discovery/interview-script.md` 참조:
 - "The Mom Test" 원칙 적용 — 그들의 삶에 대해 물어보고, 당신의 아이디어를 피칭하지 않기
 - 유도 질문 없이, 과거 행동과 실제 상황에 집중
 - 구성: 워밍업 → 핵심 탐색(JTBD, 워크플로우, 페인) → 특정 주제 → 마무리
 - 각 질문에 "왜 묻는지" + 후속 질문 가이드 포함
 
 #### Step 3: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_interview-script.md`에 저장한다.
+산출물을 `workspace/_season/plan_interview-script.md`에 저장한다.
 
 ---
 
@@ -38,7 +38,7 @@
 - 텍스트, 파일, 오디오 요약 등 모든 형식 수용
 
 #### Step 2: 구조화된 인사이트 추출
-`skills/pm-discovery/summarize-interview.md` 참조:
+`system/skills/pm-discovery/summarize-interview.md` 참조:
 - 참가자 프로필, JTBD, 현재 워크플로우
 - 페인 포인트, 만족 시그널
 - 핵심 인용구 (타임스탬프 포함)
@@ -46,7 +46,7 @@
 - 액션 아이템
 
 #### Step 3: 산출물 저장
-산출물을 `output/[시즌]/_season/check_interview-summary.md`에 저장한다.
+산출물을 `workspace/_season/check_interview-summary.md`에 저장한다.
 
 ---
 

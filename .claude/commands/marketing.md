@@ -9,9 +9,9 @@
 
 ### Step 1: 마케팅 니즈 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/tone-manner.json` 참조 — 브랜드 보이스
-3. `presets/wacky-willy/personas.json` 참조 — 타겟 고객
-4. `presets/wacky-willy/ip-bible.json` 참조 — IP 캐릭터 활용
+2. `system/presets/wacky-willy/tone-manner.json` 참조 — 브랜드 보이스
+3. `system/presets/wacky-willy/personas.json` 참조 — 타겟 고객
+4. `system/presets/wacky-willy/ip-bible.json` 참조 — IP 캐릭터 활용
 5. 사용자에게 확인:
    - 대상 상품/브랜드
    - 필요한 것 (전체 / 아이디어 / 포지셔닝 / 네이밍 / 카피)
@@ -24,7 +24,7 @@
 **포지셔닝**: 경쟁사 5개 기준 포지셔닝 스테이트먼트 3~5개 + 근거
 
 **밸류 프로포지션 카피**: 태그라인, 엘리베이터 피치, 랜딩 페이지 히어로, 세일즈 원라이너
-- `presets/wacky-willy/tone-manner.json`의 브랜드 어휘와 톤 적용
+- `system/presets/wacky-willy/tone-manner.json`의 브랜드 어휘와 톤 적용
 
 **상품명 네이밍**: 5개 후보명 (근거, 브랜드 정합성, 도메인/상표 고려)
 
@@ -32,7 +32,7 @@
 청중별 핵심 메시지, 증거 포인트, CTA 정리.
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/do_marketing-toolkit.md`에 저장한다.
+산출물을 `workspace/_season/do_marketing-toolkit.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

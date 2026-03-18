@@ -1,0 +1,81 @@
+{
+  "description": "FPOF ↔ Google Workspace CLI 연동 설정",
+  "version": "1.0.0",
+
+  "google_sheets": {
+    "description": "주간 데이터 원본 — weekly/data/ 로 동기화",
+    "spreadsheets": {
+      "product_master": {
+        "id": "",
+        "sheet_name": "상품마스터",
+        "output": "weekly/data/sheet_product-master_w{WEEK}.xlsx",
+        "description": "상품 마스터 데이터"
+      },
+      "sales_review": {
+        "id": "",
+        "sheet_name": "매출리뷰",
+        "output": "weekly/data/sheet_sales-review_w{WEEK}.xlsx",
+        "description": "주간 매출 리뷰 데이터"
+      }
+    }
+  },
+
+  "google_drive": {
+    "description": "산출물 업로드 대상 폴더",
+    "folders": {
+      "season_root": {
+        "id": "",
+        "description": "시즌 루트 폴더 (예: FPOF/26SS/)"
+      },
+      "weekly_reports": {
+        "id": "",
+        "description": "주간 리포트 폴더"
+      },
+      "presentations": {
+        "id": "",
+        "description": "프레젠테이션 (PPTX/PDF)"
+      },
+      "meeting_notes": {
+        "id": "",
+        "description": "회의록 폴더"
+      }
+    }
+  },
+
+  "gmail": {
+    "description": "리포트 이메일 수신자",
+    "recipients": {
+      "exec_report": [],
+      "weekly_summary": [],
+      "meeting_notes": []
+    },
+    "from_name": "FPOF 패션하우스",
+    "signature": "\n---\nFPOF — Wacky Willy Fashion House AI Orchestration\n이 메일은 FPOF 시스템에 의해 자동 발송되었습니다."
+  },
+
+  "google_calendar": {
+    "description": "시즌 마일스톤 캘린더",
+    "calendar_id": "",
+    "color_map": {
+      "plan": "7",
+      "design": "3",
+      "do": "11",
+      "check": "5",
+      "act": "9"
+    },
+    "season_prefix": "[FPOF 26SS]"
+  },
+
+  "google_docs": {
+    "description": "회의록 동기화 대상 폴더",
+    "folder_id": "",
+    "title_prefix": "[FPOF]"
+  },
+
+  "defaults": {
+    "season": "26SS",
+    "project_root": "../..",
+    "dry_run": false,
+    "verbose": false
+  }
+}

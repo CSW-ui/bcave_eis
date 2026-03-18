@@ -9,7 +9,7 @@
 
 ### Step 1: 기능 요청 수집
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 전략 목표 (정렬 기준)
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 전략 목표 (정렬 기준)
 3. 입력 형식:
    - 텍스트 (줄 단위 요청 리스트)
    - CSV/엑셀 (요청자, 요청 내용, 날짜 등)
@@ -20,7 +20,7 @@
    - 가중치를 둘 세그먼트 (VIP 고객, 이탈 위험 고객 등)
 
 ### Step 2: 카테고리화 및 분석
-`skills/pm-discovery/analyze-feature-requests.md` 참조:
+`system/skills/pm-discovery/analyze-feature-requests.md` 참조:
 - **테마 클러스터링**: 유사 요청을 테마로 그룹화
 - **테마별 요청 수**: 각 테마에 매핑된 고유 요청 수
 - **전략 정렬도**: 각 테마의 전략 목표 부합도 (High/Medium/Low)
@@ -28,7 +28,7 @@
 - **감정 시그널**: 좌절, 이탈 위협, 만족 등 동반 감정
 
 ### Step 3: 우선순위 매기기
-`skills/pm-discovery/prioritize-features.md` 참조:
+`system/skills/pm-discovery/prioritize-features.md` 참조:
 - 임팩트, 전략 정렬, 노력 추정, 리스크, 수익 시그널 평가
 - 우선순위 분류:
   - **Priority 1: 즉시 실행** — 단기 계획에 포함
@@ -37,7 +37,7 @@
   - **Priority 4: 거절/보류** — 전략에 부합하지 않음 (근거 포함)
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_triage-report.md`에 저장한다.
+산출물을 `workspace/_season/plan_triage-report.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

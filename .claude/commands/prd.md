@@ -9,8 +9,8 @@
 
 ### Step 1: 기능 이해
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 전략 방향
-3. `presets/wacky-willy/categories.json` 참조 — 카테고리 전략
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 전략 방향
+3. `system/presets/wacky-willy/categories.json` 참조 — 카테고리 전략
 4. 입력 수용 형식: 기능명, 문제 정의, 사용자 요청, 아이디어, 업로드 문서
 
 ### Step 2: 컨텍스트 수집 (대화형)
@@ -23,7 +23,7 @@
 6. **범위**: 풀 솔루션 vs 단계적 접근
 
 ### Step 3: PRD 생성
-`skills/pm-execution/create-prd.md` 참조 — 8개 섹션:
+`system/skills/pm-execution/create-prd.md` 참조 — 8개 섹션:
 1. 요약 (Executive Summary)
 2. 배경 및 맥락 (Background & Context)
 3. 목표 및 성공 지표 (Objectives & Success Metrics) + 비목표 (Non-Goals)
@@ -34,7 +34,7 @@
 8. 타임라인 및 단계
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/[프로젝트]/plan_prd.md`에 저장한다.
+산출물을 `workspace/[프로젝트]/plan_prd.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

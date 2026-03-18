@@ -8,6 +8,6 @@
 4. **최근 산출물**: 각 단계별 artifacts 목록
 5. **작업 메모**: work_memory의 todo, context_notes
 
-`output/` 폴더의 실제 파일도 확인하여 `.fpof-state.json`과 일치하는지 크로스체크하세요.
+`workspace/` 폴더의 실제 파일도 확인하여 `.fpof-state.json`과 일치하는지 크로스체크하세요.
 
 마지막으로 다음에 할 수 있는 작업을 추천해주세요.

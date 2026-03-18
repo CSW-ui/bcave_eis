@@ -26,14 +26,14 @@
 
 ## 절차
 
-1. `output/[시즌]/`에서 관련 산출물 수집
-2. `presets/wacky-willy/visual-identity.json`에서 브랜드 스타일 참조
+1. `workspace/`에서 관련 산출물 수집
+2. `system/presets/wacky-willy/visual-identity.json`에서 브랜드 스타일 참조
 3. PDF 스킬을 사용하여 문서 생성:
    - 표지: 브랜드 로고 영역, 시즌명, 문서 제목, 날짜
    - 목차 자동 생성
    - 본문: 산출물 내용을 보고서 형식으로 재구성
    - 헤더/푸터: 브랜드명, 페이지 번호, 보안 등급
-4. `output/[시즌]/[프로젝트]/` 에 PDF 파일 저장
+4. `workspace/[프로젝트]/` 에 PDF 파일 저장
 
 ## 디자인 원칙
 - 브랜드 컬러 팔레트 적용

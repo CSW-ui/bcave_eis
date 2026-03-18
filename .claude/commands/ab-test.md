@@ -23,7 +23,7 @@
 - 테스트 기간 중 외부 요인 유무
 
 ### Step 3: 결과 분석
-`skills/pm-analytics/ab-test-analysis.md` 참조:
+`system/skills/pm-analytics/ab-test-analysis.md` 참조:
 - **통계적 유의성**: p-value, 신뢰구간 계산
 - **효과 크기**: 절대적/상대적 차이
 - **실질적 유의성**: 비즈니스에 의미 있는 크기인가?
@@ -37,7 +37,7 @@
 - 주의사항 (신기효과, 세그먼트 차이, 외부 편향)
 
 ### Step 5: 산출물 저장
-산출물을 `output/[시즌]/_season/check_ab-test-analysis.md`에 저장한다.
+산출물을 `workspace/_season/check_ab-test-analysis.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 6: 다음 단계 제안

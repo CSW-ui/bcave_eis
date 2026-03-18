@@ -24,7 +24,7 @@ cat <<EOF
 
 ## 필수 검증 (모든 태스크)
 - [ ] 산출물 파일명이 [단계]_[내용].확장자 규칙을 따르는가?
-- [ ] 브랜드 프리셋(presets/wacky-willy/)을 참조하여 작성했는가?
+- [ ] 브랜드 프리셋(system/presets/wacky-willy/)을 참조하여 작성했는가?
 - [ ] 톤앤매너가 tone-manner.json과 일치하는가? (고객 대면 콘텐츠인 경우)
 - [ ] .fpof-state.json의 artifacts에 산출물 경로를 추가했는가?
 

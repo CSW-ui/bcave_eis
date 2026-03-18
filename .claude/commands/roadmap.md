@@ -9,7 +9,7 @@
 
 ### Step 1: 현재 로드맵 수집
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/brand.config.json` 참조 — 전략 목표
+2. `system/presets/wacky-willy/brand.config.json` 참조 — 전략 목표
 3. 입력 수용:
    - 기능 리스트 / 백로그 아이템
    - 로드맵 문서 (Now/Next/Later, 분기별, 타임라인)
@@ -23,7 +23,7 @@
 - 선호 포맷 (Now/Next/Later / 분기별 / 타임라인)
 
 ### Step 3: 각 항목 변환
-`skills/pm-execution/outcome-roadmap.md` 참조:
+`system/skills/pm-execution/outcome-roadmap.md` 참조:
 
 각 기능/아웃풋에 대해:
 1. 달성하려는 **사용자 또는 비즈니스 아웃컴** 식별
@@ -40,7 +40,7 @@ Now/Next/Later 포맷으로 전략 테마별 아웃컴 정리.
 변환 노트 (원래 기능 → 변환된 아웃컴 → 변환 이유) 포함.
 
 ### Step 5: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_outcome-roadmap.md`에 저장한다.
+산출물을 `workspace/_season/plan_outcome-roadmap.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 6: 다음 단계 제안

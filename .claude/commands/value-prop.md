@@ -9,16 +9,16 @@ JTBD 기반 6파트 템플릿으로 명확한 가치 제안을 설계합니다.
 
 ### Step 1: 컨텍스트 파악
 1. `.fpof-state.json`에서 현재 시즌과 단계 확인
-2. `presets/wacky-willy/personas.json` 참조 — 페르소나, JTBD
-3. `presets/wacky-willy/brand.config.json` 참조 — 포지셔닝, 차별화
-4. `presets/wacky-willy/tone-manner.json` 참조 — 브랜드 보이스
+2. `system/presets/wacky-willy/personas.json` 참조 — 페르소나, JTBD
+3. `system/presets/wacky-willy/brand.config.json` 참조 — 포지셔닝, 차별화
+4. `system/presets/wacky-willy/tone-manner.json` 참조 — 브랜드 보이스
 5. 사용자에게 확인:
    - 대상 상품/브랜드
    - 타겟 세그먼트 (복수 세그먼트 시 각각 작성)
    - 기존 가치 제안 유무
 
 ### Step 2: 밸류 프로포지션 작성
-`skills/pm-strategy/value-proposition.md` 참조:
+`system/skills/pm-strategy/value-proposition.md` 참조:
 
 세그먼트별 6파트 템플릿:
 1. **Who**: 타겟 사용자 프로필과 특성
@@ -33,7 +33,7 @@ JTBD 기반 6파트 템플릿으로 명확한 가치 제안을 설계합니다.
 - 마케팅용, 세일즈용, 온보딩용 각각 작성
 
 ### Step 4: 산출물 저장
-산출물을 `output/[시즌]/_season/plan_value-proposition.md`에 저장한다.
+산출물을 `workspace/_season/plan_value-proposition.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 5: 다음 단계 제안

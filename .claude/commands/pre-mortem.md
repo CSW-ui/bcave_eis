@@ -13,7 +13,7 @@
 3. 상세할수록 리스크 분석이 정밀해짐
 
 ### Step 2: 리스크 식별
-`skills/quality/quality-gate.md` (Pre-Mortem 내장) 참조:
+`system/skills/quality/quality-gate.md` (Pre-Mortem 내장) 참조:
 런칭이 실패했다고 가정하고 카테고리별 리스크 생성:
 - **기술적**: 성능, 확장성, 통합 실패, 데이터 이슈
 - **사용자**: 도입 장벽, 사용성 문제, 기대 불일치
@@ -36,7 +36,7 @@
 ### Step 4: Go/No-Go 체크리스트 포함한 보고서 작성
 
 ### Step 5: 산출물 저장
-산출물을 `output/[시즌]/[프로젝트]/plan_pre-mortem.md`에 저장한다.
+산출물을 `workspace/[프로젝트]/plan_pre-mortem.md`에 저장한다.
 `.fpof-state.json`의 artifacts 배열에 파일 경로 추가.
 
 ### Step 6: 다음 단계 제안

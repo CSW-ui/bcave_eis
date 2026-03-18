@@ -5,7 +5,7 @@
 workspace/
 
 # Node modules
-node_modules/
+system/node_modules/
 system/_pm-skills-source/
 
 # API credentials

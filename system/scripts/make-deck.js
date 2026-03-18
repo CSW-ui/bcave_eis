@@ -4,7 +4,7 @@
 //  컬러 시스템: Black #000000 + Signature Yellow #FEF200 + Sky Blue #68A8DB
 //  Layout: LAYOUT_16x9 (10" × 5.625")
 // ================================================================
-const pptxgen = require("/Users/sherman/.npm-global/lib/node_modules/pptxgenjs");
+const pptxgen = require("pptxgenjs");
 
 const pres = new pptxgen();
 pres.layout  = "LAYOUT_16x9";

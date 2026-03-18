@@ -339,7 +339,7 @@
 [정리]: 모든 작업 완료 후 팀 정리
 ```
 
-## Codex 호환 실행 (scripts/)
+## Codex 호환 실행 (system/scripts/)
 Claude 전용 훅/슬래시 명령은 유지하되, Codex에서는 아래 스크립트로 동일 흐름을 수동 실행합니다.
 
 - `make status` → 현재 시즌/단계/산출물 상태 요약

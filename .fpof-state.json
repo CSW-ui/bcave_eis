@@ -5,7 +5,7 @@
     "initialized_at": "2026-02-23T00:00:00Z"
   },
   "active_brand": "wacky-willy",
-  "active_brand_path": "presets/wacky-willy/",
+  "active_brand_path": "system/presets/wacky-willy/",
   "current_season": "26SS",
   "pdca": {
     "current_phase": "plan",

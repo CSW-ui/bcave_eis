@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:3000/api/planning/ipj/check)",
+      "Bash(curl -s \"http://localhost:3000/api/planning/ipj?brand=CO&year=26&season=봄&fromDt=20260101&toDt=20260331\")",
+      "Bash(curl -s \"http://localhost:3000/api/planning/ipj?brand=CO&year=26&season=%EB%B4%84&fromDt=20260101&toDt=20260331\")",
+      "Bash(node -e \":*)",
+      "Bash(curl -s http://localhost:3000/planning/ipj)",
+      "Bash(find /c/Users/bcave/Desktop/bcave_esi -type f -name *.js -o -name *.ts -o -name *.tsx -o -name *.jsx -o -name *.vue -o -name *.py -o -name *.html -o -name *.sql -o -name *.csv -o -name *.xlsx)",
+      "Bash(find /c/Users/bcave/Desktop/bcave_esi/src -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))",
+      "Bash(grep -r \"입판재\\\\|IPJ\\\\|입고·판매·재고\" /c/Users/bcave/Desktop/bcave_esi/src --include=*.ts --include=*.tsx --include=*.md)",
+      "Bash(npx tsc:*)",
+      "Bash(netstat -ano)",
+      "Bash(npm run:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl -s \"http://localhost:3000/api/planning/ipj?brand=all&year=26&season=%EB%B4%84,%EC%97%AC%EB%A6%84&fromDt=20260101\")",
+      "Bash(curl -s \"http://localhost:3000/api/planning/ipj?brand=CO&year=26&season=%EB%B4%84,%EC%97%AC%EB%A6%84,%EC%83%81%EB%B0%98%EA%B8%B0,%EC%8A%A4%ED%83%A0%EB%8B%A4%EB%93%9C&fromDt=20260101&toDt=20260331\")",
+      "Bash(python -c \":*)",
+      "Bash(curl -s \"http://localhost:3000/api/planning/ipj?brand=CO&year=26&season=%EB%B4%84,%EC%97%AC%EB%A6%84,%EC%83%81%EB%B0%98%EA%B8%B0,%EC%8A%A4%ED%83%A0%EB%8B%A4%EB%93%9C&fromDt=20260301&toDt=20260331\")",
+      "Bash(curl:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(find /c/Users/bcave/Desktop/bcave_esi/src/app/api -name *.ts -type f)",
+      "Bash(find /c/Users/bcave/Desktop/bcave_esi/src/app -name *.tsx -type f)",
+      "Bash(npx next:*)",
+      "Bash(findstr \"300\")",
+      "Bash(ls src/app/\\\\\\(dashboard\\\\\\)/admin/)",
+      "Bash(findstr \":3000.*LISTENING\")",
+      "Bash(xargs ls:*)",
+      "Bash(grep -l \"allowedBrands\\\\|getAuth\\\\|userId\" /c/Users/bcave/Desktop/bcave_esi/src/app/api/*/*.ts)",
+      "Bash(ls -la /c/Users/bcave/Desktop/bcave_esi/src/lib/middleware*)",
+      "Bash(node:*)"
+    ]
+  }
+}

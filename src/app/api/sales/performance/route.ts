@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, BRAND_FILTER, SALES_VIEW } from '@/lib/snowflake'
+import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 import { VALID_BRANDS } from '@/lib/constants'
 import { fmtDateSf } from '@/lib/formatters'
 
@@ -98,11 +98,9 @@ function getDateRanges(monthParam?: string, weekNum?: number, weekFrom?: number,
 // GET /api/sales/performance?brand=all
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand = searchParams.get('brand') || 'all'
-
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
-    return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
-  }
+  const brandParam = searchParams.get('brand') || 'all'
+  const { valid: brandValid, inClause: brandInClause } = parseBrandParam(brandParam)
+  if (!brandValid) return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
 
   const stylecd = searchParams.get('stylecd') || ''
   const month = searchParams.get('month') || ''
@@ -117,9 +115,7 @@ export async function GET(req: Request) {
     weekFromParam ? parseInt(weekFromParam) : undefined,
     weekToParam ? parseInt(weekToParam) : undefined,
   )
-  const brandWhere = brand === 'all'
-    ? BRAND_FILTER.replace(/BRANDCD/g, 's.BRANDCD')
-    : `s.BRANDCD = '${brand}'`
+  const brandWhere = `s.BRANDCD IN ${brandInClause}`
   const styleFilter = stylecd ? `AND s.STYLECD = '${stylecd.replace(/'/g, "''")}'` : ''
   const itemFilter = itemNm ? `AND si.ITEMNM = '${itemNm.replace(/'/g, "''")}'` : ''
 

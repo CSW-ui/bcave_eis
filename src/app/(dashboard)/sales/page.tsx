@@ -72,11 +72,15 @@ function WeekTooltip({ active, payload, label }: any) {
 
 // ── 메인 ─────────────────────────────────────────────────────────
 export default function SalesDashboard() {
-  const { allowedBrands } = useAuth()
+  const { allowedBrands, loading: authLoading } = useAuth()
 
-  // 브랜드 권한에 따라 초기값 설정
-  const defaultBrand = allowedBrands?.length === 1 ? allowedBrands[0] : 'all'
-  const [brand,    setBrand]    = useState(defaultBrand)
+  const [brand,    setBrand]    = useState<string>('all')
+  // API 호출용: 'all'이면서 권한 브랜드가 있으면 해당 브랜드만 전달
+  const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
+  useEffect(() => {
+    if (authLoading) return
+    if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
+  }, [allowedBrands, authLoading])
   const [year,     setYear]     = useState('2026')
   const [selMonth, setSelMonth] = useState('')  // '' = 현재 월 자동, '202601' 등 = 특정 월
 
@@ -134,7 +138,7 @@ export default function SalesDashboard() {
     const toDt = year === String(new Date().getFullYear()) ? lastSunday : `${year}1231`
     const styleParam = stylecd ? `&stylecd=${encodeURIComponent(stylecd)}` : ''
     try {
-      const url = `/api/sales/weekly?brand=${brand}&toDt=${toDt}${channelParamsFromSet(chs)}${styleParam}`
+      const url = `/api/sales/weekly?brand=${apiBrand}&toDt=${toDt}${channelParamsFromSet(chs)}${styleParam}`
       const res  = await fetch(url)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
@@ -149,7 +153,7 @@ export default function SalesDashboard() {
     setPLoading(true)
     const weekParam = sw != null ? `&weekNum=${sw}` : ''
     try {
-      const url = `/api/sales/products?brand=${brand}&year=${year}${weekParam}${channelParamsFromSet(chs)}`
+      const url = `/api/sales/products?brand=${apiBrand}&year=${year}${weekParam}${channelParamsFromSet(chs)}`
       const res  = await fetch(url)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
@@ -170,7 +174,7 @@ export default function SalesDashboard() {
     const weekRangeParam = (weekFrom && weekTo) ? `&weekFrom=${Math.min(weekFrom, weekTo)}&weekTo=${Math.max(weekFrom, weekTo)}` : ''
     try {
       const monthParam = selMonth ? `&month=${selMonth}` : ''
-      const res = await fetch(`/api/sales/performance?brand=${brand}${styleParam}${monthParam}${itemParam}${weekParam}${weekRangeParam}`)
+      const res = await fetch(`/api/sales/performance?brand=${apiBrand}${styleParam}${monthParam}${itemParam}${weekParam}${weekRangeParam}`)
       const perfJson = await res.json()
       if (!res.ok) throw new Error(perfJson.error)
       setPerfData(perfJson)
@@ -242,13 +246,13 @@ export default function SalesDashboard() {
     // 품목별
     fetch(`/api/sales/items?brand=${b}${itemsP}${chP}`).then(r => r.json()).then(j => { if (j.items) setItemData(j.items) }).catch(() => {})
     // 베스트 상품
-    fetch(`/api/sales/products?brand=${brand}&year=${year}${productsP}${chP}`).then(r => r.json()).then(j => { setProducts(j.products ?? []) }).catch(() => {})
+    fetch(`/api/sales/products?brand=${apiBrand}&year=${year}${productsP}${chP}`).then(r => r.json()).then(j => { setProducts(j.products ?? []) }).catch(() => {})
     // 주간 실적 (브랜드/채널)
     const weekRangeP = (wFrom && wTo) ? `&weekFrom=${Math.min(wFrom, wTo)}&weekTo=${Math.max(wFrom, wTo)}` : ''
     const singleWeekP = (wFrom && !wTo) ? `&weekNum=${wFrom}` : ''
     const monthParam = selMonth ? `&month=${selMonth}` : ''
     const itemParam = selItemFilter ? `&item=${encodeURIComponent(selItemFilter)}` : ''
-    fetch(`/api/sales/performance?brand=${brand}${monthParam}${itemParam}${singleWeekP}${weekRangeP}`).then(r => r.json()).then(j => { setPerfData(j) }).catch(() => {})
+    fetch(`/api/sales/performance?brand=${apiBrand}${monthParam}${itemParam}${singleWeekP}${weekRangeP}`).then(r => r.json()).then(j => { setPerfData(j) }).catch(() => {})
   }
 
   // 상품 클릭 → 차트만 re-fetch (다른 테이블 유지)
@@ -406,9 +410,9 @@ export default function SalesDashboard() {
   // ── 퍼포먼스 테이블 클릭 핸들러 ────────────────────────────────
   // 브랜드 다중 선택에서 API용 브랜드 파라미터 결정
   const getEffectiveBrand = (brands: Set<string>) => {
-    if (brands.size === 0) return brand  // 선택 없으면 탭 브랜드
+    if (brands.size === 0) return apiBrand  // 선택 없으면 권한 반영 브랜드
     if (brands.size === 1) return Array.from(brands)[0]
-    return brand  // 다중 선택이면 탭 기준 (클라이언트 필터)
+    return apiBrand  // 다중 선택이면 권한 반영 브랜드
   }
 
   const handleBrandClick = (brandcd: string) => {

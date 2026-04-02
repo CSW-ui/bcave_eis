@@ -5,22 +5,20 @@ import { VALID_BRANDS } from '@/lib/constants'
 // GET /api/planning/carryover?brand=all
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand = searchParams.get('brand') || 'all'
-
-  // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  const brandParam = searchParams.get('brand') || 'all'
+  const brandList = brandParam === 'all' ? null : brandParam.split(',').filter(b => VALID_BRANDS.has(b))
+  if (brandList && brandList.length === 0) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
   const selItem = searchParams.get('item') || ''
   const selYear = searchParams.get('yearcd') || ''
 
   const curYr = String(new Date().getFullYear()).slice(2) // '26'
-  const brandWhere = brand === 'all'
-    ? `si.BRANDCD IN ('CO','WA','LE','CK','LK')`
-    : `si.BRANDCD = '${brand}'`
-  const vBrand = brand === 'all'
-    ? `v.BRANDCD IN ('CO','WA','LE','CK','LK')`
-    : `v.BRANDCD = '${brand}'`
+  const brandInClause = brandList
+    ? `(${brandList.map(b => `'${b}'`).join(',')})`
+    : `('CO','WA','LE','CK','LK')`
+  const brandWhere = `si.BRANDCD IN ${brandInClause}`
+  const vBrand = `v.BRANDCD IN ${brandInClause}`
 
   // 전주 날짜
   const today = new Date()

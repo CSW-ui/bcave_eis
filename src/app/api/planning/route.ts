@@ -5,24 +5,23 @@ import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 // GET /api/planning?brand=CO&year=26&season=봄,여름
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand   = searchParams.get('brand') || 'all'
+  const brandParam = searchParams.get('brand') || 'all'
 
-  // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  // 콤마 구분 복수 브랜드 지원 (예: CO,WA,LE)
+  const brandList = brandParam === 'all' ? null : brandParam.split(',').filter(b => VALID_BRANDS.has(b))
+  if (brandList && brandList.length === 0) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
+  const brand = brandList?.length === 1 ? brandList[0] : (brandList ? 'multi' : 'all')
   const year    = searchParams.get('year') || '26'
   const seasons = searchParams.get('season')?.split(',') || ['봄', '여름']
 
-  const siBrandClause = brand === 'all'
-    ? `si.BRANDCD IN ('CO','WA','LE','CK','LK')`
-    : `si.BRANDCD = '${brand}'`
-  const vBrandClause = brand === 'all'
-    ? `v.BRANDCD IN ('CO','WA','LE','CK','LK')`
-    : `v.BRANDCD = '${brand}'`
-  const _rawBrandClause = brand === 'all'
-    ? `BRANDCD IN ('CO','WA','LE','CK','LK')`
-    : `BRANDCD = '${brand}'`
+  const brandInClause = brandList
+    ? `(${brandList.map(b => `'${b}'`).join(',')})`
+    : `('CO','WA','LE','CK','LK')`
+  const siBrandClause = `si.BRANDCD IN ${brandInClause}`
+  const vBrandClause = `v.BRANDCD IN ${brandInClause}`
+  const _rawBrandClause = `BRANDCD IN ${brandInClause}`
 
   const toDt = searchParams.get('toDt') || ''  // YYYYMMDD, 비어있으면 제한 없음
 

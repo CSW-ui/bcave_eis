@@ -86,10 +86,15 @@ function diagnosItem(cur: PlanItem, comp?: PlanItem): DiagGrade {
 
 // ── 메인 ──────────────────────────────────────────────────────
 export default function PlanningDashboard() {
-  const { allowedBrands } = useAuth()
-
-  const defaultBrand = allowedBrands?.length === 1 ? allowedBrands[0] : 'all'
-  const [brand, setBrand] = useState(defaultBrand)
+  const { allowedBrands, loading: authLoading } = useAuth()
+  const [brand, setBrand] = useState<string | null>(null)
+  // API 호출용: 'all'이면서 권한 브랜드가 있으면 해당 브랜드만 전달
+  const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
+  useEffect(() => {
+    if (authLoading) return
+    if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
+    else setBrand('all')
+  }, [allowedBrands, authLoading])
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   const [selCategory, setSelCategory] = useState('전체')
 
@@ -127,11 +132,12 @@ export default function PlanningDashboard() {
   }, [])
 
   const fetchData = useCallback(async () => {
+    if (brand === null) return
     setLoading(true); setError(null)
     try {
       const [res, cRes] = await Promise.all([
-        fetch(`/api/planning?brand=${brand}&year=${selSeason.year}&season=${selSeason.season}`),
-        fetch(`/api/planning?brand=${brand}&year=${compYear}&season=${selSeason.season}&toDt=${compToDt}`),
+        fetch(`/api/planning?brand=${apiBrand}&year=${selSeason.year}&season=${selSeason.season}`),
+        fetch(`/api/planning?brand=${apiBrand}&year=${compYear}&season=${selSeason.season}&toDt=${compToDt}`),
       ])
       const [json, cJson] = await Promise.all([res.json(), cRes.json()])
       if (!res.ok) throw new Error(json.error)
@@ -139,7 +145,7 @@ export default function PlanningDashboard() {
       setCompData(cRes.ok ? cJson : null)
     } catch (e) { setError(String(e)) }
     finally { setLoading(false) }
-  }, [brand, selSeason, compYear, compToDt])
+  }, [brand, apiBrand, selSeason, compYear, compToDt])
 
   useEffect(() => { fetchData() }, [fetchData])
 

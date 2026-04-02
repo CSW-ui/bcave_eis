@@ -33,9 +33,14 @@ function SortTh({ k, label, sort, align = 'right' }: { k: string; label: string;
 }
 
 export default function CarryoverPage() {
-  const { allowedBrands } = useAuth()
-  const defaultBrand = allowedBrands?.length === 1 ? allowedBrands[0] : 'all'
-  const [brand, setBrand] = useState(defaultBrand)
+  const { allowedBrands, loading: authLoading } = useAuth()
+  const [brand, setBrand] = useState<string | null>(null)
+  const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
+  useEffect(() => {
+    if (authLoading) return
+    if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
+    else setBrand('all')
+  }, [allowedBrands, authLoading])
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [selItem, setSelItem] = useState<string | null>(null)
@@ -61,9 +66,10 @@ export default function CarryoverPage() {
     : BRAND_TABS
 
   const fetchData = useCallback(async () => {
+    if (brand === null) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/planning/carryover?brand=${brand}`)
+      const res = await fetch(`/api/planning/carryover?brand=${apiBrand}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       setData(json)
@@ -109,7 +115,7 @@ export default function CarryoverPage() {
   const [allYears, setAllYears] = useState<any[]>([])
 
   const refetchFiltered = async (item: string | null, year: string | null) => {
-    const params = new URLSearchParams({ brand })
+    const params = new URLSearchParams({ brand: apiBrand ?? 'all' })
     if (item) params.set('item', item)
     if (year) params.set('yearcd', year)
     try {

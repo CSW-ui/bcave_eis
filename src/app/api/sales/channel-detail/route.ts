@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, SALES_VIEW, BRAND_FILTER } from '@/lib/snowflake'
-import { VALID_BRANDS } from '@/lib/constants'
+import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 
 // GET /api/sales/channel-detail?brand=all&channel=백화점&shopCd=C2037
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand = searchParams.get('brand') || 'all'
+  const brandParam = searchParams.get('brand') || 'all'
 
   // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  const { valid: brandValid, inClause: brandInClause } = parseBrandParam(brandParam)
+  if (!brandValid) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
   const channel = searchParams.get('channel') || ''
@@ -17,9 +17,7 @@ export async function GET(req: Request) {
 
   if (!channel) return NextResponse.json({ error: 'channel required' }, { status: 400 })
 
-  const brandWhere = brand === 'all'
-    ? BRAND_FILTER.replace(/BRANDCD/g, 'v.BRANDCD')
-    : `v.BRANDCD = '${brand}'`
+  const brandWhere = `v.BRANDCD IN ${brandInClause}`
 
   const today = new Date()
   const fD = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
@@ -110,7 +108,7 @@ export async function GET(req: Request) {
         FROM BCAVE.SEWON.SW_SALEINFO s
         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
         ${selItem ? `JOIN BCAVE.SEWON.SW_STYLEINFO sti ON s.STYLECD = sti.STYLECD AND s.BRANDCD = sti.BRANDCD` : ''}
-        WHERE ${brand === 'all' ? BRAND_FILTER.replace(/BRANDCD/g, 's.BRANDCD') : `s.BRANDCD = '${brand}'`}
+        WHERE s.BRANDCD IN ${brandInClause}
           AND sh.SHOPTYPENM = '${channelSafe}'
           AND s.SALEDT >= '${monthStart < pwStart ? monthStart : pwStart}'
           AND s.SALEDT <= '${cwEnd}'
@@ -125,7 +123,7 @@ export async function GET(req: Request) {
           SUM(s.SALEAMT) as SALE_TOTAL
         FROM BCAVE.SEWON.SW_SALEINFO s
         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        WHERE ${brand === 'all' ? BRAND_FILTER.replace(/BRANDCD/g, 's.BRANDCD') : `s.BRANDCD = '${brand}'`}
+        WHERE s.BRANDCD IN ${brandInClause}
           AND sh.SHOPTYPENM = '${channelSafe}'
           AND s.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}'
           ${selShopCd ? `AND s.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
@@ -141,7 +139,7 @@ export async function GET(req: Request) {
         FROM BCAVE.SEWON.SW_SALEINFO s
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        WHERE ${brand === 'all' ? BRAND_FILTER.replace(/BRANDCD/g, 's.BRANDCD') : `s.BRANDCD = '${brand}'`}
+        WHERE s.BRANDCD IN ${brandInClause}
           AND sh.SHOPTYPENM = '${channelSafe}'
           AND (s.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}' OR s.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}')
           ${selShopCd ? `AND s.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
@@ -153,7 +151,7 @@ export async function GET(req: Request) {
     const shopCds = shopData.map(r => `'${r.SHOPCD}'`).join(',')
     const saleNmData = shopCds ? await snowflakeQuery<Record<string, string>>(`
       SELECT DISTINCT SHOPCD, SHOPNM FROM BCAVE.SEWON.SW_SALEINFO
-      WHERE BRANDCD='${brand === 'all' ? 'CO' : brand}' AND SHOPCD IN (${shopCds}) AND SALEDT >= '${monthStart}' LIMIT 500
+      WHERE BRANDCD IN ${brandInClause} AND SHOPCD IN (${shopCds}) AND SALEDT >= '${monthStart}' LIMIT 500
     `) : []
     const saleNmMap = new Map(saleNmData.map(r => [r.SHOPCD, r.SHOPNM]))
 

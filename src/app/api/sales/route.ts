@@ -1,25 +1,21 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, BRAND_FILTER, SALES_VIEW } from '@/lib/snowflake'
-import { VALID_BRANDS } from '@/lib/constants'
+import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 
 // GET /api/sales?from=202601&to=202612&brand=all
 //         OR  ?fromDt=20260101&toDt=20260331&brand=CO  (일자별 모드)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand  = searchParams.get('brand') || 'all'
+  const brandParam = searchParams.get('brand') || 'all'
   const fromDt = searchParams.get('fromDt')   // YYYYMMDD  (일자 모드)
   const toDt   = searchParams.get('toDt')     // YYYYMMDD  (일자 모드)
   const from   = searchParams.get('from') || '202601' // YYYYMM (월 모드)
   const to     = searchParams.get('to')   || '202699'
 
   // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  const { valid: brandValid, inClause: brandInClause } = parseBrandParam(brandParam)
+  if (!brandValid) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
-
-  const brandClause = brand === 'all'
-    ? BRAND_FILTER
-    : `BRANDCD = '${brand}'`
 
   // 날짜 필터 & 전년동기 계산
   let dateClause:   string
@@ -54,7 +50,7 @@ export async function GET(req: Request) {
            SUM(SALEAMT_VAT_EX) AS REVENUE,
            SUM(SALEQTY) AS QTY
          FROM ${SALES_VIEW}
-         WHERE ${brandClause}
+         WHERE BRANDCD IN ${brandInClause}
            AND ${dateClause}
          GROUP BY YYYYMM, BRANDCD, BRANDNM, SHOPTYPENM
          ORDER BY YYYYMM, BRANDCD, SHOPTYPENM`
@@ -81,7 +77,7 @@ export async function GET(req: Request) {
            SUM(s.SALEQTY) AS QTY
          FROM ${SALES_VIEW} s
          LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD
-         WHERE ${brandClause.replace(/BRANDCD/g, 's.BRANDCD')}
+         WHERE s.BRANDCD IN ${brandInClause}
            AND ${topProdDateClause}
          GROUP BY s.STYLECD, si.STYLENM, s.BRANDCD
          ORDER BY REVENUE DESC
@@ -95,7 +91,7 @@ export async function GET(req: Request) {
            SUM(sl.SALEAMT) AS SALE_AMT
          FROM BCAVE.SEWON.SW_SALEINFO sl
          JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE ${brandClause.replace(/BRANDCD/g, 'sl.BRANDCD')}
+         WHERE sl.BRANDCD IN ${brandInClause}
            AND ${dateClause.replace(/SALEDT/g, 'sl.SALEDT').replace(/YYYYMM/g, 'SUBSTRING(sl.SALEDT, 1, 6)')}
          GROUP BY SUBSTRING(sl.SALEDT, 1, 6), sl.BRANDCD, sh.SHOPTYPENM`
       ),
@@ -107,7 +103,7 @@ export async function GET(req: Request) {
            SUM(sl.SALEAMT) AS SALE_AMT
          FROM BCAVE.SEWON.SW_SALEINFO sl
          JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE ${brandClause.replace(/BRANDCD/g, 'sl.BRANDCD')}
+         WHERE sl.BRANDCD IN ${brandInClause}
            AND ${lyDateClause.replace(/SALEDT/g, 'sl.SALEDT').replace(/YYYYMM/g, 'SUBSTRING(sl.SALEDT, 1, 6)')}
          GROUP BY SUBSTRING(sl.SALEDT, 1, 6), sl.BRANDCD, sh.SHOPTYPENM`
       ),

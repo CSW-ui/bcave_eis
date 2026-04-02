@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, BRAND_FILTER, SALES_VIEW } from '@/lib/snowflake'
-import { VALID_BRANDS } from '@/lib/constants'
+import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 
 // GET /api/sales/weekly?brand=all&toDt=20260308&channelGroup=오프라인&channel=백화점
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand        = searchParams.get('brand') || 'all'
+  const brandParam   = searchParams.get('brand') || 'all'
 
   // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  const { valid: brandValid, inClause: brandInClause } = parseBrandParam(brandParam)
+  if (!brandValid) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
   const toDt         = searchParams.get('toDt')  || '20261231'
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
   const stylecd      = searchParams.get('stylecd') || ''
 
-  const brandClause = brand === 'all' ? BRAND_FILTER : `BRANDCD = '${brand}'`
+  const brandClause = `BRANDCD IN ${brandInClause}`
   const styleFilter = stylecd ? `AND STYLECD = '${stylecd.replace(/'/g, "''")}'` : ''
 
   // 채널 필터 SQL 생성
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
            SUM(sl.SALEAMT) AS SALE
          FROM BCAVE.SEWON.SW_SALEINFO sl
          JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE ${brandClause.replace(/BRANDCD/g, 'sl.BRANDCD')}
+         WHERE sl.BRANDCD IN ${brandInClause}
            AND sl.SALEDT BETWEEN '${fromDt}' AND '${toDt}'
            ${chFilterSl}
            ${styleFilter ? styleFilter.replace(/STYLECD/g, 'sl.STYLECD') : ''}
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
            SUM(sl.SALEAMT) AS SALE
          FROM BCAVE.SEWON.SW_SALEINFO sl
          JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE ${brandClause.replace(/BRANDCD/g, 'sl.BRANDCD')}
+         WHERE sl.BRANDCD IN ${brandInClause}
            AND sl.SALEDT BETWEEN '${lyFromDt}' AND '${lyToDt}'
            ${chFilterSl}
            ${styleFilter ? styleFilter.replace(/STYLECD/g, 'sl.STYLECD') : ''}

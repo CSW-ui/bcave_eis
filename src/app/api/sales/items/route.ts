@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, SALES_VIEW, BRAND_FILTER } from '@/lib/snowflake'
-import { VALID_BRANDS } from '@/lib/constants'
+import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 
 // GET /api/sales/items?brand=all — 전주 마감 기준 품목별 실적
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand = searchParams.get('brand') || 'all'
+  const brandParam = searchParams.get('brand') || 'all'
 
   // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  const { valid: brandValid, inClause: brandInClause } = parseBrandParam(brandParam)
+  if (!brandValid) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
   const weekNum = searchParams.get('weekNum') || ''
@@ -23,9 +23,7 @@ export async function GET(req: Request) {
     chFilter = `AND v.SHOPTYPENM IN (${chList})`
   }
 
-  const brandWhere = brand === 'all'
-    ? BRAND_FILTER.replace(/BRANDCD/g, 'v.BRANDCD')
-    : `v.BRANDCD = '${brand}'`
+  const brandWhere = `v.BRANDCD IN ${brandInClause}`
 
   const today = new Date()
   const fD = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
@@ -95,7 +93,7 @@ export async function GET(req: Request) {
         ORDER BY CW_REV DESC`
     }
     // 할인율용: SW_SALEINFO 기반 품목별 TAG·SALEAMT
-    const dcBrandWhere = brandWhere.replace(/v\.BRANDCD/g, 'sl.BRANDCD')
+    const dcBrandWhere = `sl.BRANDCD IN ${brandInClause}`
     // 다중 채널 필터 (SW_SALEINFO용)
     let chFilterSl = ''
     if (channels) {

@@ -6,20 +6,21 @@ import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 // 이월 매출 포함: 해당 시즌 외 상품(이전 시즌)이 기간 내 판매된 실적
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand = searchParams.get('brand') || 'all'
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  const brandParam = searchParams.get('brand') || 'all'
+  const brandList = brandParam === 'all' ? null : brandParam.split(',').filter(b => VALID_BRANDS.has(b))
+  if (brandList && brandList.length === 0) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
   const year = searchParams.get('year') || '26'
   const seasons = searchParams.get('season')?.split(',') || ['봄', '여름']
-  // 기간 필터 (YYYYMMDD)
   const fromDt = searchParams.get('fromDt') || `20${year}0101`
-  const toDt = searchParams.get('toDt') || '' // 비어있으면 제한 없음
+  const toDt = searchParams.get('toDt') || ''
 
-  const siBrandClause = brand === 'all'
-    ? `si.BRANDCD IN ('CO','WA','LE','CK','LK')` : `si.BRANDCD = '${brand}'`
-  const vBrandClause = brand === 'all'
-    ? `v.BRANDCD IN ('CO','WA','LE','CK','LK')` : `v.BRANDCD = '${brand}'`
+  const brandInClause = brandList
+    ? `(${brandList.map(b => `'${b}'`).join(',')})`
+    : `('CO','WA','LE','CK','LK')`
+  const siBrandClause = `si.BRANDCD IN ${brandInClause}`
+  const vBrandClause = `v.BRANDCD IN ${brandInClause}`
 
   const seasonList = seasons.map(s => `'${s}'`).join(',')
   const saleDateClause = toDt
@@ -29,8 +30,7 @@ export async function GET(req: Request) {
   // 이월 시즌: 현재 시즌이 아닌 이전 시즌
   const prevYear = String(Number(year) - 1)
 
-  const sBrandClause = brand === 'all'
-    ? `s.BRANDCD IN ('CO','WA','LE','CK','LK')` : `s.BRANDCD = '${brand}'`
+  const sBrandClause = `s.BRANDCD IN ${brandInClause}`
   const onlineChannels = `'온라인(무신사)','온라인(위탁몰)','온라인(자사몰)','온라인B2B'`
   const excludeOverseas = `AND v.SHOPTYPENM != '해외 사입'`
 

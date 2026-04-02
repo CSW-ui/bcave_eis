@@ -17,6 +17,16 @@ const PRIVATE_KEY_PASS = process.env.SNOWFLAKE_PRIVATE_KEY_PASSPHRASE // 암호�
 // ─── 데이터 범위 제한 ────────────────────────────────────────────
 // 브랜드: 커버낫(CO), 와키윌리(WA), 리(LE), 커버낫 키즈(CK), Lee Kids(LK)
 export const BRAND_FILTER = `BRANDCD IN ('CO','WA','LE','CK','LK')`
+
+// 콤마 구분 브랜드 파라미터 → SQL IN 절 변환
+// 'all' → 전체, 'CO' → 단일, 'CO,WA,LE' → 복수
+import { VALID_BRANDS } from '@/lib/constants'
+export function parseBrandParam(param: string): { valid: boolean; inClause: string } {
+  if (param === 'all') return { valid: true, inClause: `('CO','WA','LE','CK','LK')` }
+  const brands = param.split(',').filter(b => VALID_BRANDS.has(b))
+  if (brands.length === 0) return { valid: false, inClause: '' }
+  return { valid: true, inClause: `(${brands.map(b => `'${b}'`).join(',')})` }
+}
 // 매출 기준일: 2025년 1월 1일 이후 (뷰: VW_SALES_VAT 사용, SW_SALEINFO 직접 조회 금지)
 export const SALE_DATE_FILTER = `SALEDT >= '20250101'`
 export const SALES_VIEW = `BCAVE.SEWON.VW_SALES_VAT`

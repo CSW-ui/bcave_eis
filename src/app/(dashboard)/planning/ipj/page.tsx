@@ -109,11 +109,14 @@ function calcRates(s: Record<SumKeys, number>) {
 }
 
 export default function IpjPage() {
-  const { allowedBrands } = useAuth()
-  const [brand, setBrand] = useState('all')
+  const { allowedBrands, loading: authLoading } = useAuth()
+  const [brand, setBrand] = useState<string | null>(null)
+  const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
   useEffect(() => {
+    if (authLoading) return
     if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
-  }, [allowedBrands])
+    else setBrand('all')
+  }, [allowedBrands, authLoading])
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   const [selCategory, setSelCategory] = useState('전체')
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -142,17 +145,18 @@ export default function IpjPage() {
     : BRAND_TABS
 
   const fetchData = useCallback(async () => {
+    if (brand === null) return
     setLoading(true); setError(null)
     try {
       const fromDt = fromDate.replace(/-/g, '')
       const toDt = toDate.replace(/-/g, '')
-      const res = await fetch(`/api/planning/ipj?brand=${brand}&year=${selSeason.year}&season=${selSeason.season}&fromDt=${fromDt}&toDt=${toDt}`)
+      const res = await fetch(`/api/planning/ipj?brand=${apiBrand}&year=${selSeason.year}&season=${selSeason.season}&fromDt=${fromDt}&toDt=${toDt}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       setItems(json.items)
     } catch (e) { setError(String(e)) }
     finally { setLoading(false) }
-  }, [brand, selSeason, fromDate, toDate])
+  }, [brand, apiBrand, selSeason, fromDate, toDate])
 
   useEffect(() => { fetchData() }, [fetchData])
 

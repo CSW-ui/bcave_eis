@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY!
-const MID_WEATHER_API_KEY = process.env.MID_WEATHER_API_KEY || WEATHER_API_KEY
+const MID_WEATHER_API_KEY = WEATHER_API_KEY
 
 // 품목 × 기온 매핑
 const TEMP_ITEM_MAP: { min: number; max: number; items: string[]; label: string }[] = [
@@ -35,15 +35,18 @@ export async function GET() {
     const shortRes = await fetch(`https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=${encodeURIComponent(WEATHER_API_KEY)}&pageNo=1&numOfRows=1000&dataType=JSON&base_date=${baseDate}&base_time=${baseTime}&nx=60&ny=127`)
     const shortJson = await shortRes.json()
 
+    // 중기기온 + 중기육상예보 동시 호출
     let midJson: any = null
-    try {
-      const midRes = await fetch(`https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa?serviceKey=${MID_WEATHER_API_KEY}&pageNo=1&numOfRows=10&dataType=JSON&regId=11B10101&tmFc=${midTmFc}`)
-      if (midRes.ok) {
-        const text = await midRes.text()
-        try { midJson = JSON.parse(text) } catch { console.error('[기상청] 중기 JSON 파싱 실패') }
-      }
-    } catch (err) {
-      console.error('[기상청] 중기기온 호출 실패:', err)
+    let midLandJson: any = null
+    const [midTaRes, midLandRes] = await Promise.allSettled([
+      fetch(`https://apis.data.go.kr/1360000/MidFcstInfoService/getMidTa?serviceKey=${MID_WEATHER_API_KEY}&pageNo=1&numOfRows=10&dataType=JSON&regId=11B10101&tmFc=${midTmFc}`),
+      fetch(`https://apis.data.go.kr/1360000/MidFcstInfoService/getMidLandFcst?serviceKey=${MID_WEATHER_API_KEY}&pageNo=1&numOfRows=10&dataType=JSON&regId=11B00000&tmFc=${midTmFc}`),
+    ])
+    if (midTaRes.status === 'fulfilled' && midTaRes.value.ok) {
+      try { midJson = await midTaRes.value.json() } catch { console.error('[기상청] 중기기온 JSON 파싱 실패') }
+    }
+    if (midLandRes.status === 'fulfilled' && midLandRes.value.ok) {
+      try { midLandJson = await midLandRes.value.json() } catch { console.error('[기상청] 중기육상 JSON 파싱 실패') }
     }
 
     // ── 단기예보 파싱 ──
@@ -94,10 +97,19 @@ export async function GET() {
       })
     }
 
-    // ── 중기기온 파싱 (3일~10일후) ──
+    // ── 중기기온 + 중기육상예보 파싱 (3일~10일후) ──
     const midData = midJson?.response?.body?.items?.item?.[0]
+    const midLandData = midLandJson?.response?.body?.items?.item?.[0]
+
+    // 중기육상예보 날씨 텍스트 → 간략화
+    const MID_WEATHER_MAP: Record<string, string> = {
+      '맑음': '맑음', '구름많음': '구름', '구름많고 비': '비', '구름많고 눈': '눈',
+      '구름많고 비/눈': '비/눈', '구름많고 소나기': '소나기',
+      '흐림': '흐림', '흐리고 비': '비', '흐리고 눈': '눈',
+      '흐리고 비/눈': '비/눈', '흐리고 소나기': '소나기',
+    }
+
     if (midData) {
-      // 중기 기온 필드: taMin3, taMax3, taMin4, taMax4, ... taMin10, taMax10
       for (let d = 3; d <= 10; d++) {
         const tmn = Number(midData[`taMin${d}`]) || null
         const tmx = Number(midData[`taMax${d}`]) || null
@@ -108,6 +120,27 @@ export async function GET() {
         // 단기예보와 중복되면 스킵
         if (dailyTemps.some(t => t.date === dateStr)) continue
 
+        // 중기육상예보에서 날씨/강수확률 추출
+        // 3~7일: wf3Am/wf3Pm, rnSt3Am/rnSt3Pm / 8~10일: wf8, rnSt8
+        let weather = ''
+        let rainPct: number | null = null
+        if (midLandData) {
+          if (d <= 7) {
+            const amW = midLandData[`wf${d}Am`] || ''
+            const pmW = midLandData[`wf${d}Pm`] || ''
+            const amR = Number(midLandData[`rnSt${d}Am`]) || 0
+            const pmR = Number(midLandData[`rnSt${d}Pm`]) || 0
+            // 오후 날씨 우선 (외출 시간대)
+            const rawW = pmW || amW
+            weather = MID_WEATHER_MAP[rawW] ?? rawW
+            rainPct = Math.max(amR, pmR)
+          } else {
+            const rawW = midLandData[`wf${d}`] || ''
+            weather = MID_WEATHER_MAP[rawW] ?? rawW
+            rainPct = Number(midLandData[`rnSt${d}`]) || 0
+          }
+        }
+
         const avg = tmn != null && tmx != null ? Math.round((tmn + tmx) / 2 * 10) / 10 : null
         const md = new Date(Number(dateStr.slice(0, 4)), Number(dateStr.slice(4, 6)) - 1, Number(dateStr.slice(6)))
         dailyTemps.push({
@@ -117,7 +150,8 @@ export async function GET() {
           tmx,
           tmn,
           avg,
-          weather: '',
+          weather,
+          rainPct,
           source: 'mid',
         })
       }
@@ -194,6 +228,15 @@ export async function GET() {
         if (avgTemp != null && Math.abs(wkAvg - avgTemp) >= 3) {
           alerts.push(`주말 평균 ${wkAvg}°C — 매장 VMD 주말 전 조정 권장`)
         }
+      }
+
+      // 강수 예보 감지 (중기육상예보 강수확률 60% 이상)
+      const rainyDays = temps10.filter(t => (t as any).rainPct >= 60)
+      if (rainyDays.length >= 3) {
+        alerts.push(`향후 10일 중 ${rainyDays.length}일 강수확률 60%↑ — 우천 대비 상품(방수자켓/레인부츠) 및 매장 VM 조정 권장`)
+      } else if (rainyDays.length > 0) {
+        const rdLabels = rainyDays.map(t => `${t.dateLabel}(${(t as any).rainPct}%)`).join(', ')
+        alerts.push(`강수 예보: ${rdLabels} — 해당일 야외 행사/촬영 일정 확인`)
       }
 
       // 이번주 vs 다음주 기온대 전환 감지

@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { fmtM, fmtPctF, fmtPctI, fmtPctS } from '@/lib/formatters'
 import type { PerfMetrics } from '@/lib/sales-types'
+import { ArrowUpDown } from 'lucide-react'
 
 // 영업 현황 테이블의 각 열 셀 렌더링
 export function PerfCells({ m }: { m: PerfMetrics }) {
@@ -49,6 +50,29 @@ export function PerfCells({ m }: { m: PerfMetrics }) {
   )
 }
 
+// PerfMetrics에서 정렬 가능한 키 목록
+export const PERF_SORT_KEYS = [
+  'target', 'mtdRev', 'achPct', 'mtdDc', 'mtdCogs',
+  'cwRev', 'wow', 'wowPct', 'cwYoy', 'cwYoyPct', 'cwDc', 'cwCogs',
+  'yoy', 'yoyPct', 'dcChg', 'cogsChg',
+  'grossProfit', 'grossProfitRate', 'grossProfitGap',
+] as const
+
+export type PerfSortKey = typeof PERF_SORT_KEYS[number]
+
+// 정렬값 추출 (grossProfit 등 파생 컬럼 포함)
+export function getPerfSortValue(m: PerfMetrics, key: PerfSortKey): number {
+  if (key === 'grossProfit') return m.mtdRev - (m.mtdRev * m.mtdCogs / 100)
+  if (key === 'grossProfitRate') return m.mtdRev > 0 ? (1 - m.mtdCogs / 100) * 100 : 0
+  if (key === 'grossProfitGap') {
+    const gp = m.mtdRev - (m.mtdRev * m.mtdCogs / 100)
+    const lyCogs = m.mtdCogs - m.cogsChg
+    const lyGp = m.lyMtdRev - (m.lyMtdRev * lyCogs / 100)
+    return gp - lyGp
+  }
+  return (m as any)[key] ?? 0
+}
+
 export const PERF_GROUP_HEADER = (
   <tr className="bg-gray-100 border-b border-gray-200 text-[10px] text-gray-500 font-bold uppercase">
     <th className="sticky left-0 bg-gray-100 z-30"></th>
@@ -59,6 +83,54 @@ export const PERF_GROUP_HEADER = (
   </tr>
 )
 
+interface SortableHeaderProps {
+  sortKey: PerfSortKey | null
+  sortDir: 'asc' | 'desc'
+  onSort: (key: PerfSortKey) => void
+}
+
+function SortTh({ k, label, w, sortKey, sortDir, onSort, border }: {
+  k: PerfSortKey; label: string; w: string; border?: boolean
+} & SortableHeaderProps) {
+  return (
+    <th className={cn('text-right px-1 py-2 cursor-pointer hover:text-gray-700 select-none whitespace-nowrap', w, border && 'border-l border-gray-200')}
+      onClick={() => onSort(k)}>
+      <span className="inline-flex items-center gap-0.5 justify-end">
+        {label}
+        <ArrowUpDown size={7} className={cn('shrink-0', sortKey === k ? 'opacity-100 text-brand-accent' : 'opacity-20')} />
+      </span>
+    </th>
+  )
+}
+
+export function PerfHeaderCols(props: SortableHeaderProps) {
+  const p = props
+  return (
+    <>
+      <SortTh k="target" label="목표" w="w-[62px]" {...p} />
+      <SortTh k="mtdRev" label="실적" w="w-[62px]" {...p} />
+      <SortTh k="achPct" label="ACH%" w="w-[42px]" {...p} />
+      <SortTh k="mtdDc" label="할인율" w="w-[40px]" {...p} />
+      <SortTh k="mtdCogs" label="원가율" w="w-[48px]" {...p} />
+      <SortTh k="cwRev" label="주간실적" w="w-[62px]" {...p} border />
+      <SortTh k="wow" label="WOW" w="w-[52px]" {...p} />
+      <SortTh k="wowPct" label="WOW%" w="w-[44px]" {...p} />
+      <SortTh k="cwYoy" label="YOY" w="w-[52px]" {...p} />
+      <SortTh k="cwYoyPct" label="YOY%" w="w-[44px]" {...p} />
+      <SortTh k="cwDc" label="할인율" w="w-[40px]" {...p} />
+      <SortTh k="cwCogs" label="원가율" w="w-[48px]" {...p} />
+      <SortTh k="yoy" label="YOY" w="w-[52px]" {...p} border />
+      <SortTh k="yoyPct" label="YOY%" w="w-[44px]" {...p} />
+      <SortTh k="dcChg" label="할인율±" w="w-[44px]" {...p} />
+      <SortTh k="cogsChg" label="원가율±" w="w-[48px]" {...p} />
+      <SortTh k="grossProfit" label="매출이익" w="w-[52px]" {...p} border />
+      <SortTh k="grossProfitRate" label="이익률" w="w-[48px]" {...p} />
+      <SortTh k="grossProfitGap" label="YOY GAP" w="w-[48px]" {...p} />
+    </>
+  )
+}
+
+// 기존 호환용 (정렬 없는 정적 헤더)
 export const PERF_HEADER_COLS = (
   <>
     <th className="text-right px-1 py-2 w-[62px]">목표</th>

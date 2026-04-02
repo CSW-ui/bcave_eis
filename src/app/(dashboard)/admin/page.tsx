@@ -120,17 +120,48 @@ export default function AdminPage() {
       const ws = wb.Sheets[wb.SheetNames[0]]
       const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws)
 
-      const parsed: MonthlyTarget[] = rows
-        .filter(r => r['년월'] && r['브랜드'] && r['목표'])
-        .map(r => ({
-          yyyymm: String(r['년월']).replace(/[^0-9]/g, ''),
-          brandnm: String(r['브랜드']),
-          target: Number(r['목표']) || 0,
-          shoptypenm: r['채널'] ? String(r['채널']) : undefined,
-        }))
+      // 컬럼명 공백 트림
+      const trimmedRows = rows.map(r => {
+        const obj: Record<string, any> = {}
+        for (const [k, v] of Object.entries(r)) obj[k.trim()] = v
+        return obj
+      })
+
+      // 컬럼 자동 감지: 신규 형식(매장별) vs 기존 형식(합산)
+      const sample = trimmedRows[0] ?? {}
+      const isNewFormat = '매출액(원)' in sample && '매장코드' in sample
+
+      let parsed: MonthlyTarget[] = []
+
+      if (isNewFormat) {
+        // 신규 형식: 매장별 행 → 브랜드+채널+월 합산
+        const agg = new Map<string, { target: number; brandnm: string; yyyymm: string; shoptypenm?: string }>()
+        for (const r of trimmedRows) {
+          const yyyymm = String(r['년월']).replace(/[^0-9]/g, '')
+          const brandnm = String(r['브랜드'] ?? '')
+          const target = Number(r['매출액(원)']) || 0
+          const shoptypenm = r['채널'] ? String(r['채널']) : undefined
+          if (!yyyymm || !brandnm || !target) continue
+          const key = `${brandnm}|${yyyymm}|${shoptypenm ?? ''}`
+          const prev = agg.get(key)
+          if (prev) { prev.target += target }
+          else { agg.set(key, { brandnm, yyyymm, target, shoptypenm }) }
+        }
+        parsed = Array.from(agg.values())
+      } else {
+        // 기존 형식: 년월, 브랜드, 목표
+        parsed = trimmedRows
+          .filter(r => r['년월'] && r['브랜드'] && r['목표'])
+          .map(r => ({
+            yyyymm: String(r['년월']).replace(/[^0-9]/g, ''),
+            brandnm: String(r['브랜드']),
+            target: Number(r['목표']) || 0,
+            shoptypenm: r['채널'] ? String(r['채널']) : undefined,
+          }))
+      }
 
       if (parsed.length === 0) {
-        alert('유효한 데이터가 없습니다. 년월, 브랜드, 목표 컬럼을 확인해주세요.')
+        alert('유효한 데이터가 없습니다. 엑셀 컬럼을 확인해주세요.\n지원 형식:\n① 년월, 브랜드, 목표 (합산형)\n② 브랜드, 매장코드, 년월, 매출액(원) (매장별형)')
       } else {
         saveTargets(parsed, file.name)
         alert(`${parsed.length}건 업로드 완료`)

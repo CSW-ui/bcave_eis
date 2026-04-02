@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 // useRouter removed – was unused
-import { RefreshCw, ArrowUpDown, Download, Bot, Send, X } from 'lucide-react'
+import { RefreshCw, ArrowUpDown, Download, CloudSun } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BRAND_COLORS, BRAND_TABS } from '@/lib/constants'
 import { fmtM, fmtW } from '@/lib/formatters'
@@ -34,22 +34,21 @@ function SortTh({ k, label, sort, align = 'right' }: { k: string; label: string;
 
 export default function CarryoverPage() {
   const { allowedBrands } = useAuth()
-  const [brand, setBrand] = useState('all')
+  const defaultBrand = allowedBrands?.length === 1 ? allowedBrands[0] : 'all'
+  const [brand, setBrand] = useState(defaultBrand)
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [selItem, setSelItem] = useState<string | null>(null)
   const [channels, setChannels] = useState<any[]>([])
   const [years, setYears] = useState<any[]>([])
-  const [_aiAdvice, setAiAdvice] = useState<string>('')
-  const [_aiLoading, setAiLoading] = useState(false)
   const [selYear, setSelYear] = useState<string | null>(null)
   const [staleMinInvAmt, setStaleMinInvAmt] = useState(0)
   const [staleMinTotalInv, setStaleMinTotalInv] = useState(0)
   const [staleMinInvWeeks, setStaleMinInvWeeks] = useState(0)
-  const [chatOpen, setChatOpen] = useState(false)
-  const [chatMessages, setChatMessages] = useState<{role: string; content: string}[]>([])
-  const [chatInput, setChatInput] = useState('')
-  const [chatLoading, setChatLoading] = useState(false)
+
+  // 날씨 기반 출고 제안
+  const [weather, setWeather] = useState<any>(null)
+  const [weatherLoading, setWeatherLoading] = useState(false)
 
   const itemSort = useSortable('totalInv')
   const styleSort = useSortable('invAmt')
@@ -78,6 +77,31 @@ export default function CarryoverPage() {
   }, [brand])
 
   useEffect(() => { setSelItem(null); setSelYear(null); fetchData() }, [fetchData])
+
+  // 날씨 데이터 로드 (1회)
+  useEffect(() => {
+    setWeatherLoading(true)
+    fetch('/api/weather').then(r => r.json()).then(j => setWeather(j)).catch(() => {}).finally(() => setWeatherLoading(false))
+  }, [])
+
+  // 날씨 추천 품목과 이월재고 매칭
+  const weatherSuggestions = useMemo(() => {
+    if (!weather?.recommendations?.length || !data?.items?.length) return []
+    const results: { period: string; tempLabel: string; items: { item: string; whAvail: number; totalInv: number; cwRev: number; invWeeks: number }[] }[] = []
+    for (const rec of weather.recommendations) {
+      const matched = (data.items as any[])
+        .filter((item: any) => {
+          const name = (item.item || '').toLowerCase()
+          return rec.items.some((ri: string) => name.includes(ri.toLowerCase()) || ri.toLowerCase().includes(name))
+        })
+        .filter((item: any) => item.whAvail > 0)
+        .sort((a: any, b: any) => b.whAvail - a.whAvail)
+      if (matched.length > 0) {
+        results.push({ period: rec.period, tempLabel: rec.label, items: matched })
+      }
+    }
+    return results
+  }, [weather, data])
 
   // 필터 re-fetch — 품목 테이블은 유지, 채널/연도/적체만 업데이트
   const [filteredItems, setFilteredItems] = useState<any[]>([])
@@ -114,23 +138,6 @@ export default function CarryoverPage() {
     refetchFiltered(selItem, next)
   }
 
-  // AI 이월재고 제안 (서버 API 경유)
-  const _fetchAiAdvice = async () => {
-    setAiLoading(true)
-    try {
-      const topStale = (data?.staleStyles ?? []).slice(0, 10).map((s: any) => `${s.stylenm}(${s.yearcd}) 재고${s.totalInv} 판매율${s.sellThrough}%`)
-      const chInfo = channels.map((c: any) => `${c.channel}: 전주${Math.round(c.cwRev/1e6)}백만 비중${c.share}%`)
-      const yrInfo = years.map((y: any) => `20${y.year}: 재고${y.totalInv} 판매율${y.sellThrough}%`)
-      const res = await fetch('/api/planning/carryover-advice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ staleStyles: topStale, channels: chInfo, years: yrInfo, brand }),
-      })
-      const json = await res.json()
-      setAiAdvice(json.advice ?? '')
-    } catch { setAiAdvice('AI 분석 실패') }
-    finally { setAiLoading(false) }
-  }
 
   const downloadExcel = () => {
     if (!data?.staleStyles) return
@@ -147,30 +154,6 @@ export default function CarryoverPage() {
     XLSX.writeFile(wb, `이월재고_${brand}_${new Date().toISOString().slice(0,10)}.xlsx`)
   }
 
-  const sendChat = async () => {
-    if (!chatInput.trim() || chatLoading) return
-    const userMsg = chatInput.trim()
-    setChatInput('')
-    const newMsgs = [...chatMessages, { role: 'user', content: userMsg }]
-    setChatMessages(newMsgs)
-    setChatLoading(true)
-    try {
-      const context = {
-        staleStyles: (data?.staleStyles ?? []).slice(0, 15).map((s: any) => `${s.stylenm}(${s.yearcd}) 재고${s.totalInv} 판매율${s.sellThrough}%`),
-        channels: channels.map((c: any) => `${c.channel}: 전주${Math.round(c.cwRev/1e6)}백만 비중${c.share}%`),
-        years: years.map((y: any) => `20${y.year}: 재고${y.totalInv} 판매율${y.sellThrough}%`),
-        brand, question: userMsg,
-        history: newMsgs.slice(-6),
-      }
-      const res = await fetch('/api/planning/carryover-advice', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(context),
-      })
-      const json = await res.json()
-      setChatMessages([...newMsgs, { role: 'assistant', content: json.advice ?? 'AI 응답 실패' }])
-    } catch { setChatMessages([...newMsgs, { role: 'assistant', content: '오류가 발생했습니다.' }]) }
-    finally { setChatLoading(false) }
-  }
 
   const rawStyles = (selItem || selYear) ? filteredStaleStyles : (data?.staleStyles ?? [])
   const filteredStyles = rawStyles.filter((s: any) => {
@@ -252,7 +235,7 @@ export default function CarryoverPage() {
       <div className="flex gap-3" style={{ height: 700 }}>
 
         {/* 품목별 이월 현황 */}
-        <div className="flex-[3] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="flex-[3.5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">품목별 이월 현황 <span className="font-normal text-gray-400 ml-1">클릭 시 상품 필터</span></h3>
           </div>
@@ -277,7 +260,7 @@ export default function CarryoverPage() {
                     <tr key={item.item} onClick={() => handleItemClick(item.item)}
                       className={cn('border-b border-surface-border/50 cursor-pointer transition-colors',
                         selItem === item.item ? 'bg-emerald-50' : i%2===0 ? 'bg-white hover:bg-surface-subtle' : 'bg-gray-50/30 hover:bg-surface-subtle')}>
-                      <td className="px-2 py-2 font-medium text-gray-800">{item.item}</td>
+                      <td className="px-2 py-2 font-medium text-gray-800 whitespace-nowrap">{item.item}</td>
                       <td className="px-1 py-2 text-right font-mono text-gray-700">{item.styleCnt}</td>
                       <td className="px-1 py-2 text-right font-mono text-gray-700">{item.totalInv.toLocaleString()}</td>
                       <td className="px-1 py-2 text-right font-mono text-gray-600">{fmtW(item.invAmt)}</td>
@@ -285,26 +268,9 @@ export default function CarryoverPage() {
                       <td className={cn('px-1 py-2 text-right font-mono', item.wow >= 0 ? 'text-emerald-600' : 'text-red-500')}>
                         {item.pwRev > 0 ? `${item.wow >= 0 ? '+' : ''}${item.wow}%` : '—'}
                       </td>
-                      <td className="px-1 py-2 text-right">
-                        <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
-                          item.sellThrough >= 50 ? 'bg-emerald-100 text-emerald-700' :
-                          item.sellThrough >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>
-                          {item.sellThrough}%
-                        </span>
-                      </td>
-                      <td className="px-1 py-2 text-right">
-                        <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
-                          item.invWeeks >= 20 ? 'bg-red-100 text-red-700' :
-                          item.invWeeks >= 10 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')}>
-                          {item.invWeeks >= 999 ? '—' : `${item.invWeeks}주`}
-                        </span>
-                      </td>
-                      <td className="px-1 py-2 text-right">
-                        <span className={cn('font-mono text-[10px]', item.whRatio >= 70 ? 'text-red-600 font-bold' : 'text-gray-500')}>
-                          {item.whRatio}%
-                        </span>
-                        {item.whRatio >= 70 && <span className="ml-0.5 text-[8px] text-red-500" title="매장배분필요">!</span>}
-                      </td>
+                      <td className="px-1 py-2 text-right font-mono text-gray-700">{item.sellThrough}%</td>
+                      <td className="px-1 py-2 text-right font-mono text-gray-700">{item.invWeeks >= 999 ? '—' : `${item.invWeeks}주`}</td>
+                      <td className="px-1 py-2 text-right font-mono text-gray-700">{item.whRatio}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -314,7 +280,7 @@ export default function CarryoverPage() {
         </div>
 
         {/* 채널별 이월 판매 */}
-        <div className="flex-[2] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="flex-[1.5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">채널별 이월 판매</h3>
           </div>
@@ -373,13 +339,7 @@ export default function CarryoverPage() {
                       <td className="px-1 py-2 text-right font-mono text-gray-700">{y.styleCnt}</td>
                       <td className="px-1 py-2 text-right font-mono text-gray-700">{y.totalInv.toLocaleString()}</td>
                       <td className="px-1 py-2 text-right font-mono text-purple-700">{fmtM(y.cwRev)}</td>
-                      <td className="px-2 py-2 text-right">
-                        <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
-                          y.sellThrough >= 50 ? 'bg-emerald-100 text-emerald-700' :
-                          y.sellThrough >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>
-                          {y.sellThrough}%
-                        </span>
-                      </td>
+                      <td className="px-2 py-2 text-right font-mono text-gray-700">{y.sellThrough}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -387,10 +347,71 @@ export default function CarryoverPage() {
             </div>
           </div>
 
+          {/* 날씨 기반 출고 제안 */}
+          <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1">
+            <div className="px-3 py-2 border-b border-surface-border bg-blue-50/50 shrink-0">
+              <h3 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+                <CloudSun size={13} className="text-blue-500" />
+                날씨 기반 출고 제안
+                {weather?.avgTemp != null && (
+                  <span className="font-normal text-gray-400 ml-1">현재 평균 {weather.avgTemp}°C</span>
+                )}
+              </h3>
+            </div>
+            <div className="overflow-auto flex-1 p-3">
+              {weatherLoading ? (
+                <div className="space-y-2">{Array.from({length:3}).map((_,i)=><div key={i} className="h-6 bg-surface-subtle animate-pulse rounded"/>)}</div>
+              ) : weatherSuggestions.length > 0 ? (
+                <div className="space-y-3">
+                  {weather?.alerts?.length > 0 && (
+                    <div className="space-y-1">
+                      {weather.alerts.map((a: string, i: number) => (
+                        <p key={i} className="text-[10px] text-amber-700 bg-amber-50 rounded px-2 py-1">{a}</p>
+                      ))}
+                    </div>
+                  )}
+                  {weatherSuggestions.map((sg, i) => (
+                    <div key={i}>
+                      <p className="text-[10px] font-semibold text-blue-700 mb-1.5">
+                        {sg.period} · {sg.tempLabel}
+                      </p>
+                      <table className="w-full text-[10px]">
+                        <thead>
+                          <tr className="text-gray-400 border-b border-gray-100">
+                            <th className="text-left py-1">품목</th>
+                            <th className="text-right py-1">창고재고</th>
+                            <th className="text-right py-1">전주매출</th>
+                            <th className="text-right py-1">재고주수</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sg.items.map((item, j) => (
+                            <tr key={j} className="border-b border-gray-50">
+                              <td className="py-1 font-medium text-gray-800 whitespace-nowrap">{item.item}</td>
+                              <td className="py-1 text-right font-mono text-gray-700">{item.whAvail.toLocaleString()}</td>
+                              <td className="py-1 text-right font-mono text-purple-700">{fmtM(item.cwRev)}</td>
+                              <td className="py-1 text-right font-mono text-gray-600">{item.invWeeks >= 999 ? '—' : `${item.invWeeks}주`}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              ) : weather && !weatherLoading ? (
+                <div className="text-center py-4 text-[10px] text-gray-400">
+                  {weather.avgTemp != null
+                    ? '현재 기온에 맞는 이월 품목이 없습니다'
+                    : '날씨 데이터를 불러올 수 없습니다'}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
         </div>
 
         {/* 적체 상품 TOP 30 */}
-        <div className="flex-[4] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="flex-[5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">
               {selItem ? `${selItem} 이월 상품` : '적체 상품 (재고금액 높은 순)'}
@@ -453,26 +474,9 @@ export default function CarryoverPage() {
                       <td className="px-1 py-1.5 text-right font-mono text-gray-600">{fmtW(s.invAmt)}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-600">{s.saleQty.toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-purple-700">{s.cwRev > 0 ? fmtM(s.cwRev) : '—'}</td>
-                      <td className="px-1 py-1.5 text-right">
-                        <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
-                          s.sellThrough >= 50 ? 'bg-emerald-100 text-emerald-700' :
-                          s.sellThrough >= 20 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>
-                          {s.sellThrough}%
-                        </span>
-                      </td>
-                      <td className="px-1 py-1.5 text-right">
-                        <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
-                          s.invWeeks >= 20 ? 'bg-red-100 text-red-700' :
-                          s.invWeeks >= 10 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700')}>
-                          {s.invWeeks >= 999 ? '—' : `${s.invWeeks}주`}
-                        </span>
-                      </td>
-                      <td className="px-1 py-1.5 text-right">
-                        <span className={cn('font-mono text-[10px]', s.whRatio >= 70 ? 'text-red-600 font-bold' : 'text-gray-500')}>
-                          {s.whRatio}%
-                        </span>
-                        {s.whRatio >= 70 && <span className="ml-0.5 px-1 py-px rounded bg-red-100 text-red-600 text-[8px] font-semibold">매장배분필요</span>}
-                      </td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-700">{s.sellThrough}%</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-700">{s.invWeeks >= 999 ? '—' : `${s.invWeeks}주`}</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-700">{s.whRatio}%</td>
                     </tr>
                   ))}
                 </tbody>
@@ -482,79 +486,6 @@ export default function CarryoverPage() {
         </div>
       </div>
 
-      {/* AI 채팅 플로팅 버튼 */}
-      <button onClick={() => setChatOpen(!chatOpen)}
-        className={cn('fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all z-50',
-          chatOpen ? 'bg-gray-700' : 'bg-blue-600 hover:bg-blue-700')}>
-        {chatOpen ? <X size={24} className="text-white" /> : <Bot size={24} className="text-white" />}
-      </button>
-
-      {/* AI 채팅 패널 */}
-      {chatOpen && (
-        <div className="fixed bottom-24 right-6 w-[400px] h-[500px] bg-white rounded-2xl shadow-2xl border border-surface-border flex flex-col z-50 overflow-hidden">
-          <div className="px-4 py-3 bg-blue-600 text-white shrink-0">
-            <h3 className="text-sm font-bold flex items-center gap-2"><Bot size={16} /> 이월재고 AI 에이전트</h3>
-            <p className="text-[10px] text-blue-200 mt-0.5">이월재고에 대해 무엇이든 물어보세요</p>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
-            {chatMessages.length === 0 && (
-              <div className="text-center py-8">
-                <Bot size={32} className="text-blue-200 mx-auto mb-3" />
-                <p className="text-xs text-gray-400 mb-3">이월재고 관련 질문을 해보세요</p>
-                <div className="space-y-1.5">
-                  {['후드티 이월 어떻게 처리해?', '아울렛에 어떤 상품 보내야 해?', '23년도 재고 할인 전략 알려줘'].map(q => (
-                    <button key={q} onClick={() => {
-                      const newMsgs = [...chatMessages, { role: 'user', content: q }]
-                      setChatMessages(newMsgs)
-                      setChatLoading(true)
-                      const context = {
-                        staleStyles: (data?.staleStyles ?? []).slice(0, 15).map((s: any) => `${s.stylenm}(${s.yearcd}) 재고${s.totalInv} 판매율${s.sellThrough}%`),
-                        channels: channels.map((c: any) => `${c.channel}: 전주${Math.round(c.cwRev/1e6)}백만 비중${c.share}%`),
-                        years: allYears.map((y: any) => `20${y.year}: 재고${y.totalInv} 판매율${y.sellThrough}%`),
-                        brand, question: q, history: newMsgs,
-                      }
-                      fetch('/api/planning/carryover-advice', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(context) })
-                        .then(r => r.json()).then(j => setChatMessages([...newMsgs, { role: 'assistant', content: j.advice ?? 'AI 응답 실패' }]))
-                        .catch(() => setChatMessages([...newMsgs, { role: 'assistant', content: '오류 발생' }]))
-                        .finally(() => setChatLoading(false))
-                    }}
-                      className="block w-full text-left text-[11px] text-blue-600 bg-blue-50 rounded-lg px-3 py-2 hover:bg-blue-100 transition-colors">
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                <div className={cn('max-w-[85%] rounded-2xl px-3 py-2 text-[11px] leading-relaxed',
-                  msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm')}>
-                  {msg.content}
-                </div>
-              </div>
-            ))}
-            {chatLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-3 py-2 text-[11px] text-gray-400 animate-pulse">AI가 분석 중...</div>
-              </div>
-            )}
-          </div>
-
-          <div className="p-3 border-t border-surface-border shrink-0">
-            <div className="flex gap-2">
-              <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendChat()}
-                placeholder="질문을 입력하세요..."
-                className="flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500" />
-              <button onClick={sendChat} disabled={chatLoading || !chatInput.trim()}
-                className="bg-blue-600 text-white rounded-xl px-3 py-2 hover:bg-blue-700 disabled:opacity-50">
-                <Send size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

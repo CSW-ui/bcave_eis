@@ -111,6 +111,9 @@ function calcRates(s: Record<SumKeys, number>) {
 export default function IpjPage() {
   const { allowedBrands } = useAuth()
   const [brand, setBrand] = useState('all')
+  useEffect(() => {
+    if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
+  }, [allowedBrands])
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   const [selCategory, setSelCategory] = useState('전체')
   const todayStr = new Date().toISOString().slice(0, 10)

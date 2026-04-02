@@ -88,7 +88,8 @@ function diagnosItem(cur: PlanItem, comp?: PlanItem): DiagGrade {
 export default function PlanningDashboard() {
   const { allowedBrands } = useAuth()
 
-  const [brand, setBrand] = useState('all')
+  const defaultBrand = allowedBrands?.length === 1 ? allowedBrands[0] : 'all'
+  const [brand, setBrand] = useState(defaultBrand)
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   const [selCategory, setSelCategory] = useState('전체')
 
@@ -548,14 +549,18 @@ export default function PlanningDashboard() {
               <div className="flex flex-wrap gap-1.5">
                 {weather.temps.slice(0, 10).map(t => {
                   const isWeekend = t.day === '토' || t.day === '일'
-                  const wIcon = t.weather === '비' || t.weather === '소나기' ? '🌧' : t.weather === '눈' || t.weather === '비/눈' ? '🌨' : t.weather === '흐림' ? '☁' : t.weather === '구름' ? '⛅' : t.weather === '맑음' ? '☀' : ''
+                  const wIcon = t.weather === '비' || t.weather === '소나기' ? '🌧' : t.weather === '눈' || t.weather === '비/눈' ? '🌨' : t.weather === '흐림' ? '☁' : t.weather === '구름' ? '⛅' : t.weather === '맑음' ? '☀' : '·'
+                  const rainPct = (t as any).rainPct as number | undefined
                   return (
-                    <div key={t.date} className={cn('flex flex-col items-center min-w-[32px] rounded-lg py-1', isWeekend && 'bg-sky-100/50')}>
+                    <div key={t.date} className={cn('flex flex-col items-center min-w-[36px] rounded-lg py-1', isWeekend && 'bg-sky-100/50')}>
                       <span className={cn('text-xs font-semibold', isWeekend ? 'text-red-400' : 'text-sky-500')}>{t.day}</span>
                       <span className="text-[11px] text-sky-400">{t.dateLabel}</span>
-                      {wIcon && <span className="text-lg leading-none my-0.5">{wIcon}</span>}
+                      <span className="text-lg leading-none my-0.5">{wIcon}</span>
                       <span className="text-sm font-bold text-sky-800">{t.tmx ?? '?'}°</span>
                       <span className="text-xs text-sky-400">{t.tmn ?? '?'}°</span>
+                      {rainPct != null && rainPct > 0 && (
+                        <span className={cn('text-[9px] font-semibold mt-0.5', rainPct >= 60 ? 'text-blue-600' : 'text-sky-400')}>{rainPct}%</span>
+                      )}
                     </div>
                   )
                 })}

@@ -133,9 +133,9 @@ export async function GET(req: Request) {
           FROM ${SALES_VIEW} v WHERE v.SALEDT BETWEEN '${pw3Start}' AND '${pw3End}' GROUP BY v.STYLECD, v.BRANDCD
         ) s_pw3 ON si.STYLECD = s_pw3.STYLECD AND si.BRANDCD = s_pw3.BRANDCD
         WHERE ${brandWhere} AND si.YEARCD < '${curYr}' ${selYear ? `AND si.YEARCD = '${selYear}'` : ''}
+          ${selItem ? `AND si.ITEMNM = '${selItem.replace(/'/g, "''")}'` : ''}
           AND (COALESCE(inv.INVQTY, 0) + COALESCE(wh.AVAILQTY, 0)) > 0
         ORDER BY (COALESCE(inv.INVQTY, 0) + COALESCE(wh.AVAILQTY, 0)) * (si.TAGPRICE / 1.1) DESC
-        LIMIT 30
       `),
 
       // 연도별 이월 재고 현황

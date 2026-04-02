@@ -12,7 +12,7 @@ import { BRAND_COLORS, BRAND_NAMES, BRAND_TABS, brandNameToCode } from '@/lib/co
 import { fmtM, fmtPctS } from '@/lib/formatters'
 import { useTargetData } from '@/hooks/useTargetData'
 import { useAuth } from '@/contexts/AuthContext'
-import { PerfCells, PERF_GROUP_HEADER, PERF_HEADER_COLS } from '@/components/sales/PerfCells'
+import { PerfCells, PERF_GROUP_HEADER, PerfHeaderCols, getPerfSortValue, type PerfSortKey } from '@/components/sales/PerfCells'
 import {
   type ChannelGroup, type WeekPoint, type WeeklyMeta, type Product,
   type PerfData, type PerfMetrics, type MonthProgress,
@@ -104,6 +104,14 @@ export default function SalesDashboard() {
   const [itemSortKey, setItemSortKey] = useState<string>('cwRev')
   const [itemSortDir, setItemSortDir] = useState<'asc' | 'desc'>('desc')
   const toggleItemSort = (k: string) => { if (itemSortKey === k) setItemSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setItemSortKey(k); setItemSortDir('desc') } }
+
+  // 브랜드/채널 테이블 정렬
+  const [brandSortKey, setBrandSortKey] = useState<PerfSortKey | null>(null)
+  const [brandSortDir, setBrandSortDir] = useState<'asc' | 'desc'>('desc')
+  const toggleBrandSort = (k: PerfSortKey) => { if (brandSortKey === k) setBrandSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setBrandSortKey(k); setBrandSortDir('desc') } }
+  const [chSortKey, setChSortKey] = useState<PerfSortKey | null>(null)
+  const [chSortDir, setChSortDir] = useState<'asc' | 'desc'>('desc')
+  const toggleChSort = (k: PerfSortKey) => { if (chSortKey === k) setChSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setChSortKey(k); setChSortDir('desc') } }
 
   const [weeks,     setWeeks]     = useState<WeekPoint[]>([])
   const [weekMeta,  setWeekMeta]  = useState<WeeklyMeta | null>(null)
@@ -382,6 +390,7 @@ export default function SalesDashboard() {
       chRows.push({ group: grp, channel: '합계', m: calcMetrics(sumAgg(gc), sumAgg(gl), grpTarget), isGroupTotal: true })
 
       const channels = grpChannels
+        .filter(ch => (ch ?? '').trim() !== '')  // 빈 채널명 제외
         .sort((a, b) => gc.filter(r => r.shoptypenm === b).reduce((s, r) => s + r.mtdRev, 0)
                       - gc.filter(r => r.shoptypenm === a).reduce((s, r) => s + r.mtdRev, 0))
       for (const ch of channels) {
@@ -703,11 +712,18 @@ export default function SalesDashboard() {
                   {PERF_GROUP_HEADER}
                   <tr className="bg-gray-50 border-b border-surface-border text-gray-400 font-semibold uppercase tracking-wide">
                     <th className="text-left px-3 py-2 sticky left-0 bg-gray-50 z-30 w-[120px]"></th>
-                    {PERF_HEADER_COLS}
+                    <PerfHeaderCols sortKey={brandSortKey} sortDir={brandSortDir} onSort={toggleBrandSort} />
                   </tr>
                 </thead>
                 <tbody>
-                  {perfTableData.brandRows.map((row) => (
+                  {(brandSortKey
+                    ? [perfTableData.brandRows[0], ...perfTableData.brandRows.slice(1).sort((a, b) => {
+                        const va = getPerfSortValue(a.m, brandSortKey)
+                        const vb = getPerfSortValue(b.m, brandSortKey)
+                        return brandSortDir === 'asc' ? va - vb : vb - va
+                      })]
+                    : perfTableData.brandRows
+                  ).map((row) => (
                     <tr key={row.brandcd}
                       onClick={() => handleBrandClick(row.brandcd)}
                       className={cn('border-b border-surface-border cursor-pointer transition-colors',
@@ -738,12 +754,31 @@ export default function SalesDashboard() {
                 <thead className="sticky top-0 z-20">
                   {PERF_GROUP_HEADER}
                   <tr className="bg-gray-50 border-b border-surface-border text-gray-400 font-semibold uppercase tracking-wide">
-                    <th className="text-left px-3 py-2 sticky left-0 bg-gray-50 z-30 w-[120px]">매장형태</th>
-                    {PERF_HEADER_COLS}
+                    <th className="text-left px-3 py-2 sticky left-0 bg-gray-50 z-30 w-[120px] whitespace-nowrap">매장형태</th>
+                    <PerfHeaderCols sortKey={chSortKey} sortDir={chSortDir} onSort={toggleChSort} />
                   </tr>
                 </thead>
                 <tbody>
-                  {perfTableData.chRows.map((row, i) => {
+                  {(chSortKey
+                    ? (() => {
+                        // 그룹 합계는 유지, 그룹 내 개별 채널만 정렬
+                        const groups = CHANNEL_GROUP_ORDER.filter(g => perfTableData.chRows.some(r => r.group === g))
+                        const sorted: ChRow[] = []
+                        for (const g of groups) {
+                          const total = perfTableData.chRows.find(r => r.group === g && r.isGroupTotal)
+                          if (total) sorted.push(total)
+                          const children = perfTableData.chRows.filter(r => r.group === g && !r.isGroupTotal)
+                            .sort((a, b) => {
+                              const va = getPerfSortValue(a.m, chSortKey)
+                              const vb = getPerfSortValue(b.m, chSortKey)
+                              return chSortDir === 'asc' ? va - vb : vb - va
+                            })
+                          sorted.push(...children)
+                        }
+                        return sorted
+                      })()
+                    : perfTableData.chRows
+                  ).map((row, i) => {
                     const grpColor = CHANNEL_GROUP_COLORS[row.group]
                     // 개별 채널: selChannels에 포함되면 선택
                     const isSelected = row.isGroupTotal
@@ -770,7 +805,7 @@ export default function SalesDashboard() {
                               <span className="font-semibold text-gray-800">{row.group} 합계</span>
                             </span>
                           ) : (
-                            <span className="flex items-center gap-1 text-gray-600 pl-4">
+                            <span className="flex items-center gap-1 text-gray-600 pl-4 whitespace-nowrap">
                             {row.channel}
                             <button onClick={(e) => handleChannelNavigate(row.channel, e)}
                               className="opacity-0 group-hover:opacity-100 hover:text-brand-accent transition-opacity ml-auto shrink-0"
@@ -808,9 +843,9 @@ export default function SalesDashboard() {
                   <thead className="bg-surface-subtle sticky top-0">
                     <tr className="border-b border-surface-border text-gray-400 font-semibold">
                       {[{k:'item',l:'품목',a:'left'},{k:'cwRev',l:'매출',a:'right'},{k:'dcRate',l:'할인율',a:'right'},{k:'wow',l:'WoW',a:'right'},{k:'yoy',l:'YoY',a:'right'},{k:'share',l:'비중',a:'right'}].map(c=>(
-                        <th key={c.k} className={cn('px-1 py-2 cursor-pointer hover:text-gray-900', c.a==='left'?'text-left px-2':'text-right', c.k==='share'&&'px-2')}
+                        <th key={c.k} className={cn('px-1 py-2 cursor-pointer hover:text-gray-900 whitespace-nowrap', c.a==='left'?'text-left px-2':'text-right', c.k==='share'&&'px-2')}
                           onClick={()=>toggleItemSort(c.k)}>
-                          <span className="inline-flex items-center gap-0.5">{c.l}<ArrowUpDown size={8} className={cn(itemSortKey===c.k?'opacity-100 text-brand-accent':'opacity-20')}/></span>
+                          <span className="inline-flex items-center gap-0.5">{c.l}<ArrowUpDown size={7} className={cn('shrink-0', itemSortKey===c.k?'opacity-100 text-brand-accent':'opacity-20')}/></span>
                         </th>
                       ))}
                     </tr>

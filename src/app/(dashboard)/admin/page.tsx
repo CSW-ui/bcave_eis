@@ -134,20 +134,16 @@ export default function AdminPage() {
       let parsed: MonthlyTarget[] = []
 
       if (isNewFormat) {
-        // 신규 형식: 매장별 행 → 브랜드+채널+월 합산
-        const agg = new Map<string, { target: number; brandnm: string; yyyymm: string; shoptypenm?: string }>()
+        // 신규 형식: 매장별 행 → 매장코드 포함하여 개별 행 유지
         for (const r of trimmedRows) {
           const yyyymm = String(r['년월']).replace(/[^0-9]/g, '')
           const brandnm = String(r['브랜드'] ?? '')
           const target = Number(r['매출액(원)']) || 0
           const shoptypenm = r['채널'] ? String(r['채널']) : undefined
+          const shopcd = r['매장코드'] ? String(r['매장코드']).trim() : undefined
           if (!yyyymm || !brandnm || !target) continue
-          const key = `${brandnm}|${yyyymm}|${shoptypenm ?? ''}`
-          const prev = agg.get(key)
-          if (prev) { prev.target += target }
-          else { agg.set(key, { brandnm, yyyymm, target, shoptypenm }) }
+          parsed.push({ yyyymm, brandnm, target, shoptypenm, shopcd })
         }
-        parsed = Array.from(agg.values())
       } else {
         // 기존 형식: 년월, 브랜드, 목표
         parsed = trimmedRows

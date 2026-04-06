@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         WHERE ${brandFilter} ${regionFilter}
       `),
 
-      // 2. 월별 매출 추이: 올해 + 전년 (1월~12월 기준으로 비교)
+      // 2. 월별 매출 추이: 올해 + 전년 (차트용 — 월 전체)
       snowflakeQuery<{ M: string; REV: number }>(`
         SELECT SUBSTRING(SALEDT, 1, 6) AS M, SUM(SALEAMT_VAT_EX) AS REV
         FROM BCAVE.SEWON.VW_SALES_VAT

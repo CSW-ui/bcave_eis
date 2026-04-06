@@ -5,10 +5,11 @@ import { VALID_BRANDS } from '@/lib/constants'
 // GET /api/planning/item-weekly?brand=all&year=26&season=봄,여름&item=반팔티셔츠
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const brand   = searchParams.get('brand') || 'all'
+  const brandParam = searchParams.get('brand') || 'all'
+  const brandList = brandParam === 'all' ? null : brandParam.split(',').filter(b => VALID_BRANDS.has(b))
 
   // 브랜드 유효성 검증 (SQL 인젝션 방지)
-  if (brand !== 'all' && !VALID_BRANDS.has(brand)) {
+  if (brandList && brandList.length === 0) {
     return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
   }
   const year    = searchParams.get('year') || '26'
@@ -20,9 +21,10 @@ export async function GET(req: Request) {
 
   if (!item) return NextResponse.json({ error: 'item required' }, { status: 400 })
 
-  const brandWhere = brand === 'all'
-    ? `v.BRANDCD IN ('CO','WA','LE','CK','LK')`
-    : `v.BRANDCD = '${brand}'`
+  const brandInClause = brandList
+    ? `(${brandList.map(b => `'${b}'`).join(',')})`
+    : `('CO','WA','LE','CK','LK')`
+  const brandWhere = `v.BRANDCD IN ${brandInClause}`
   const seasonList = seasons.map(s => `'${s}'`).join(',')
   const styleFilter = stylecd ? `AND si.STYLECD = '${stylecd.replace(/'/g, "''")}'` : ''
   const channelFilter = channel ? `AND v.SHOPTYPENM = '${channel.replace(/'/g, "''")}'` : ''

@@ -125,6 +125,22 @@ export const ITEM_CATEGORY_MAP: Record<string, string> = {
 // 카테고리 목록 (필터용)
 export const ITEM_CATEGORIES = ['전체', 'Outer', 'Top', 'Bottom', 'Bag', 'Shoes', 'ACC', 'Set/Dress', '속옷', 'Beauty', '기타']
 
+// 상위 그룹 필터: 어패럴 vs 용품
+export const ITEM_GROUP_MAP: Record<string, string> = {
+  Outer: '어패럴', Top: '어패럴', Bottom: '어패럴', 'Set/Dress': '어패럴', '속옷': '어패럴',
+  Bag: '용품', Shoes: '용품', ACC: '용품', Beauty: '용품', '기타': '용품',
+}
+export const ITEM_GROUPS = ['전체', '어패럴', '용품'] as const
+
+// 성별 필터 (Snowflake GENDERNM 기반)
+export const GENDER_FILTERS = ['전체', '유니', '여성'] as const
+// Snowflake GENDERNM → 필터 매핑
+export const GENDER_MAP: Record<string, string> = {
+  '공통': '유니', '남성': '유니',
+  '여성': '여성',
+  '키즈공통': '유니', '키즈여자': '여성',
+}
+
 // 카테고리별 색상
 export const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   Outer:      { bg: '#dbeafe', text: '#1d4ed8' },

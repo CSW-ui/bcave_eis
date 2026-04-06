@@ -24,6 +24,12 @@ export async function GET(req: Request) {
 
   const stylecd      = searchParams.get('stylecd') || ''
 
+  const gender = searchParams.get('gender') || ''
+  // weekly API는 테이블 별칭이 없으므로 서브쿼리 IN절로 성별 필터 적용
+  const genderValues = gender === '유니' ? `'공통','남성','키즈공통'` : gender === '여성' ? `'여성','키즈여자'` : ''
+  const genderFilter = genderValues ? `AND STYLECD IN (SELECT STYLECD FROM BCAVE.SEWON.SW_STYLEINFO WHERE GENDERNM IN (${genderValues}))` : ''
+  const genderFilterSl = genderValues ? `AND sl.STYLECD IN (SELECT STYLECD FROM BCAVE.SEWON.SW_STYLEINFO WHERE GENDERNM IN (${genderValues}))` : ''
+
   const brandClause = `BRANDCD IN ${brandInClause}`
   const styleFilter = stylecd ? `AND STYLECD = '${stylecd.replace(/'/g, "''")}'` : ''
 
@@ -67,6 +73,7 @@ export async function GET(req: Request) {
            AND SALEDT BETWEEN '${fromDt}' AND '${toDt}'
            ${chFilter}
            ${styleFilter}
+           ${genderFilter}
          GROUP BY WEEK_NUM, WEEK_START
          ORDER BY WEEK_NUM`
       ),
@@ -80,6 +87,7 @@ export async function GET(req: Request) {
            AND SALEDT BETWEEN '${lyFromDt}' AND '${lyToDt}'
            ${chFilter}
            ${styleFilter}
+           ${genderFilter}
          GROUP BY WEEK_NUM
          ORDER BY WEEK_NUM`
       ),
@@ -95,6 +103,7 @@ export async function GET(req: Request) {
            AND sl.SALEDT BETWEEN '${fromDt}' AND '${toDt}'
            ${chFilterSl}
            ${styleFilter ? styleFilter.replace(/STYLECD/g, 'sl.STYLECD') : ''}
+           ${genderFilterSl}
          GROUP BY WEEK_NUM
          ORDER BY WEEK_NUM`
       ),
@@ -110,6 +119,7 @@ export async function GET(req: Request) {
            AND sl.SALEDT BETWEEN '${lyFromDt}' AND '${lyToDt}'
            ${chFilterSl}
            ${styleFilter ? styleFilter.replace(/STYLECD/g, 'sl.STYLECD') : ''}
+           ${genderFilterSl}
          GROUP BY WEEK_NUM
          ORDER BY WEEK_NUM`
       ),

@@ -9,7 +9,7 @@ import {
 import { RefreshCw } from 'lucide-react'
 import { PlanningItemTable } from '@/components/planning/PlanningItemTable'
 import { cn } from '@/lib/utils'
-import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, CATEGORY_COLORS } from '@/lib/constants'
+import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, CATEGORY_COLORS, ITEM_GROUPS, ITEM_GROUP_MAP, GENDER_FILTERS } from '@/lib/constants'
 import { fmtW, fmtDelta, fmtDeltaPt } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -57,7 +57,8 @@ interface TopStyle { styleCd: string; styleNm: string; item: string; tagPrice: n
 interface WeatherTemp { date: string; dateLabel: string; day?: string; tmx: number | null; tmn: number | null; avg: number | null; weather?: string }
 interface WeatherData { temps: WeatherTemp[]; avgTemp: number | null; laterAvg?: number | null; recommendations: { label: string; items: string[]; period?: string }[]; tempTrend: string | null; alerts?: string[] }
 interface WeekTrend { week: number; cy: number; ly: number }
-interface PlanData { kpi: PlanKpi; items: PlanItem[]; channels: PlanChannel[]; topStyles: TopStyle[]; weeklyTrend: WeekTrend[] }
+interface GenderSale { gender: string; amt: number; ordTagAmt: number; salesRate: number; invTagAmt: number; dcRate: number }
+interface PlanData { kpi: PlanKpi; items: PlanItem[]; channels: PlanChannel[]; topStyles: TopStyle[]; weeklyTrend: WeekTrend[]; genderSales?: GenderSale[] }
 
 // ── 상품 진단 (테이블용 유지) ──────────────────────────────────
 type DiagGrade = 'hero' | 'normal' | 'rising' | 'slow' | 'dead'
@@ -96,6 +97,8 @@ export default function PlanningDashboard() {
     else setBrand('all')
   }, [allowedBrands, authLoading])
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
+  const [selGroup, setSelGroup] = useState<string>('전체')
+  const [selGender, setSelGender] = useState<string>('전체')
   const [selCategory, setSelCategory] = useState('전체')
 
   const router = useRouter()
@@ -135,9 +138,10 @@ export default function PlanningDashboard() {
     if (brand === null) return
     setLoading(true); setError(null)
     try {
+      const genderParam = selGender !== '전체' ? `&gender=${encodeURIComponent(selGender)}` : ''
       const [res, cRes] = await Promise.all([
-        fetch(`/api/planning?brand=${apiBrand}&year=${selSeason.year}&season=${selSeason.season}`),
-        fetch(`/api/planning?brand=${apiBrand}&year=${compYear}&season=${selSeason.season}&toDt=${compToDt}`),
+        fetch(`/api/planning?brand=${apiBrand}&year=${selSeason.year}&season=${selSeason.season}${genderParam}`),
+        fetch(`/api/planning?brand=${apiBrand}&year=${compYear}&season=${selSeason.season}&toDt=${compToDt}${genderParam}`),
       ])
       const [json, cJson] = await Promise.all([res.json(), cRes.json()])
       if (!res.ok) throw new Error(json.error)
@@ -145,7 +149,7 @@ export default function PlanningDashboard() {
       setCompData(cRes.ok ? cJson : null)
     } catch (e) { setError(String(e)) }
     finally { setLoading(false) }
-  }, [brand, apiBrand, selSeason, compYear, compToDt])
+  }, [brand, apiBrand, selSeason, compYear, compToDt, selGender])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -168,18 +172,30 @@ export default function PlanningDashboard() {
     finally { setStyleChLoading(false) }
   }
 
-  // 카테고리 필터 적용
+  // 그룹(어패럴/용품) + 카테고리 필터 적용
+  const visibleCategories = useMemo(() => {
+    if (selGroup === '전체') return ITEM_CATEGORIES
+    return ['전체', ...ITEM_CATEGORIES.filter(c => c !== '전체' && ITEM_GROUP_MAP[c] === selGroup)]
+  }, [selGroup])
+
+  // 그룹 변경 시 카테고리 리셋
+  useEffect(() => { setSelCategory('전체') }, [selGroup])
+
   const filteredItems = useMemo(() => {
     if (!data) return []
-    if (selCategory === '전체') return data.items
-    return data.items.filter(i => i.category === selCategory)
-  }, [data, selCategory])
+    let items = data.items
+    if (selGroup !== '전체') items = items.filter(i => ITEM_GROUP_MAP[i.category] === selGroup)
+    if (selCategory !== '전체') items = items.filter(i => i.category === selCategory)
+    return items
+  }, [data, selGroup, selCategory])
 
   const filteredCompItems = useMemo(() => {
     if (!compData) return []
-    if (selCategory === '전체') return compData.items
-    return compData.items.filter(i => i.category === selCategory)
-  }, [compData, selCategory])
+    let items = compData.items
+    if (selGroup !== '전체') items = items.filter(i => ITEM_GROUP_MAP[i.category] === selGroup)
+    if (selCategory !== '전체') items = items.filter(i => i.category === selCategory)
+    return items
+  }, [compData, selGroup, selCategory])
 
   const handleItemClick = (itemName: string) => {
     router.push(`/planning/${encodeURIComponent(itemName)}?year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}`)
@@ -243,6 +259,63 @@ export default function PlanningDashboard() {
     return { totalStyles, totalSkus, totalSaleAmt, salesRate, dcRate, cogsRate, totalInvTagAmt, totalInvCostAmt, totalOrdTagAmt, totalInAmt }
   }, [filteredCompItems, compData])
 
+  // 어패럴/용품 + 성별 KPI 비중
+  const salesBreakdown = useMemo(() => {
+    if (!data) return null
+    const items = data.items
+    const ap = items.filter(i => ITEM_GROUP_MAP[i.category] === '어패럴')
+    const gd = items.filter(i => ITEM_GROUP_MAP[i.category] === '용품')
+
+    const sum = (arr: PlanItem[], key: keyof PlanItem) => arr.reduce((s, i) => s + (Number(i[key]) || 0), 0)
+    const pct = (a: number, b: number) => (a + b) > 0 ? Math.round(a / (a + b) * 100) : 0
+
+    // 어패럴/용품 비율
+    const apSale = sum(ap, 'saleAmt'); const gdSale = sum(gd, 'saleAmt')
+    const apOrd = sum(ap, 'ordTagAmt'); const gdOrd = sum(gd, 'ordTagAmt')
+    const apInv = sum(ap, 'invTagAmt'); const gdInv = sum(gd, 'invTagAmt')
+    const apInQty = sum(ap, 'inQty'); const gdInQty = sum(gd, 'inQty')
+    const apSaleQty = sum(ap, 'saleQty'); const gdSaleQty = sum(gd, 'saleQty')
+    const apTag = sum(ap, 'tagAmt'); const gdTag = sum(gd, 'tagAmt')
+    const apSalePrice = sum(ap, 'salePriceAmt'); const gdSalePrice = sum(gd, 'salePriceAmt')
+    const apSalesRate = apInQty > 0 ? Math.round(apSaleQty / apInQty * 1000) / 10 : 0
+    const gdSalesRate = gdInQty > 0 ? Math.round(gdSaleQty / gdInQty * 1000) / 10 : 0
+    const apDc = apTag > 0 ? Math.round((1 - apSalePrice / apTag) * 1000) / 10 : 0
+    const gdDc = gdTag > 0 ? Math.round((1 - gdSalePrice / gdTag) * 1000) / 10 : 0
+
+    // 성별: API genderSales
+    const gs = data.genderSales ?? []
+    const isUni = (g: string) => ['공통', '남성', '키즈공통'].includes(g)
+    const sumG = (key: keyof GenderSale, filter: (g: string) => boolean) =>
+      gs.filter(r => filter(r.gender)).reduce((s, r) => s + (Number(r[key]) || 0), 0)
+    const wAvg = (key: keyof GenderSale, filter: (g: string) => boolean) => {
+      const matched = gs.filter(r => filter(r.gender))
+      if (matched.length === 0) return 0
+      // amt-weighted average for rate fields
+      const totalAmt = matched.reduce((s, r) => s + r.amt, 0)
+      if (totalAmt === 0) return 0
+      return Math.round(matched.reduce((s, r) => s + Number(r[key]) * r.amt, 0) / totalAmt * 10) / 10
+    }
+
+    const uniAmt = sumG('amt', isUni); const wAmt = sumG('amt', g => !isUni(g))
+    const uniOrd = sumG('ordTagAmt', isUni); const wOrd = sumG('ordTagAmt', g => !isUni(g))
+    const uniInv = sumG('invTagAmt', isUni); const wInv = sumG('invTagAmt', g => !isUni(g))
+    const uniSalesRate = wAvg('salesRate', isUni); const wSalesRate = wAvg('salesRate', g => !isUni(g))
+    const uniDc = wAvg('dcRate', isUni); const wDc = wAvg('dcRate', g => !isUni(g))
+
+    return {
+      // 매출
+      salePct: { ap: pct(apSale, gdSale), gd: pct(gdSale, apSale), uni: pct(uniAmt, wAmt), w: pct(wAmt, uniAmt) },
+      // 판매율
+      salesRate: { ap: apSalesRate, gd: gdSalesRate, uni: uniSalesRate, w: wSalesRate },
+      // 발주
+      ordPct: { ap: pct(apOrd, gdOrd), gd: pct(gdOrd, apOrd), uni: pct(uniOrd, wOrd), w: pct(wOrd, uniOrd) },
+      // 재고
+      invPct: { ap: pct(apInv, gdInv), gd: pct(gdInv, apInv), uni: pct(uniInv, wInv), w: pct(wInv, uniInv) },
+      // 할인율
+      dcRate: { ap: apDc, gd: gdDc, uni: uniDc, w: wDc },
+    }
+  }, [data])
+
   // 판매율 도넛 차트 데이터
   const salesRatePieData = useMemo(() => {
     if (!kpiData) return []
@@ -291,7 +364,16 @@ export default function PlanningDashboard() {
 
         <span className="text-xs text-gray-400 ml-2">품목</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
-          {ITEM_CATEGORIES.map(cat => (
+          {ITEM_GROUPS.map(g => (
+            <button key={g} onClick={() => setSelGroup(g)}
+              className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
+                selGroup === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              {g}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
+          {visibleCategories.map(cat => (
             <button key={cat} onClick={() => setSelCategory(cat)}
               className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
                 selCategory === cat ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
@@ -299,6 +381,17 @@ export default function PlanningDashboard() {
                 <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 mb-px" style={{ background: CATEGORY_COLORS[cat].text }} />
               )}
               {cat}
+            </button>
+          ))}
+        </div>
+
+        <span className="text-xs text-gray-400 ml-2">성별</span>
+        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
+          {GENDER_FILTERS.map(g => (
+            <button key={g} onClick={() => setSelGender(g)}
+              className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
+                selGender === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              {g}
             </button>
           ))}
         </div>
@@ -327,6 +420,20 @@ export default function PlanningDashboard() {
                   <span className="text-[10px] text-gray-400">({fmtW(kpiData.totalSaleAmt - compKpi.totalSaleAmt)})</span>
                 </div>
               )}
+              {salesBreakdown && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
+                  <p className="text-[9px] text-gray-400">
+                    어패럴 <span className="font-semibold text-gray-600">{salesBreakdown.salePct.ap}%</span>
+                    <span className="mx-1">·</span>
+                    용품 <span className="font-semibold text-gray-600">{salesBreakdown.salePct.gd}%</span>
+                  </p>
+                  <p className="text-[9px] text-gray-400">
+                    유니 <span className="font-semibold text-gray-600">{salesBreakdown.salePct.uni}%</span>
+                    <span className="mx-1">·</span>
+                    여성 <span className="font-semibold text-gray-600">{salesBreakdown.salePct.w}%</span>
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* ② 판매율 */}
@@ -345,6 +452,12 @@ export default function PlanningDashboard() {
               <span className={cn('text-[10px] font-medium', compKpi ? 'text-gray-600' : 'text-gray-300')}>
                 {compKpi ? fmtDeltaPt(kpiData.salesRate, compKpi.salesRate).t : '—'}
               </span>
+              {salesBreakdown && (
+                <div className="mt-1 pt-1 border-t border-gray-100 w-full space-y-0.5">
+                  <p className="text-[9px] text-gray-400">어패럴 <span className="font-semibold text-gray-600">{salesBreakdown.salesRate.ap}%</span> · 용품 <span className="font-semibold text-gray-600">{salesBreakdown.salesRate.gd}%</span></p>
+                  <p className="text-[9px] text-gray-400">유니 <span className="font-semibold text-gray-600">{salesBreakdown.salesRate.uni}%</span> · 여성 <span className="font-semibold text-gray-600">{salesBreakdown.salesRate.w}%</span></p>
+                </div>
+              )}
             </div>
 
             {/* ③ 발주 */}
@@ -357,6 +470,12 @@ export default function PlanningDashboard() {
                     {fmtDelta(kpiData.totalOrdTagAmt, compKpi.totalOrdTagAmt).t}
                   </span>
                   <span className="text-[10px] text-gray-400">({fmtW(kpiData.totalOrdTagAmt - compKpi.totalOrdTagAmt)})</span>
+                </div>
+              )}
+              {salesBreakdown && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
+                  <p className="text-[9px] text-gray-400">어패럴 <span className="font-semibold text-gray-600">{salesBreakdown.ordPct.ap}%</span> · 용품 <span className="font-semibold text-gray-600">{salesBreakdown.ordPct.gd}%</span></p>
+                  <p className="text-[9px] text-gray-400">유니 <span className="font-semibold text-gray-600">{salesBreakdown.ordPct.uni}%</span> · 여성 <span className="font-semibold text-gray-600">{salesBreakdown.ordPct.w}%</span></p>
                 </div>
               )}
             </div>
@@ -381,6 +500,12 @@ export default function PlanningDashboard() {
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">재고(TAG)</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(kpiData.totalInvTagAmt)}</p>
               <p className="text-[10px] text-gray-500">원가 {fmtW(kpiData.totalInvCostAmt)}</p>
+              {salesBreakdown && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
+                  <p className="text-[9px] text-gray-400">어패럴 <span className="font-semibold text-gray-600">{salesBreakdown.invPct.ap}%</span> · 용품 <span className="font-semibold text-gray-600">{salesBreakdown.invPct.gd}%</span></p>
+                  <p className="text-[9px] text-gray-400">유니 <span className="font-semibold text-gray-600">{salesBreakdown.invPct.uni}%</span> · 여성 <span className="font-semibold text-gray-600">{salesBreakdown.invPct.w}%</span></p>
+                </div>
+              )}
             </div>
 
             {/* ⑥ 할인율 */}
@@ -390,6 +515,12 @@ export default function PlanningDashboard() {
               <span className={cn('text-[10px] font-medium', compKpi ? (kpiData.dcRate <= compKpi.dcRate ? 'text-emerald-600' : 'text-red-500') : 'text-gray-300')}>
                 {compKpi ? fmtDeltaPt(kpiData.dcRate, compKpi.dcRate).t : '—'}
               </span>
+              {salesBreakdown && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
+                  <p className="text-[9px] text-gray-400">어패럴 <span className="font-semibold text-gray-600">{salesBreakdown.dcRate.ap}%</span> · 용품 <span className="font-semibold text-gray-600">{salesBreakdown.dcRate.gd}%</span></p>
+                  <p className="text-[9px] text-gray-400">유니 <span className="font-semibold text-gray-600">{salesBreakdown.dcRate.uni}%</span> · 여성 <span className="font-semibold text-gray-600">{salesBreakdown.dcRate.w}%</span></p>
+                </div>
+              )}
             </div>
           </>
         )}

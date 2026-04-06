@@ -24,6 +24,14 @@ export async function GET(req: Request) {
   const _rawBrandClause = `BRANDCD IN ${brandInClause}`
 
   const toDt = searchParams.get('toDt') || ''  // YYYYMMDD, 비어있으면 제한 없음
+  const gender = searchParams.get('gender') || ''  // '유니' | '여성' | '' (전체)
+
+  // 성별 필터: GENDERNM 매핑
+  const genderWhere = (() => {
+    if (gender === '유니') return `AND si.GENDERNM IN ('공통','남성','키즈공통')`
+    if (gender === '여성') return `AND si.GENDERNM IN ('여성','키즈여자')`
+    return ''
+  })()
 
   const seasonList = seasons.map(s => `'${s}'`).join(',')
   const saleDateFrom = `20${year}0101`
@@ -49,7 +57,7 @@ export async function GET(req: Request) {
   const monthStart = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}01`
 
   try {
-    const [itemSummary, skuByItem, orderByItem, inboundByItem, salesByItem, shopInvByItem, whInvByItem, channelSales, dcRateByItem, bestStyles, weeklyTrend] = await Promise.all([
+    const [itemSummary, skuByItem, orderByItem, inboundByItem, salesByItem, shopInvByItem, whInvByItem, channelSales, dcRateByItem, bestStyles, weeklyTrend, genderSales, genderOrd, genderInbound, genderInv, genderDc] = await Promise.all([
       // 1. 품목별 스타일 마스터
       snowflakeQuery<{
         ITEMNM: string; STYLE_CNT: number; AVG_TAG: number; AVG_COST: number
@@ -61,7 +69,7 @@ export async function GET(req: Request) {
         FROM BCAVE.SEWON.SW_STYLEINFO si
         WHERE ${siBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY si.ITEMNM
         ORDER BY STYLE_CNT DESC
       `),
@@ -76,7 +84,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON d.STYLECD = si.STYLECD AND d.BRANDCD = si.BRANDCD
         WHERE ${siBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY si.ITEMNM
       `),
 
@@ -89,9 +97,10 @@ export async function GET(req: Request) {
           SUM(d.ORDQTY * (d.TAGPRICE / 1.1)) as ORD_TAG_AMT,
           SUM(d.ORDQTY * d.PRECOST) as ORD_COST_AMT
         FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL d
-        WHERE d.BRANDCD IN (${brand === 'all' ? "'CO','WA','LE','CK','LK'" : `'${brand}'`})
+        ${genderWhere ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON d.STYLECD = si.STYLECD AND d.BRANDCD = si.BRANDCD` : ''}
+        WHERE d.BRANDCD IN ${brandInClause}
           AND d.YEARCD = '${year}'
-          AND d.SEASONNM IN (${seasonList})
+          AND d.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY d.ITEMNM
       `),
 
@@ -111,7 +120,7 @@ export async function GET(req: Request) {
         ) tp ON w.STYLECD = tp.STYLECD AND si.BRANDCD = tp.BRANDCD AND w.CHASU = tp.CHASU
         WHERE ${siBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY si.ITEMNM
       `),
 
@@ -132,7 +141,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
           AND v.SALEDT >= '${saleDateFrom}'
           ${saleDateTo}
         GROUP BY si.ITEMNM
@@ -149,7 +158,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON inv.STYLECD = si.STYLECD
         WHERE ${siBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY si.ITEMNM
       `),
 
@@ -165,7 +174,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON wh.STYLECD = si.STYLECD
         WHERE ${siBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY si.ITEMNM
       `),
 
@@ -180,7 +189,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD
         WHERE ${vBrandClause}
           AND si.YEARCD = '${year}'
-          AND si.SEASONNM IN (${seasonList})
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
           AND v.SALEDT >= '${saleDateFrom}'
           ${saleDateTo}
         GROUP BY v.SHOPTYPENM
@@ -195,7 +204,7 @@ export async function GET(req: Request) {
         FROM BCAVE.SEWON.SW_SALEINFO s
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
         WHERE ${_rawBrandClause.replace(/BRANDCD/g, 's.BRANDCD')}
-          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList})
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
           AND s.SALEDT >= '${saleDateFrom}'
           ${toDt ? `AND s.SALEDT <= '${toDt}'` : ''}
         GROUP BY si.ITEMNM
@@ -224,7 +233,7 @@ export async function GET(req: Request) {
           FROM ${SALES_VIEW} v
           JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
           WHERE ${vBrandClause}
-            AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList})
+            AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
             AND v.SALEDT >= '${saleDateFrom}'
             ${toDt ? `AND v.SALEDT <= '${toDt}'` : ''}
           GROUP BY v.STYLECD
@@ -243,13 +252,77 @@ export async function GET(req: Request) {
           FROM ${SALES_VIEW} v
           JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
           WHERE ${vBrandClause}
-            AND si.SEASONNM IN (${seasonList})
+            AND si.SEASONNM IN (${seasonList}) ${genderWhere}
             AND ((si.YEARCD = '${year}' AND v.SALEDT BETWEEN '20${year}0101' AND '20${year}1231')
               OR (si.YEARCD = '${lyYear}' AND v.SALEDT BETWEEN '20${lyYear}0101' AND '20${lyYear}1231'))
           GROUP BY YR, WK
           ORDER BY YR, WK
         `)
       })(),
+
+      // 11. 성별 KPI 비중 (매출·판매율·할인율 산출용)
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.GENDERNM,
+          SUM(v.SALEAMT_VAT_EX) as SALE_AMT,
+          SUM(v.SALEQTY) as SALE_QTY
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+          AND v.SALEDT >= '${saleDateFrom}'
+          ${saleDateTo}
+        GROUP BY si.GENDERNM
+      `),
+
+      // 12. 성별 발주·입고·재고
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.GENDERNM,
+          SUM(d.ORDQTY) as ORD_QTY,
+          SUM(d.ORDQTY * (d.TAGPRICE / 1.1)) as ORD_TAG_AMT
+        FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL d
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON d.STYLECD = si.STYLECD AND d.BRANDCD = si.BRANDCD
+        WHERE d.BRANDCD IN ${brandInClause}
+          AND d.YEARCD = '${year}' AND d.SEASONNM IN (${seasonList}) ${genderWhere}
+        GROUP BY si.GENDERNM
+      `),
+
+      // 13. 성별 입고수량
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.GENDERNM,
+          SUM(w.INQTY) as IN_QTY
+        FROM BCAVE.SEWON.SW_WHININFO w
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON w.STYLECD = si.STYLECD
+        WHERE ${siBrandClause}
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+        GROUP BY si.GENDERNM
+      `),
+
+      // 14. 성별 재고
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.GENDERNM,
+          SUM(COALESCE(sinv.INVQTY, 0) + COALESCE(winv.AVAILQTY, 0)) as TOTAL_INV,
+          SUM((COALESCE(sinv.INVQTY, 0) + COALESCE(winv.AVAILQTY, 0)) * (si.TAGPRICE / 1.1)) as INV_TAG_AMT
+        FROM BCAVE.SEWON.SW_STYLEINFO si
+        LEFT JOIN (SELECT STYLECD, SUM(INVQTY) AS INVQTY FROM BCAVE.SEWON.SW_SHOPINV GROUP BY STYLECD) sinv ON si.STYLECD = sinv.STYLECD
+        LEFT JOIN (SELECT STYLECD, SUM(AVAILQTY) AS AVAILQTY FROM BCAVE.SEWON.SW_WHINV GROUP BY STYLECD) winv ON si.STYLECD = winv.STYLECD
+        WHERE ${siBrandClause}
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+        GROUP BY si.GENDERNM
+      `),
+
+      // 15. 성별 할인율
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.GENDERNM,
+          SUM((s.TAGPRICE / 1.1) * s.SALEQTY) as TAG_AMT,
+          SUM(s.SALEAMT) as SALE_PRICE_AMT
+        FROM BCAVE.SEWON.SW_SALEINFO s
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
+        WHERE ${_rawBrandClause.replace(/BRANDCD/g, 's.BRANDCD')}
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+          AND s.SALEDT >= '${saleDateFrom}'
+          ${toDt ? `AND s.SALEDT <= '${toDt}'` : ''}
+        GROUP BY si.GENDERNM
+      `),
     ])
 
     // 품목별 데이터 조합
@@ -429,6 +502,31 @@ export async function GET(req: Request) {
       items,
       channels,
       topStyles,
+      genderSales: (() => {
+        const ordMap = new Map(genderOrd.map(r => [r.GENDERNM, r]))
+        const inbMap = new Map(genderInbound.map(r => [r.GENDERNM, r]))
+        const invMap = new Map(genderInv.map(r => [r.GENDERNM, r]))
+        const dcMap = new Map(genderDc.map(r => [r.GENDERNM, r]))
+        return genderSales.map(r => {
+          const g = r.GENDERNM
+          const ord = ordMap.get(g)
+          const inb = inbMap.get(g)
+          const inv = invMap.get(g)
+          const dc = dcMap.get(g)
+          const inQty = Number(inb?.IN_QTY || 0)
+          const saleQty = Number(r.SALE_QTY || 0)
+          const tagAmt = Number(dc?.TAG_AMT || 0)
+          const salePriceAmt = Number(dc?.SALE_PRICE_AMT || 0)
+          return {
+            gender: g,
+            amt: Number(r.SALE_AMT) || 0,
+            ordTagAmt: Number(ord?.ORD_TAG_AMT || 0),
+            salesRate: inQty > 0 ? Math.round(saleQty / inQty * 1000) / 10 : 0,
+            invTagAmt: Number(inv?.INV_TAG_AMT || 0),
+            dcRate: tagAmt > 0 ? Math.round((1 - salePriceAmt / tagAmt) * 1000) / 10 : 0,
+          }
+        })
+      })(),
       weeklyTrend: (() => {
         const cy: Record<number, number> = {}
         const ly: Record<number, number> = {}

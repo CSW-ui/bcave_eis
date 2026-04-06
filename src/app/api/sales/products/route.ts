@@ -54,6 +54,9 @@ export async function GET(req: Request) {
     chFilter = `AND NOT (${col} LIKE '%해외%' OR ${col} LIKE '%수출%' OR ${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%쇼핑몰%' OR ${col} LIKE '%사입%')`
   }
 
+  const gender = searchParams.get('gender') || ''
+  const genderWhere = gender === '유니' ? `AND si.GENDERNM IN ('공통','남성','키즈공통')` : gender === '여성' ? `AND si.GENDERNM IN ('여성','키즈여자')` : ''
+
   const weekFilter = weekNum
     ? `AND WEEKOFYEAR(TO_DATE(s.SALEDT, 'YYYYMMDD')) = ${parseInt(weekNum)}`
     : ''
@@ -95,6 +98,7 @@ export async function GET(req: Request) {
            ${weekFilter}
            ${chFilter}
            ${itemNm ? `AND si.ITEMNM = '${itemNm.replace(/'/g, "''")}'` : ''}
+           ${genderWhere}
          GROUP BY s.STYLECD, si.STYLENM, s.BRANDCD
          ORDER BY REVENUE DESC
          LIMIT 20`
@@ -106,12 +110,13 @@ export async function GET(req: Request) {
            SUM(sl.SALEAMT) AS SALE_TOTAL
          FROM BCAVE.SEWON.SW_SALEINFO sl
          JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         ${itemNm ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD` : ''}
+         ${(itemNm || genderWhere) ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD` : ''}
          WHERE sl.BRANDCD IN ${brandInClause}
            AND sl.SALEDT BETWEEN '${fromDt}' AND '${defaultToDt}'
            ${weekFilterSl}
            ${chFilterSl}
            ${itemNm ? `AND si.ITEMNM = '${itemNm.replace(/'/g, "''")}'` : ''}
+           ${genderWhere}
          GROUP BY sl.STYLECD`
       ),
     ])

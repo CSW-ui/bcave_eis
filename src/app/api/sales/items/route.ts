@@ -15,6 +15,8 @@ export async function GET(req: Request) {
   const channels = searchParams.get('channels') || ''
   const paramFromDt = searchParams.get('fromDt') || ''
   const paramToDt = searchParams.get('toDt') || ''
+  const gender = searchParams.get('gender') || ''
+  const genderWhere = gender === '유니' ? `AND si.GENDERNM IN ('공통','남성','키즈공통')` : gender === '여성' ? `AND si.GENDERNM IN ('여성','키즈여자')` : ''
 
   // 다중 채널 필터
   let chFilter = ''
@@ -55,7 +57,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${brandWhere}
           AND (v.SALEDT BETWEEN '${paramFromDt}' AND '${paramToDt}' OR v.SALEDT BETWEEN '${lyFrom}' AND '${lyTo}')
-          ${chFilter}
+          ${chFilter} ${genderWhere}
         GROUP BY si.ITEMNM
         ORDER BY CW_REV DESC`
     } else if (weekNum) {
@@ -73,7 +75,7 @@ export async function GET(req: Request) {
         WHERE ${brandWhere}
           AND ((YEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${yr} AND WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD')) IN (${wn},${pwn}))
             OR (YEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${lyYr} AND WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${wn}))
-          ${chFilter}
+          ${chFilter} ${genderWhere}
         GROUP BY si.ITEMNM
         ORDER BY CW_REV DESC`
     } else {
@@ -88,7 +90,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${brandWhere}
           AND (v.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}' OR v.SALEDT BETWEEN '${lyCwStart}' AND '${lyCwEnd}')
-          ${chFilter}
+          ${chFilter} ${genderWhere}
         GROUP BY si.ITEMNM
         ORDER BY CW_REV DESC`
     }
@@ -114,7 +116,7 @@ export async function GET(req: Request) {
         WHERE ${dcBrandWhere}
           AND YEAR(TO_DATE(sl.SALEDT,'YYYYMMDD'))=${yr}
           AND WEEKOFYEAR(TO_DATE(sl.SALEDT,'YYYYMMDD'))=${wn}
-          ${chFilterSl}
+          ${chFilterSl} ${genderWhere}
         GROUP BY si.ITEMNM`
     } else {
       dcSql = `
@@ -126,7 +128,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
         WHERE ${dcBrandWhere}
           AND sl.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}'
-          ${chFilterSl}
+          ${chFilterSl} ${genderWhere}
         GROUP BY si.ITEMNM`
     }
 

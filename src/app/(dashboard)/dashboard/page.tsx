@@ -233,7 +233,10 @@ export default function DashboardPage() {
                   <tr className="border-t border-gray-50">
                     <td className="py-1 px-1 text-gray-400 font-medium whitespace-nowrap">신장률</td>
                     {chartData.map((d: any) => {
-                      const growth = d.lastYear && d.actual ? Math.round(((d.actual - d.lastYear) / d.lastYear) * 100) : null
+                      // 당월은 전년 동기간(lyRev) 기준으로 비교
+                      const isCurMonth = d.month === `${String(data?.kpi?.curMonth).padStart(2, '0')}월`
+                      const lyBase = isCurMonth && data?.kpi?.lyRev ? data.kpi.lyRev : d.lastYear
+                      const growth = lyBase && d.actual ? Math.round(((d.actual - lyBase) / lyBase) * 100) : null
                       return (
                         <td key={d.month} className={cn('py-1 px-1 text-center font-medium',
                           growth === null ? 'text-gray-300' : growth >= 0 ? 'text-red-500' : 'text-blue-500'

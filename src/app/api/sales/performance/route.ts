@@ -116,6 +116,8 @@ export async function GET(req: Request) {
     weekToParam ? parseInt(weekToParam) : undefined,
   )
   const brandWhere = `s.BRANDCD IN ${brandInClause}`
+  const gender = searchParams.get('gender') || ''
+  const genderWhere = gender === '유니' ? `AND si.GENDERNM IN ('공통','남성','키즈공통')` : gender === '여성' ? `AND si.GENDERNM IN ('여성','키즈여자')` : ''
   const styleFilter = stylecd ? `AND s.STYLECD = '${stylecd.replace(/'/g, "''")}'` : ''
   const itemFilter = itemNm ? `AND si.ITEMNM = '${itemNm.replace(/'/g, "''")}'` : ''
 
@@ -148,6 +150,7 @@ export async function GET(req: Request) {
         AND s.SALEDT BETWEEN '${rs}' AND '${re}'
         ${styleFilter}
         ${itemFilter}
+        ${genderWhere}
       GROUP BY s.BRANDCD, s.BRANDNM, s.SHOPTYPENM
     `
   }
@@ -175,11 +178,12 @@ export async function GET(req: Request) {
         SUM(CASE WHEN sl.SALEDT BETWEEN '${ps}' AND '${pe}' THEN sl.SALEAMT ELSE 0 END) AS PW_SALE
       FROM BCAVE.SEWON.SW_SALEINFO sl
       JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-      ${itemFilter ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD` : ''}
+      ${(itemFilter || genderWhere) ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD` : ''}
       WHERE ${siBrandWhere}
         AND sl.SALEDT BETWEEN '${rs}' AND '${re}'
         ${styleFilter ? styleFilter.replace(/s\./g, 'sl.') : ''}
         ${itemFilter ? itemFilter.replace(/si\./g, 'si.') : ''}
+        ${genderWhere}
       GROUP BY sl.BRANDCD, sh.SHOPTYPENM
     `
   }

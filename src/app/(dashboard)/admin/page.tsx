@@ -163,7 +163,7 @@ export default function AdminPage() {
       if (parsed.length === 0) {
         alert('유효한 데이터가 없습니다. 엑셀 컬럼을 확인해주세요.\n지원 형식:\n① 년월, 브랜드, 목표 (합산형)\n② 브랜드, 매장코드, 년월, 매출액(원) (매장별형)')
       } else {
-        saveTargets(parsed, file.name)
+        await saveTargets(parsed, file.name)
         alert(`${parsed.length}건 업로드 완료`)
       }
     } catch { alert('파일 읽기 오류') }

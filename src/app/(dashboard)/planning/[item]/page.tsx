@@ -24,6 +24,7 @@ export default function ItemDetailPage() {
   const itemName = decodeURIComponent(params.item as string)
 
   const [brand, setBrand] = useState('all')
+  const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
   const year = searchParams.get('year') || '26'
   const season = searchParams.get('season') || '봄,여름,상반기,스탠다드'
   const compYear = String(Number(year) - 1)
@@ -48,18 +49,18 @@ export default function ItemDetailPage() {
 
   // 차트 데이터 fetch (stylecd, channel 필터 반영)
   const fetchWeekly = useCallback(async () => {
-    const sp = new URLSearchParams({ brand, year, season, item: itemName })
+    const sp = new URLSearchParams({ brand: apiBrand, year, season, item: itemName })
     if (selStyle) sp.set('stylecd', selStyle.code)
     if (selChannel) sp.set('channel', selChannel)
     const res = await fetch(`/api/planning/item-weekly?${sp}`)
     const json = await res.json()
     setWeeks(json.weeks ?? [])
     setWeekMeta(json.meta ?? null)
-  }, [brand, year, season, itemName, selStyle, selChannel])
+  }, [apiBrand, year, season, itemName, selStyle, selChannel])
 
   // 스타일 테이블 + 채널 fetch (weekNum, channel, stylecd 필터 반영)
   const fetchStyles = useCallback(async () => {
-    const sp = new URLSearchParams({ brand, year, season, item: itemName, compareYear: compYear })
+    const sp = new URLSearchParams({ brand: apiBrand, year, season, item: itemName, compareYear: compYear })
     if (selWeek) sp.set('weekNum', String(selWeek))
     if (selChannel) sp.set('channel', selChannel)
     if (selStyle) sp.set('stylecd', selStyle.code)
@@ -68,7 +69,7 @@ export default function ItemDetailPage() {
     setStyles(json.styles ?? [])
     setLyStyles(json.lyStyles ?? [])
     setChannels(json.channels ?? [])
-  }, [brand, year, season, itemName, compYear, selWeek, selChannel, selStyle])
+  }, [apiBrand, year, season, itemName, compYear, selWeek, selChannel, selStyle])
 
   // 초기 로드
   useEffect(() => {

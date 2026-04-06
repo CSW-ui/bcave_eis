@@ -10,34 +10,55 @@ export interface MonthlyTarget {
   shopcd?: string      // optional: 매장코드 (점당 목표)
 }
 
-const STORAGE_KEY = 'bcave_monthly_targets'
-
 export function useTargetData() {
   const [targets, setTargets] = useState<MonthlyTarget[]>([])
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  // 서버에서 목표 데이터 로드
+  const fetchTargets = useCallback(async () => {
+    setLoading(true)
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        setTargets(parsed.data ?? [])
-        setLastUpdated(parsed.updatedAt ?? null)
+      const res = await fetch('/api/targets')
+      const json = await res.json()
+      if (json.data) {
+        setTargets(json.data)
+        // 가장 최근 updated_at 을 lastUpdated 로 사용
+        const latest = json.data.reduce(
+          (max: string | null, t: any) => (!max || t.updated_at > max ? t.updated_at : max),
+          null as string | null,
+        )
+        setLastUpdated(latest)
       }
     } catch {}
+    finally { setLoading(false) }
   }, [])
 
-  const saveTargets = useCallback((data: MonthlyTarget[], filename: string) => {
-    const payload = { data, updatedAt: new Date().toISOString(), filename }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
-    setTargets(data)
-    setLastUpdated(payload.updatedAt)
-  }, [])
+  useEffect(() => { fetchTargets() }, [fetchTargets])
 
-  const clearTargets = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
-    setTargets([])
-    setLastUpdated(null)
+  // 서버에 목표 데이터 저장 (upsert)
+  const saveTargets = useCallback(async (data: MonthlyTarget[], _filename?: string) => {
+    try {
+      const res = await fetch('/api/targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targets: data }),
+      })
+      if (res.ok) {
+        await fetchTargets() // 저장 후 다시 로드
+      }
+    } catch {}
+  }, [fetchTargets])
+
+  // 서버에서 목표 데이터 전체 삭제
+  const clearTargets = useCallback(async () => {
+    try {
+      const res = await fetch('/api/targets', { method: 'DELETE' })
+      if (res.ok) {
+        setTargets([])
+        setLastUpdated(null)
+      }
+    } catch {}
   }, [])
 
   // 월별 전체 목표 합계 (브랜드 합산)
@@ -47,5 +68,5 @@ export function useTargetData() {
       .reduce((sum, t) => sum + t.target, 0)
   }, [targets])
 
-  return { targets, lastUpdated, saveTargets, clearTargets, getMonthlyTotal }
+  return { targets, lastUpdated, loading, saveTargets, clearTargets, getMonthlyTotal }
 }

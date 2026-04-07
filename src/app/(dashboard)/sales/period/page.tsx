@@ -44,13 +44,16 @@ interface AggRow {
   coDcRate: number; lyCoDcRate: number; coCogsRate: number; lyCoCogsRate: number
 }
 
+const EXCLUDE_SHOP_CNT = ['오프라인 위탁', '온라인B2B', '해외 위탁', '해외 사입']
+
 function sumRows(rows: ChannelRow[]): AggRow {
   let rev = 0, lyRev = 0, nRev = 0, lyNRev = 0, cRev = 0, lyCRev = 0
   let shopCnt = 0, lyShopCnt = 0
   let dcW = 0, cgW = 0, lyDcW = 0, lyCgW = 0
   let nDcW = 0, nCgW = 0, lyNDcW = 0, lyNCgW = 0, cDcW = 0, cCgW = 0, lyCDcW = 0, lyCCgW = 0
   for (const r of rows) {
-    rev += r.rev; lyRev += r.lyRev; shopCnt += r.shopCnt; lyShopCnt += r.lyShopCnt
+    rev += r.rev; lyRev += r.lyRev
+    if (!EXCLUDE_SHOP_CNT.includes(r.channel)) { shopCnt += r.shopCnt; lyShopCnt += r.lyShopCnt }
     dcW += r.dcRate * r.rev; cgW += r.cogsRate * r.rev
     lyDcW += r.lyDcRate * r.lyRev; lyCgW += r.lyCogsRate * r.lyRev
     nRev += r.normRev; lyNRev += r.lyNormRev; cRev += r.coRev; lyCRev += r.lyCoRev
@@ -222,10 +225,9 @@ export default function PeriodPage() {
     if (ly === 0 && cy === 0) return '—'
     return <span className={cn('font-mono', gap >= 0 ? 'text-red-500' : 'text-blue-500')}>{gap >= 0 ? '+' : ''}{fmtE(gap)}</span>
   }
-  const HIDE_SHOP_CHANNELS = ['오프라인 위탁', '온라인B2B', '해외 위탁', '해외 사입']
   const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean, totalRev?: number, channelName?: string) => {
     const share = totalRev && totalRev > 0 ? Math.round(a.rev / totalRev * 1000) / 10 : null
-    const hideShop = channelName && HIDE_SHOP_CHANNELS.includes(channelName)
+    const hideShop = channelName && EXCLUDE_SHOP_CNT.includes(channelName)
     return (
     <>
       <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>

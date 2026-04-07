@@ -21,7 +21,7 @@ const SEASON_OPTIONS = [
 const ADULT_BRANDS = ['CO', 'LE', 'WA']
 const KIDS_BRANDS = ['CK', 'LK']
 
-const CHANNEL_GROUPS = ['전체', '오프라인', '온라인', '해외'] as const
+const CHANNEL_OPTIONS = ['백화점', '아울렛', '직영점', '쇼핑몰', '대리점', '면세점', '온라인(무신사)', '온라인(위드플)', '온라인(자사몰)', '온라인B2B', '해외 사입', '해외 위탁']
 
 interface ChannelRow {
   brandcd: string; brandnm: string; channel: string
@@ -81,7 +81,15 @@ export default function PeriodPage() {
     if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
     else setBrand('all')
   }, [allowedBrands, authLoading])
-  const [selChannelGroup, setSelChannelGroup] = useState<string>('전체')
+  const [selChannels, setSelChannels] = useState<Set<string>>(new Set())
+  const [chDropdownOpen, setChDropdownOpen] = useState(false)
+  const toggleChannel = (ch: string) => {
+    setSelChannels(prev => {
+      const next = new Set(prev)
+      if (next.has(ch)) next.delete(ch); else next.add(ch)
+      return next
+    })
+  }
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   // 기간비교 기본값: 금년 1/1~전일, 전년 동기간
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -161,9 +169,15 @@ export default function PeriodPage() {
     return result
   }, [brandData, brand, individualBrands])
 
-  // 채널 → 그룹 → 개별 채널 (채널 그룹 필터 적용)
+  // 채널 필터 적용
+  const matchesChannelFilter = (channel: string) => {
+    if (selChannels.size === 0) return true
+    return Array.from(selChannels).some(sel => channel.includes(sel) || sel.includes(channel))
+  }
+
+  // 채널 → 그룹 → 개별 채널
   const groupChannels = (rows: ChannelRow[]) => {
-    const filteredRows = selChannelGroup === '전체' ? rows : rows.filter(r => getChannelGroup(r.channel) === selChannelGroup)
+    const filteredRows = rows.filter(r => matchesChannelFilter(r.channel))
     const groups = new Map<ChannelGroup, ChannelRow[]>()
     for (const g of CHANNEL_GROUP_ORDER) groups.set(g, [])
     for (const r of filteredRows) groups.get(getChannelGroup(r.channel))!.push(r)
@@ -181,9 +195,7 @@ export default function PeriodPage() {
     }).filter(g => g.channels.length > 0)
   }
 
-  // 섹션별 합산도 채널 그룹 필터 반영
-  const filterRowsByGroup = (rows: ChannelRow[]) =>
-    selChannelGroup === '전체' ? rows : rows.filter(r => getChannelGroup(r.channel) === selChannelGroup)
+  const filterRowsByGroup = (rows: ChannelRow[]) => rows.filter(r => matchesChannelFilter(r.channel))
 
   const [collapsedBrands, setCollapsedBrands] = useState<Set<string>>(new Set(['CO', 'LE', 'WA', 'CK', 'LK']))
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -263,13 +275,41 @@ export default function PeriodPage() {
           ))}
         </div>
         <span className="text-xs text-gray-400 ml-2">채널</span>
-        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
-          {CHANNEL_GROUPS.map(g => (
-            <button key={g} onClick={() => setSelChannelGroup(g)}
-              className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
-                selChannelGroup === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{g}</button>
-          ))}
+        <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setChDropdownOpen(false) }}>
+          <button onClick={() => setChDropdownOpen(p => !p)}
+            className={cn('text-xs border rounded-lg px-3 py-1.5 bg-white flex items-center gap-1.5 min-w-[100px]',
+              selChannels.size > 0 ? 'border-brand-accent text-brand-accent' : 'border-gray-200 text-gray-500')}>
+            {selChannels.size === 0 ? '전체' : `${selChannels.size}개 선택`}
+            <ChevronDown size={12} />
+          </button>
+          {chDropdownOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 p-1.5 min-w-[160px]">
+              <button onClick={() => { setSelChannels(new Set()); setChDropdownOpen(false) }}
+                className={cn('w-full text-left px-2 py-1 text-[11px] rounded hover:bg-gray-50', selChannels.size === 0 && 'font-semibold text-brand-accent')}>전체</button>
+              {CHANNEL_OPTIONS.map(ch => (
+                <button key={ch} onClick={() => toggleChannel(ch)}
+                  className={cn('w-full text-left px-2 py-1 text-[11px] rounded hover:bg-gray-50 flex items-center gap-1.5',
+                    selChannels.has(ch) && 'font-semibold text-brand-accent')}>
+                  <span className={cn('w-3 h-3 rounded border flex items-center justify-center text-[8px]',
+                    selChannels.has(ch) ? 'bg-brand-accent border-brand-accent text-white' : 'border-gray-300')}>
+                    {selChannels.has(ch) && '✓'}
+                  </span>
+                  {ch}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+        {selChannels.size > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {Array.from(selChannels).map(ch => (
+              <button key={ch} onClick={() => toggleChannel(ch)}
+                className="text-[10px] text-brand-accent border border-brand-accent/30 rounded-full px-2 py-0.5 hover:bg-brand-accent/5">
+                {ch} ×
+              </button>
+            ))}
+          </div>
+        )}
 
         <span className="text-xs text-gray-400 ml-2">시즌</span>
         <select value={SEASON_OPTIONS.indexOf(selSeason)} onChange={e => setSelSeason(SEASON_OPTIONS[Number(e.target.value)])}

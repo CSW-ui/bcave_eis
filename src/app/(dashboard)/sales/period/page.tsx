@@ -172,6 +172,7 @@ export default function PeriodPage() {
   // 채널 필터 적용
   const matchesChannelFilter = (channel: string) => {
     if (selChannels.size === 0) return true
+    if (!channel) return false
     return Array.from(selChannels).some(sel => channel.includes(sel) || sel.includes(channel))
   }
 

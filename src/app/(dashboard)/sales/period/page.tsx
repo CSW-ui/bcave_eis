@@ -21,7 +21,7 @@ const SEASON_OPTIONS = [
 const ADULT_BRANDS = ['CO', 'LE', 'WA']
 const KIDS_BRANDS = ['CK', 'LK']
 
-const GROUP_COLORS: Record<string, string> = { '오프라인': '#3b82f6', '온라인': '#e91e63', '해외': '#10b981' }
+const CHANNEL_GROUPS = ['전체', '오프라인', '온라인', '해외'] as const
 
 interface ChannelRow {
   brandcd: string; brandnm: string; channel: string
@@ -73,9 +73,15 @@ function sumRows(rows: ChannelRow[]): AggRow {
 }
 
 export default function PeriodPage() {
-  const { allowedBrands } = useAuth()
+  const { allowedBrands, loading: authLoading } = useAuth()
   const { targets } = useTargetData()
-  const [brand, setBrand] = useState('all')
+  const [brand, setBrand] = useState<string | null>(null)
+  useEffect(() => {
+    if (authLoading) return
+    if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
+    else setBrand('all')
+  }, [allowedBrands, authLoading])
+  const [selChannelGroup, setSelChannelGroup] = useState<string>('전체')
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   // 기간비교 기본값: 금년 1/1~전일, 전년 동기간
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -106,6 +112,7 @@ export default function PeriodPage() {
   const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
 
   const fetchData = useCallback(async () => {
+    if (brand === null) return
     setLoading(true)
     try {
       const base = `/api/sales/period?year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}&fromDt=${fromDt.replace(/-/g, '')}&toDt=${toDt.replace(/-/g, '')}&lyFromDt=${lyFromDt.replace(/-/g, '')}&lyToDt=${lyToDt.replace(/-/g, '')}`
@@ -154,14 +161,14 @@ export default function PeriodPage() {
     return result
   }, [brandData, brand, individualBrands])
 
-  // 채널 → 그룹 → 개별 채널
+  // 채널 → 그룹 → 개별 채널 (채널 그룹 필터 적용)
   const groupChannels = (rows: ChannelRow[]) => {
+    const filteredRows = selChannelGroup === '전체' ? rows : rows.filter(r => getChannelGroup(r.channel) === selChannelGroup)
     const groups = new Map<ChannelGroup, ChannelRow[]>()
     for (const g of CHANNEL_GROUP_ORDER) groups.set(g, [])
-    for (const r of rows) groups.get(getChannelGroup(r.channel))!.push(r)
+    for (const r of filteredRows) groups.get(getChannelGroup(r.channel))!.push(r)
     return CHANNEL_GROUP_ORDER.map(g => {
       const chRows = groups.get(g)!
-      // 채널별 합산
       const chMap = new Map<string, ChannelRow[]>()
       for (const r of chRows) { if (!chMap.has(r.channel)) chMap.set(r.channel, []); chMap.get(r.channel)!.push(r) }
       return {
@@ -173,6 +180,10 @@ export default function PeriodPage() {
       }
     }).filter(g => g.channels.length > 0)
   }
+
+  // 섹션별 합산도 채널 그룹 필터 반영
+  const filterRowsByGroup = (rows: ChannelRow[]) =>
+    selChannelGroup === '전체' ? rows : rows.filter(r => getChannelGroup(r.channel) === selChannelGroup)
 
   const [collapsedBrands, setCollapsedBrands] = useState<Set<string>>(new Set(['CO', 'LE', 'WA', 'CK', 'LK']))
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -232,7 +243,7 @@ export default function PeriodPage() {
     <div className="p-4 space-y-4 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">시즌/기간 분석</h1>
+          <h1 className="text-lg font-bold text-gray-900">채널판매현황</h1>
           <p className="text-xs text-gray-400 mt-0.5">브랜드×채널별 매출·수익성 종합 분석</p>
         </div>
         <button onClick={fetchData} disabled={loading}
@@ -251,6 +262,15 @@ export default function PeriodPage() {
                 brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
           ))}
         </div>
+        <span className="text-xs text-gray-400 ml-2">채널</span>
+        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
+          {CHANNEL_GROUPS.map(g => (
+            <button key={g} onClick={() => setSelChannelGroup(g)}
+              className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
+                selChannelGroup === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{g}</button>
+          ))}
+        </div>
+
         <span className="text-xs text-gray-400 ml-2">시즌</span>
         <select value={SEASON_OPTIONS.indexOf(selSeason)} onChange={e => setSelSeason(SEASON_OPTIONS[Number(e.target.value)])}
           className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
@@ -319,7 +339,7 @@ export default function PeriodPage() {
                   const isBrand = !isSummary
                   const isBrandCollapsed = collapsedBrands.has(sec.key)
                   const indent = (sec as any).indent ?? 0
-                  const secAgg = sumRows(sec.rows)
+                  const secAgg = sumRows(filterRowsByGroup(sec.rows))
                   const grouped = groupChannels(sec.rows)
 
                   return (
@@ -349,7 +369,7 @@ export default function PeriodPage() {
                               {renderRow(
                                 <div className="flex items-center gap-1.5" style={{ paddingLeft: (indent + 1) * 16 }}>
                                   {isOpen ? <ChevronDown size={10} className="text-gray-300" /> : <ChevronRight size={10} className="text-gray-300" />}
-                                  <span className="text-[11px] font-semibold" style={{ color: GROUP_COLORS[g.group] }}>{g.group}</span>
+                                  <span className="text-[11px] font-semibold text-gray-700">{g.group}</span>
                                   <span className="text-[10px] text-gray-400">{g.channels.length}</span>
                                 </div>,
                                 g.agg, false,

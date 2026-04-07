@@ -44,7 +44,7 @@ export const NAV_CONFIG: NavSection[] = [
         icon: Target,
         children: [
           { label: '매출 대시보드', href: '/sales', icon: BarChart3 },
-          { label: '시즌/기간 분석', href: '/sales/period', icon: ClipboardList },
+          { label: '채널판매현황', href: '/sales/period', icon: ClipboardList },
           { label: '매장/채널 분석', href: '/sales/shops', icon: Store },
           { label: '예상달성', href: '/sales/forecast', icon: Target },
           { label: '보충출고 자동화', href: '/sales/replenishment', icon: Truck },

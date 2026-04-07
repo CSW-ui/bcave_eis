@@ -44,8 +44,12 @@ export async function GET(req: Request) {
   const pwStart = new Date(pwEnd); pwStart.setDate(pwEnd.getDate() - 6)
   const cwS = fD(cwStart); const cwE = fD(lastSun)
   const pwS = fD(pwStart); const pwE = fD(pwEnd)
+  // 전년 동기간 종료일 (전주 일요일의 전년 동일 날짜)
+  const lyEndDate = new Date(lastSun); lyEndDate.setFullYear(lyEndDate.getFullYear() - 1)
+  const lyEndStr = fD(lyEndDate)
 
-  function buildStyleQuery(yr: string) {
+  function buildStyleQuery(yr: string, isCompYear?: boolean) {
+    const toDtFilter = isCompYear ? `AND v.SALEDT <= '${lyEndStr}'` : ''
     return `
       SELECT si.STYLECD, si.STYLENM, si.BRANDCD, si.TAGPRICE / 1.1 as TAGPRICE, si.PRODCOST,
         COALESCE(SUM(v.SALEQTY), 0) AS SALE_QTY,
@@ -63,7 +67,7 @@ export async function GET(req: Request) {
         COALESCE(winv.WH_AVAIL, 0) AS WH_AVAIL
       FROM BCAVE.SEWON.SW_STYLEINFO si
       LEFT JOIN ${SALES_VIEW} v
-        ON si.STYLECD = v.STYLECD AND si.BRANDCD = v.BRANDCD AND v.SALEDT >= '20${yr}0101'
+        ON si.STYLECD = v.STYLECD AND si.BRANDCD = v.BRANDCD AND v.SALEDT >= '20${yr}0101' ${toDtFilter}
         ${channelFilter} ${weekFilter}
       LEFT JOIN (SELECT STYLECD, SUM(INVQTY) AS SHOP_INV FROM BCAVE.SEWON.SW_SHOPINV GROUP BY STYLECD) sinv
         ON si.STYLECD = sinv.STYLECD
@@ -81,7 +85,7 @@ export async function GET(req: Request) {
   try {
     const [cyRaw, lyRaw, orderData, inboundData, channelData, dcRateData] = await Promise.all([
       snowflakeQuery<Record<string, string>>(buildStyleQuery(year)),
-      snowflakeQuery<Record<string, string>>(buildStyleQuery(compYear)),
+      snowflakeQuery<Record<string, string>>(buildStyleQuery(compYear, true)),
       // 스타일별 발주 (수량, 택가금액, 원가)
       snowflakeQuery<{ STYLECD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
         SELECT STYLECD,

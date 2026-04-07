@@ -83,19 +83,20 @@ async function getTopShops(
   const sql = `
     SELECT
       v.SHOPCD,
-      v.SHOPNM,
-      v.SHOPTYPENM,
+      MAX(sh.SHOPNM) AS SHOPNM,
+      MAX(sh.SHOPTYPENM) AS SHOPTYPENM,
       SUM(CASE WHEN v.SALEDT BETWEEN '${dates.mtdStart}' AND '${dates.mtdEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS MTD_REV,
       SUM(CASE WHEN v.SALEDT BETWEEN '${dates.cwStart}' AND '${dates.cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CW_REV,
       SUM(CASE WHEN v.SALEDT BETWEEN '${dates.pwStart}' AND '${dates.pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS PW_REV,
       SUM(CASE WHEN v.SALEDT BETWEEN '${dates.lyMtdStart}' AND '${dates.lyMtdEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS LY_REV
     FROM ${SALES_VIEW} v
+    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD = sh.SHOPCD
     ${itemFilter ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD` : ''}
     WHERE v.BRANDCD IN ${brandInClause}
       AND v.SALEDT BETWEEN '${dates.lyMtdStart}' AND '${dates.mtdEnd}'
-      ${channelFilter}
+      ${channelFilter ? channelFilter.replace(/v\.SHOPTYPENM/g, 'sh.SHOPTYPENM') : ''}
       ${itemFilter}
-    GROUP BY v.SHOPCD, v.SHOPNM, v.SHOPTYPENM
+    GROUP BY v.SHOPCD
     ORDER BY MTD_REV DESC
     LIMIT 30
   `
@@ -235,19 +236,20 @@ async function getShopPnl(
   const sql = `
     SELECT
       v.SHOPCD,
-      v.SHOPNM,
-      v.SHOPTYPENM,
+      MAX(sh.SHOPNM) AS SHOPNM,
+      MAX(sh.SHOPTYPENM) AS SHOPTYPENM,
       SUM(CASE WHEN v.SALEDT BETWEEN '${dates.mtdStart}' AND '${dates.mtdEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS REV,
-      SUM(CASE WHEN v.SALEDT BETWEEN '${dates.mtdStart}' AND '${dates.mtdEnd}' THEN si.PRODCOST * v.SALEQTY ELSE 0 END) AS COST,
+      SUM(CASE WHEN v.SALEDT BETWEEN '${dates.mtdStart}' AND '${dates.mtdEnd}' THEN COALESCE(si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS COST,
       SUM(CASE WHEN v.SALEDT BETWEEN '${dates.lyMtdStart}' AND '${dates.lyMtdEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS LY_REV,
-      SUM(CASE WHEN v.SALEDT BETWEEN '${dates.lyMtdStart}' AND '${dates.lyMtdEnd}' THEN si.PRODCOST * v.SALEQTY ELSE 0 END) AS LY_COST
+      SUM(CASE WHEN v.SALEDT BETWEEN '${dates.lyMtdStart}' AND '${dates.lyMtdEnd}' THEN COALESCE(si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS LY_COST
     FROM ${SALES_VIEW} v
-    JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD = sh.SHOPCD
+    LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
     WHERE v.BRANDCD IN ${brandInClause}
       AND v.SALEDT BETWEEN '${dates.lyMtdStart}' AND '${dates.mtdEnd}'
-      ${channelFilter}
+      ${channelFilter ? channelFilter.replace(/v\.SHOPTYPENM/g, 'sh.SHOPTYPENM') : ''}
       ${itemFilter}
-    GROUP BY v.SHOPCD, v.SHOPNM, v.SHOPTYPENM
+    GROUP BY v.SHOPCD
     ORDER BY REV DESC
   `
 

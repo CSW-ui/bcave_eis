@@ -345,7 +345,7 @@ export default function ItemDetailPage() {
                 <tr className="bg-gray-800 border-b-2 border-gray-900">
                   <th colSpan={5} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">발주/입고</th>
-                  <th colSpan={6} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출</th>
+                  <th colSpan={6} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출 (백만원)</th>
                   <th colSpan={3} className="text-center text-[10px] text-purple-300 font-bold py-1 border-r border-gray-600">전주</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1">재고</th>
                 </tr>
@@ -362,7 +362,7 @@ export default function ItemDetailPage() {
                   <th className="text-right px-1 py-2">매출</th>
                   <th className="text-right px-1 py-2">매출원가</th>
                   <th className="text-right px-1 py-2">원가율</th>
-                  <th className="text-right px-1 py-2">DC%</th>
+                  <th className="text-right px-1 py-2">할인율</th>
                   <th className="text-right px-1 py-2">판매율</th>
                   <th className="text-right px-1 py-2 border-l border-gray-200">매출</th>
                   <th className="text-right px-1 py-2">수량</th>
@@ -383,7 +383,7 @@ export default function ItemDetailPage() {
                       <td className="px-3 py-1.5 font-mono text-gray-400 text-[9px]">{s.stylecd}</td>
                       <td className={cn('px-2 py-1.5 font-medium truncate max-w-[160px]', isSel ? 'text-purple-700' : 'text-gray-800')}>{s.stylenm}</td>
                       <td className="px-1 py-1.5 text-center"><span className="px-1 py-px rounded-full text-[8px] font-bold text-white" style={{ background: BRAND_COLORS[s.brandcd]??'#999' }}>{s.brandcd}</span></td>
-                      <td className="px-1 py-1.5 text-right font-mono text-gray-600">₩{s.tagPrice.toLocaleString()}</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-600">₩{Math.round(s.tagPrice).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-500">₩{(s.prodCost||0).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-700 border-l border-gray-100">{(s.ordQty||0).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-green-700">{(s.inQty||0).toLocaleString()}</td>
@@ -394,15 +394,15 @@ export default function ItemDetailPage() {
                         ) : <span className="text-gray-300">—</span>}
                       </td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-700 border-l border-gray-100">{s.saleQty.toLocaleString()}</td>
-                      <td className="px-1 py-1.5 text-right font-mono font-semibold text-blue-700">{fmtW(s.saleAmt)}</td>
-                      <td className="px-1 py-1.5 text-right font-mono text-gray-500">{fmtW(s.costAmt)}</td>
+                      <td className="px-1 py-1.5 text-right font-mono font-semibold text-blue-700">{Math.round(s.saleAmt / 1e6).toLocaleString()}</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-500">{Math.round(s.costAmt / 1e6).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right text-gray-600">{s.cogsRate}%</td>
                       <td className="px-1 py-1.5 text-right text-gray-600">{s.dcRate}%</td>
                       <td className="px-1 py-1.5 text-right">
                         <span className={cn('px-1 py-px rounded-full text-[9px] font-semibold',
                           s.sellThrough>=70?'bg-emerald-100 text-emerald-700':s.sellThrough>=40?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700')}>{s.sellThrough}%</span>
                       </td>
-                      <td className="px-1 py-1.5 text-right font-mono text-purple-700 font-semibold border-l border-gray-100">{s.cwAmt ? fmtW(s.cwAmt) : '—'}</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-purple-700 font-semibold border-l border-gray-100">{s.cwAmt ? Math.round(s.cwAmt / 1e6).toLocaleString() : '—'}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-purple-600">{s.cwQty ? s.cwQty.toLocaleString() : '—'}</td>
                       <td className={cn('px-1 py-1.5 text-right font-mono text-[9px]', (s.wow??0) >= 0 ? 'text-emerald-600' : 'text-red-500')}>
                         {s.pwAmt > 0 ? `${s.wow >= 0 ? '+' : ''}${s.wow}%` : '—'}

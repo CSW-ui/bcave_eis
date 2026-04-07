@@ -320,20 +320,47 @@ export default function ForecastPage() {
                       <th className="text-left px-3 py-2">채널</th>
                       <th className="text-right px-2 py-2">경과 매출</th>
                       <th className="text-right px-2 py-2">예상 매출</th>
+                      <th className="text-right px-2 py-2">목표</th>
+                      <th className="text-right px-2 py-2">달성률</th>
                       <th className="text-right px-2 py-2">비중</th>
                       <th className="text-right px-2 py-2">성장률</th>
                       <th className="text-right px-2 py-2">모멘텀</th>
-                      <th className="text-right px-2 py-2">전년동월</th>
+                      <th className="text-right px-2 py-2">전년비</th>
                     </tr>
                   </thead>
                   <tbody>
                     {f.channelForecasts?.map((ch: any, i: number) => {
                       const vsLy = ch.lyFull > 0 ? Math.round((ch.forecast - ch.lyFull) / ch.lyFull * 100) : null
+                      // 채널 목표 매칭
+                      const now = new Date()
+                      const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+                      const brandCodes = brand === 'all' ? null : [brand]
+                      const chTarget = targets
+                        .filter(t => {
+                          if (t.yyyymm !== yyyymm) return false
+                          if (t.shoptypenm !== ch.channel) return false
+                          if (brandCodes) {
+                            const tCode = brandNameToCode(t.brandnm)
+                            if (!tCode || !brandCodes.includes(tCode)) return false
+                          }
+                          return true
+                        })
+                        .reduce((s, t) => s + t.target, 0)
+                      const chAch = chTarget > 0 ? Math.round(ch.forecast / chTarget * 100) : null
                       return (
                         <tr key={ch.channel} className={cn('border-b border-surface-border/50', i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30')}>
                           <td className="px-3 py-1.5 font-medium text-gray-800">{ch.channel}</td>
                           <td className="px-2 py-1.5 text-right font-mono text-gray-600">{fmtM(ch.cyRev)}</td>
                           <td className="px-2 py-1.5 text-right font-mono font-semibold text-blue-600">{fmtM(ch.forecast)}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-gray-400">{chTarget > 0 ? fmtM(chTarget) : '—'}</td>
+                          <td className="px-2 py-1.5 text-right">
+                            {chAch !== null ? (
+                              <span className={cn('font-mono font-bold',
+                                chAch >= 100 ? 'text-emerald-600' : chAch >= 90 ? 'text-amber-500' : 'text-red-500')}>
+                                {chAch}%
+                              </span>
+                            ) : '—'}
+                          </td>
                           <td className="px-2 py-1.5 text-right font-mono text-gray-500">{ch.share}%</td>
                           <td className={cn('px-2 py-1.5 text-right font-mono font-semibold',
                             ch.growth >= 100 ? 'text-emerald-600' : 'text-red-500')}>

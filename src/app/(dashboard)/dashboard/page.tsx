@@ -152,23 +152,24 @@ export default function DashboardPage() {
       {/* YTD 누적 KPI */}
       {!loading && data?.ytd && (() => {
         const y = data.ytd
-        // YTD 목표 합산
-        const ytdTarget = (() => {
+        // 달성률: 전월 마감까지 목표 합산
+        const curMonth = data.kpi?.curMonth ?? 1
+        const achTarget = (() => {
           let total = 0
-          for (let m = 1; m <= (data.kpi?.curMonth ?? 12); m++) {
+          for (let m = 1; m < curMonth; m++) {
             const yyyymm = `${data.kpi?.curYear}${String(m).padStart(2, '0')}`
             total += getFilteredMonthlyTarget(yyyymm)
           }
           return total
         })()
-        const achPct = ytdTarget > 0 ? Math.round(y.rev / ytdTarget * 100) : null
+        const achPct = achTarget > 0 ? Math.round(y.achRev / achTarget * 100) : null
         const cogsChg = Math.round((y.cogsRate - y.lyCogsRate) * 10) / 10
         const dcChg = Math.round((y.dcRate - y.lyDcRate) * 10) / 10
         const cards = [
-          { label: 'YTD 매출', value: fmtW(y.rev), sub: `전년 ${fmtW(y.lyRev)}`, badge: y.yoy >= 0 ? `+${y.yoy}%` : `${y.yoy}%`, positive: y.yoy >= 0 },
-          ...(achPct !== null ? [{ label: 'YTD 달성률', value: `${achPct}%`, sub: `목표 ${fmtW(ytdTarget)}`, badge: null, positive: achPct >= 90 }] : []),
-          { label: 'YTD 원가율', value: `${y.cogsRate}%`, sub: `전년 ${y.lyCogsRate}%`, badge: cogsChg !== 0 ? `${cogsChg > 0 ? '+' : ''}${cogsChg}p` : '0p', positive: cogsChg <= 0 },
-          { label: 'YTD 할인율', value: `${y.dcRate}%`, sub: `전년 ${y.lyDcRate}%`, badge: dcChg !== 0 ? `${dcChg > 0 ? '+' : ''}${dcChg}p` : '0p', positive: dcChg <= 0 },
+          { label: 'YTD 매출', value: fmtW(y.rev), sub: `전년동기 ${fmtW(y.lyRev)}`, badge: y.yoy >= 0 ? `+${y.yoy}%` : `${y.yoy}%`, positive: y.yoy >= 0 },
+          ...(achPct !== null ? [{ label: `${curMonth - 1}월까지 달성률`, value: `${achPct}%`, sub: `목표 ${fmtW(achTarget)}`, badge: `달성 ${fmtW(y.achRev)}`, positive: achPct >= 90 }] : []),
+          { label: 'YTD 매출원가율', value: `${y.cogsRate}%`, sub: `전년동기 ${y.lyCogsRate}%`, badge: cogsChg !== 0 ? `${cogsChg > 0 ? '+' : ''}${cogsChg}p` : '0p', positive: cogsChg <= 0 },
+          { label: 'YTD 할인율', value: `${y.dcRate}%`, sub: `전년동기 ${y.lyDcRate}%`, badge: dcChg !== 0 ? `${dcChg > 0 ? '+' : ''}${dcChg}p` : '0p', positive: dcChg <= 0 },
         ]
         return (
           <div className={cn('grid gap-3', achPct !== null ? 'grid-cols-4' : 'grid-cols-3')}>

@@ -319,10 +319,25 @@ export async function GET(req: NextRequest) {
 
     // YTD 누적 지표
     const ytd = (() => {
-      let rev = 0, lyRev = 0, cost = 0, lyCost = 0, tag = 0, sale = 0, lyTag = 0, lySale = 0, target = 0
-      for (const [, v] of monthlyMap) {
-        rev += v.actual; lyRev += v.lastYear; cost += v.cost; lyCost += v.lyCost
-        tag += v.tag; sale += v.sale; lyTag += v.lyTag; lySale += v.lySale
+      const cmMm = String(curMonth).padStart(2, '0')
+      // 매출: 전일마감 누적 (당월 포함), 전년은 동기간
+      let rev = 0, lyRev = 0, cost = 0, lyCost = 0, tag = 0, sale = 0, lyTag = 0, lySale = 0
+      for (const [mm, v] of monthlyMap) {
+        rev += v.actual; cost += v.cost; tag += v.tag; sale += v.sale
+        if (mm === cmMm) {
+          // 당월 전년은 KPI의 동기간 값 사용
+          lyRev += Number(k.LY_REV) || 0
+          // 당월 전년 원가/할인율은 별도 동기간 쿼리 없으므로 비율 역산 불가 — 월별 데이터 그대로 사용하되 비율에서 보정
+          lyCost += v.lyCost; lyTag += v.lyTag; lySale += v.lySale
+        } else {
+          lyRev += v.lastYear; lyCost += v.lyCost; lyTag += v.lyTag; lySale += v.lySale
+        }
+      }
+      // 달성률: 전월 마감 기준 (당월 제외)
+      let achRev = 0, achLyRev = 0
+      for (const [mm, v] of monthlyMap) {
+        if (mm >= cmMm) continue // 당월 이후 제외
+        achRev += v.actual; achLyRev += v.lastYear
       }
       return {
         rev, lyRev,
@@ -331,6 +346,7 @@ export async function GET(req: NextRequest) {
         lyCogsRate: lyRev > 0 ? Math.round(lyCost / lyRev * 1000) / 10 : 0,
         dcRate: tag > 0 ? Math.round((1 - sale / tag) * 1000) / 10 : 0,
         lyDcRate: lyTag > 0 ? Math.round((1 - lySale / lyTag) * 1000) / 10 : 0,
+        achRev, // 전월까지 누적 매출 (달성률용)
       }
     })()
 

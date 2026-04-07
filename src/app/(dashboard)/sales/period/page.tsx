@@ -44,7 +44,7 @@ interface AggRow {
   coDcRate: number; lyCoDcRate: number; coCogsRate: number; lyCoCogsRate: number
 }
 
-const EXCLUDE_SHOP_CNT = ['오프라인 위탁', '온라인B2B', '해외 위탁', '해외 사입']
+const EXCLUDE_SHOP_CNT = ['오프라인 위탁', '온라인B2B', '해외 사입']
 
 function sumRows(rows: ChannelRow[]): AggRow {
   let rev = 0, lyRev = 0, nRev = 0, lyNRev = 0, cRev = 0, lyCRev = 0

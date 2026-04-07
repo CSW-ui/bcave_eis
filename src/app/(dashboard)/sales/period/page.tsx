@@ -190,6 +190,11 @@ export default function PeriodPage() {
   }
 
   const bg = (isTotal: boolean) => isTotal ? 'bg-gray-100' : ''
+  const renderGap = (cy: number, ly: number) => {
+    const gap = cy - ly
+    if (ly === 0 && cy === 0) return '—'
+    return <span className={cn('font-mono', gap >= 0 ? 'text-red-500' : 'text-blue-500')}>{gap >= 0 ? '+' : ''}{fmtE(gap)}</span>
+  }
   const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean) => (
     <>
       <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
@@ -197,6 +202,7 @@ export default function PeriodPage() {
       <td className={cn(cellBase, 'font-semibold text-gray-900', bg(isTotal))}>{fmtE(a.rev)}</td>
       <td className={cn(cellBase, 'text-gray-500', bg(isTotal))}>{fmtE(a.lyRev)}</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderYoy(a.yoy)}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderGap(a.rev, a.lyRev)}</td>
       <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.dcRate}%</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.dcRate, a.lyDcRate)}</td>
       <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.cogsRate}%</td>
@@ -206,6 +212,7 @@ export default function PeriodPage() {
       <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{a.normRatio}%</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.normRatio, a.lyRev > 0 ? Math.round(a.lyNormRev / a.lyRev * 1000) / 10 : a.normRatio)}</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderYoy(a.normYoy)}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderGap(a.normRev, a.lyNormRev)}</td>
       <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.normDcRate}%</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.normDcRate, a.lyNormDcRate)}</td>
       <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.normCogsRate}%</td>
@@ -213,6 +220,7 @@ export default function PeriodPage() {
       {/* 이월 매출 */}
       <td className={cn(cellBase, 'font-semibold text-amber-700', bg(isTotal))}>{a.coRev ? fmtE(a.coRev) : '—'}</td>
       <td className={cn(cellBase, bg(isTotal))}>{a.coRev ? renderYoy(a.coYoy) : '—'}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{a.coRev || a.lyCoRev ? renderGap(a.coRev, a.lyCoRev) : '—'}</td>
       <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.coRev ? `${a.coDcRate}%` : '—'}</td>
       <td className={cn(cellBase, bg(isTotal))}>{a.coRev ? renderPt(a.coDcRate, a.lyCoDcRate) : '—'}</td>
       <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.coRev ? `${a.coCogsRate}%` : '—'}</td>
@@ -265,19 +273,20 @@ export default function PeriodPage() {
           <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px] border-collapse" style={{ minWidth: 1700 }}>
+            <table className="w-full text-[11px] border-collapse" style={{ minWidth: 1900 }}>
               <thead>
                 <tr className="bg-gray-800">
                   <th rowSpan={2} className="text-left px-1.5 py-1.5 sticky left-0 bg-gray-800 z-20 w-[160px] min-w-[160px] text-[11px] text-gray-300 font-bold" style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.2)' }}>구분</th>
-                  <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
-                  <th colSpan={8} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
-                  <th colSpan={6} className="text-center px-1.5 py-1.5 text-[11px] text-amber-300 font-bold border-l border-gray-600">이월 매출</th>
+                  <th colSpan={8} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
+                  <th colSpan={9} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
+                  <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-amber-300 font-bold border-l border-gray-600">이월 매출</th>
                 </tr>
                 <tr className="bg-gray-700 border-b-2 border-gray-400 text-[11px] text-gray-300 font-medium">
                   {/* 총 매출 */}
                   <th className="text-right px-1.5 py-1.5 border-l border-gray-500">매출</th>
                   <th className="text-right px-1.5 py-1.5">전년</th>
                   <th className="text-right px-1.5 py-1.5">신장률</th>
+                  <th className="text-right px-1.5 py-1.5">GAP</th>
                   <th className="text-right px-1.5 py-1.5">할인율</th>
                   <th className="text-right px-1.5 py-1.5">전년비</th>
                   <th className="text-right px-1.5 py-1.5">원가율</th>
@@ -287,6 +296,7 @@ export default function PeriodPage() {
                   <th className="text-right px-1.5 py-1.5">비중</th>
                   <th className="text-right px-1.5 py-1.5">전년비</th>
                   <th className="text-right px-1.5 py-1.5">신장률</th>
+                  <th className="text-right px-1.5 py-1.5">GAP</th>
                   <th className="text-right px-1.5 py-1.5">할인율</th>
                   <th className="text-right px-1.5 py-1.5">전년비</th>
                   <th className="text-right px-1.5 py-1.5">원가율</th>
@@ -294,6 +304,7 @@ export default function PeriodPage() {
                   {/* 이월 */}
                   <th className="text-right px-1.5 py-1.5 border-l border-gray-500 text-amber-400/80">매출</th>
                   <th className="text-right px-1.5 py-1.5 text-amber-400/80">신장률</th>
+                  <th className="text-right px-1.5 py-1.5 text-amber-400/80">GAP</th>
                   <th className="text-right px-1.5 py-1.5 text-amber-400/80">할인율</th>
                   <th className="text-right px-1.5 py-1.5 text-amber-400/80">전년비</th>
                   <th className="text-right px-1.5 py-1.5 text-amber-400/80">원가율</th>

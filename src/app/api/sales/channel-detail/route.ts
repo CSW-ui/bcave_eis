@@ -46,12 +46,13 @@ export async function GET(req: Request) {
         SELECT v.SHOPCD, v.SHOPCD as SHOPNM_SALE, MAX(si.SHOPNM) as SHOPNM, MAX(si.AREANM) as AREANM,
           SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_REV,
           SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEQTY ELSE 0 END) as MTD_QTY,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN COALESCE(sti.PRODCOST,0) * v.SALEQTY ELSE 0 END) as MTD_COST,
+          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY ELSE 0 END) as MTD_COST,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as CW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${pwStart}' AND '${pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as PW_REV
         FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON v.SHOPCD = si.SHOPCD
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO sti ON v.STYLECD = sti.STYLECD AND v.BRANDCD = sti.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON sti.STYLECD = pc.STYLECD AND sti.BRANDCD = pc.BRANDCD
         WHERE ${brandWhere} AND v.SHOPTYPENM = '${channelSafe}'
           AND v.SALEDT BETWEEN '${monthStart < pwStart ? monthStart : pwStart}' AND '${cwEnd}'
           ${itemFilterSti}
@@ -71,11 +72,12 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT v.STYLECD, MAX(sti.STYLENM) as STYLENM, v.BRANDCD,
           SUM(v.SALEAMT_VAT_EX) as REVENUE, SUM(v.SALEQTY) as QTY,
-          SUM(COALESCE(sti.PRODCOST,0) * v.SALEQTY) as COST_TOTAL,
+          SUM(COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY) as COST_TOTAL,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as CW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${pwStart}' AND '${pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as PW_REV
         FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO sti ON v.STYLECD = sti.STYLECD AND v.BRANDCD = sti.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON sti.STYLECD = pc.STYLECD AND sti.BRANDCD = pc.BRANDCD
         WHERE ${brandWhere} AND v.SHOPTYPENM = '${channelSafe}'
           AND v.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}'
           ${shopFilter}

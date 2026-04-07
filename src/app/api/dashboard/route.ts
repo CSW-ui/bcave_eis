@@ -99,9 +99,10 @@ export async function GET(req: NextRequest) {
           SUM(v.SALEQTY) AS SALE_QTY,
           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS SALE_TAG,
           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS COST_AMT
         FROM BCAVE.SEWON.VW_SALES_VAT v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
           AND v.SALEDT >= '20260101'
         GROUP BY si.YEARCD
@@ -138,9 +139,10 @@ export async function GET(req: NextRequest) {
       // 8. 매출원가용: 월별 PRODCOST (올해+전년)
       snowflakeQuery<{ M: string; COST: number }>(`
         SELECT SUBSTRING(v.SALEDT, 1, 6) AS M,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS COST
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS COST
         FROM BCAVE.SEWON.VW_SALES_VAT v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
           AND v.SALEDT >= '${curYear - 1}0101'
         GROUP BY SUBSTRING(v.SALEDT, 1, 6)
@@ -152,9 +154,10 @@ export async function GET(req: NextRequest) {
         SELECT si.YEARCD AS YR,
           SUM(w.INQTY) AS IN_QTY,
           SUM(w.INQTY * COALESCE(tp.TAGPRICE, 0)) AS IN_TAG,
-          SUM(w.INQTY * COALESCE(si.PRODCOST, 0)) AS IN_COST
+          SUM(w.INQTY * COALESCE(pc.PRECOST, si.PRODCOST, 0)) AS IN_COST
         FROM BCAVE.SEWON.SW_WHININFO w
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON w.STYLECD = si.STYLECD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         LEFT JOIN (
           SELECT STYLECD, BRANDCD, CHASU, MAX(TAGPRICE / 1.1) as TAGPRICE
           FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
@@ -169,7 +172,7 @@ export async function GET(req: NextRequest) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.YEARCD AS YR,
           SUM(inv.QTY * COALESCE(tp.TAGPRICE, 0)) as BASE_TAG,
-          SUM(inv.QTY * COALESCE(si.PRODCOST, 0)) as BASE_COST,
+          SUM(inv.QTY * COALESCE(pc.PRECOST, si.PRODCOST, 0)) as BASE_COST,
           SUM(inv.QTY) as BASE_QTY
         FROM (
           SELECT s.STYLECD, SUM(s.INVQTY) as QTY
@@ -181,6 +184,7 @@ export async function GET(req: NextRequest) {
           SELECT STYLECD, SUM(INVQTY) as QTY FROM BCAVE.SEWON.SW_WHINV_20251231 GROUP BY STYLECD
         ) inv
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON inv.STYLECD = si.STYLECD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         LEFT JOIN (
           SELECT STYLECD, BRANDCD, MAX(TAGPRICE / 1.1) as TAGPRICE
           FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
@@ -208,7 +212,7 @@ export async function GET(req: NextRequest) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.YEARCD AS YR,
           SUM(inv.QTY * COALESCE(tp.TAGPRICE, 0)) as REM_TAG,
-          SUM(inv.QTY * COALESCE(si.PRODCOST, 0)) as REM_COST,
+          SUM(inv.QTY * COALESCE(pc.PRECOST, si.PRODCOST, 0)) as REM_COST,
           SUM(inv.QTY) as REM_QTY
         FROM (
           SELECT s.STYLECD, SUM(s.INVQTY) as QTY
@@ -220,6 +224,7 @@ export async function GET(req: NextRequest) {
           SELECT STYLECD, SUM(AVAILQTY) as QTY FROM BCAVE.SEWON.SW_WHINV GROUP BY STYLECD
         ) inv
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON inv.STYLECD = si.STYLECD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         LEFT JOIN (
           SELECT STYLECD, BRANDCD, MAX(TAGPRICE / 1.1) as TAGPRICE
           FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
@@ -231,9 +236,10 @@ export async function GET(req: NextRequest) {
 
       // 13. 전년 당월 동기간 원가 (YTD 매출원가율 동기간 보정용)
       snowflakeQuery<Record<string, string>>(`
-        SELECT SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS LY_CM_COST
+        SELECT SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS LY_CM_COST
         FROM BCAVE.SEWON.VW_SALES_VAT v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
           AND v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}'
       `),

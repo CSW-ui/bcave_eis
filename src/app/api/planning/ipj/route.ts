@@ -92,9 +92,10 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as SALE_AMT,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) as COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as COST_AMT
         FROM BCAVE.SEWON.VW_SALES_VAT v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${vBrandClause}
           AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
           ${saleDateClause}
@@ -145,11 +146,12 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as CO_SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as CO_SALE_AMT,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) as CO_COST_AMT,
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as CO_COST_AMT,
           COUNT(DISTINCT si.STYLECD) as CO_ST_CNT,
           COUNT(DISTINCT si.STYLECD) as CO_STCL_CNT
         FROM BCAVE.SEWON.VW_SALES_VAT v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${vBrandClause}
           AND NOT (si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere})
           ${saleDateClause}
@@ -189,13 +191,14 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(inv.QTY) as CO_INV_QTY,
           SUM(inv.QTY * COALESCE(tp.TAGPRICE, 0)) as CO_INV_TAG_AMT,
-          SUM(inv.QTY * COALESCE(si.PRODCOST, 0)) as CO_INV_COST_AMT
+          SUM(inv.QTY * COALESCE(pc.PRECOST, si.PRODCOST, 0)) as CO_INV_COST_AMT
         FROM (
           SELECT STYLECD, SUM(INVQTY) as QTY FROM BCAVE.SEWON.SW_SHOPINV GROUP BY STYLECD
           UNION ALL
           SELECT STYLECD, SUM(AVAILQTY) as QTY FROM BCAVE.SEWON.SW_WHINV GROUP BY STYLECD
         ) inv
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON inv.STYLECD = si.STYLECD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         LEFT JOIN (
           SELECT STYLECD, BRANDCD, MAX(TAGPRICE / 1.1) as TAGPRICE
           FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
@@ -210,10 +213,11 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM(v.SALEAMT_VAT_EX) as LY_SALE_AMT,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) as LY_COST_AMT,
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as LY_COST_AMT,
           SUM(v.SALEQTY) as LY_SALE_QTY
         FROM BCAVE.SEWON.VW_SALES_VAT v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${vBrandClause}
           AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
           ${lySaleDateClause}
@@ -225,9 +229,10 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM(v.SALEAMT_VAT_EX) as LY_CO_SALE_AMT,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) as LY_CO_COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as LY_CO_COST_AMT
         FROM BCAVE.SEWON.VW_SALES_VAT v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${vBrandClause}
           AND NOT (si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}) ${genderWhere})
           ${lySaleDateClause}
@@ -240,9 +245,10 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as OV_SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as OV_SALE_AMT,
-          SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) as OV_COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as OV_COST_AMT
         FROM BCAVE.SEWON.VW_SALES_VAT v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${vBrandClause}
           ${saleDateClause}
           AND v.SHOPTYPENM = '해외 사입'

@@ -51,10 +51,10 @@ export async function GET(req: Request) {
   function buildStyleQuery(yr: string, isCompYear?: boolean) {
     const toDtFilter = isCompYear ? `AND v.SALEDT <= '${lyEndStr}'` : ''
     return `
-      SELECT si.STYLECD, si.STYLENM, si.BRANDCD, si.TAGPRICE / 1.1 as TAGPRICE, si.PRODCOST,
+      SELECT si.STYLECD, si.STYLENM, si.BRANDCD, si.TAGPRICE / 1.1 as TAGPRICE, COALESCE(pc.PRECOST, si.PRODCOST, 0) as PRODCOST,
         COALESCE(SUM(v.SALEQTY), 0) AS SALE_QTY,
         COALESCE(SUM(v.SALEAMT_VAT_EX), 0) AS SALE_AMT,
-        COALESCE(SUM(si.PRODCOST * v.SALEQTY), 0) AS COST_AMT,
+        COALESCE(SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY), 0) AS COST_AMT,
         ${weekNum
           ? `COALESCE(SUM(CASE WHEN WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${parseInt(weekNum)} THEN v.SALEAMT_VAT_EX ELSE 0 END), 0) AS CW_AMT,
              COALESCE(SUM(CASE WHEN WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${parseInt(weekNum)} THEN v.SALEQTY ELSE 0 END), 0) AS CW_QTY,
@@ -66,6 +66,7 @@ export async function GET(req: Request) {
         COALESCE(sinv.SHOP_INV, 0) AS SHOP_INV,
         COALESCE(winv.WH_AVAIL, 0) AS WH_AVAIL
       FROM BCAVE.SEWON.SW_STYLEINFO si
+      LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
       LEFT JOIN ${SALES_VIEW} v
         ON si.STYLECD = v.STYLECD AND si.BRANDCD = v.BRANDCD AND v.SALEDT >= '20${yr}0101' ${toDtFilter}
         ${channelFilter} ${weekFilter}
@@ -77,7 +78,7 @@ export async function GET(req: Request) {
         AND si.YEARCD = '${yr}'
         AND si.SEASONNM IN (${seasonList})
         AND si.ITEMNM = '${itemSafe}'
-      GROUP BY si.STYLECD, si.STYLENM, si.BRANDCD, si.TAGPRICE, si.PRODCOST, sinv.SHOP_INV, winv.WH_AVAIL
+      GROUP BY si.STYLECD, si.STYLENM, si.BRANDCD, si.TAGPRICE, si.PRODCOST, pc.PRECOST, sinv.SHOP_INV, winv.WH_AVAIL
       ORDER BY SALE_AMT DESC
     `
   }

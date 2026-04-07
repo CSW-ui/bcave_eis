@@ -84,7 +84,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [cyRaw, lyRaw, orderData, inboundData, channelData, dcRateData] = await Promise.all([
+    const [cyRaw, lyRaw, orderData, inboundData, lyInboundData, channelData, dcRateData] = await Promise.all([
       snowflakeQuery<Record<string, string>>(buildStyleQuery(year)),
       snowflakeQuery<Record<string, string>>(buildStyleQuery(compYear, true)),
       // 스타일별 발주 (수량, 택가금액, 원가)
@@ -109,6 +109,18 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON w.STYLECD = si.STYLECD
         WHERE ${brandWhere}
           AND si.YEARCD = '${year}'
+          AND si.SEASONNM IN (${seasonList})
+          AND si.ITEMNM = '${itemSafe}'
+        GROUP BY w.STYLECD
+      `),
+      // 전년 스타일별 입고 (수량)
+      snowflakeQuery<{ STYLECD: string; IN_QTY: number }>(`
+        SELECT w.STYLECD,
+          SUM(w.INQTY) AS IN_QTY
+        FROM BCAVE.SEWON.SW_WHININFO w
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON w.STYLECD = si.STYLECD
+        WHERE ${brandWhere}
+          AND si.YEARCD = '${compYear}'
           AND si.SEASONNM IN (${seasonList})
           AND si.ITEMNM = '${itemSafe}'
         GROUP BY w.STYLECD
@@ -146,9 +158,10 @@ export async function GET(req: Request) {
 
     const ordMap = new Map(orderData.map(r => [r.STYLECD, r]))
     const inMap = new Map(inboundData.map(r => [r.STYLECD, r]))
+    const lyInMap = new Map(lyInboundData.map(r => [r.STYLECD, r]))
     const dcMap = new Map(dcRateData.map(r => [r.STYLECD, r]))
 
-    const mapRows = (rows: Record<string, string>[], useOrderData = false) => {
+    const mapRows = (rows: Record<string, string>[], useOrderData = false, inboundMap?: Map<string, { STYLECD: string; IN_QTY: number }>) => {
       return rows.map(r => {
         const saleQty = Number(r.SALE_QTY) || 0
         const saleAmt = Number(r.SALE_AMT) || 0
@@ -165,7 +178,8 @@ export async function GET(req: Request) {
         const ordTagAmt = ord ? Number(ord.ORD_TAG_AMT) || 0 : 0
         const ordCostAmt = ord ? Number(ord.ORD_COST_AMT) || 0 : 0
         // 입고
-        const inb = useOrderData ? inMap.get(r.STYLECD) : null
+        const activeInMap = inboundMap ?? inMap
+        const inb = activeInMap.get(r.STYLECD)
         const inQty = inb ? Number(inb.IN_QTY) || 0 : 0
         const inAmt = inb ? Number(inb.IN_AMT) || 0 : 0
         const inboundRate = ordQty > 0 ? Math.round(inQty / ordQty * 1000) / 10 : 0
@@ -193,8 +207,8 @@ export async function GET(req: Request) {
     }))
 
     return NextResponse.json({
-      styles: mapRows(cyRaw, true),
-      lyStyles: mapRows(lyRaw, false),
+      styles: mapRows(cyRaw, true, inMap),
+      lyStyles: mapRows(lyRaw, false, lyInMap),
       channels,
     })
   } catch (err) {

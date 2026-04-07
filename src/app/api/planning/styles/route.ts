@@ -113,26 +113,36 @@ export async function GET(req: Request) {
           AND ITEMNM = '${itemSafe}'
         GROUP BY STYLECD
       `),
-      // 스타일별 입고 (수량, 금액)
+      // 스타일별 입고 (수량, TAG금액)
       snowflakeQuery<{ STYLECD: string; IN_QTY: number; IN_AMT: number }>(`
         SELECT w.STYLECD,
           SUM(w.INQTY) AS IN_QTY,
-          SUM(w.INQTY * w.INPRICE) AS IN_AMT
+          SUM(w.INQTY * COALESCE(tp.TAGPRICE, 0)) AS IN_AMT
         FROM BCAVE.SEWON.SW_WHININFO w
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON w.STYLECD = si.STYLECD
+        LEFT JOIN (
+          SELECT STYLECD, BRANDCD, CHASU, MAX(TAGPRICE / 1.1) as TAGPRICE
+          FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
+          GROUP BY STYLECD, BRANDCD, CHASU
+        ) tp ON w.STYLECD = tp.STYLECD AND si.BRANDCD = tp.BRANDCD AND w.CHASU = tp.CHASU
         WHERE ${brandWhere}
           AND si.YEARCD = '${year}'
           AND si.SEASONNM IN (${seasonList})
           AND si.ITEMNM = '${itemSafe}'
         GROUP BY w.STYLECD
       `),
-      // 전년 스타일별 입고 (수량, 금액)
+      // 전년 스타일별 입고 (수량, TAG금액)
       snowflakeQuery<{ STYLECD: string; IN_QTY: number; IN_AMT: number }>(`
         SELECT w.STYLECD,
           SUM(w.INQTY) AS IN_QTY,
-          SUM(w.INQTY * w.INPRICE) AS IN_AMT
+          SUM(w.INQTY * COALESCE(tp.TAGPRICE, 0)) AS IN_AMT
         FROM BCAVE.SEWON.SW_WHININFO w
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON w.STYLECD = si.STYLECD
+        LEFT JOIN (
+          SELECT STYLECD, BRANDCD, CHASU, MAX(TAGPRICE / 1.1) as TAGPRICE
+          FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
+          GROUP BY STYLECD, BRANDCD, CHASU
+        ) tp ON w.STYLECD = tp.STYLECD AND si.BRANDCD = tp.BRANDCD AND w.CHASU = tp.CHASU
         WHERE ${brandWhere}
           AND si.YEARCD = '${compYear}'
           AND si.SEASONNM IN (${seasonList})

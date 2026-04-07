@@ -22,42 +22,29 @@ export async function GET(req: Request) {
   const lyFromDt = searchParams.get('lyFromDt') || ''
   const lyToDt = searchParams.get('lyToDt') || ''
 
-  // 모드 결정: 커스텀 기간 > 시즌
-  const isCustom = !!(fromDt && toDt)
+  // 시즌 + 기간 동시 적용
   const seasons = seasonParam ? seasonParam.split(',').map(s => s.trim()) : ['봄', '여름', '상반기', '스탠다드']
   const seasonList = seasons.map(s => `'${s.replace(/'/g, "''")}'`).join(',')
   const prevYear = String(Number(year) - 1)
 
-  // 날짜 범위 결정
-  let cyDateFilter: string
-  let lyDateFilter: string
-  let siJoin: string
+  // 기간 필터 (항상 적용)
+  const lyF = lyFromDt || String(Number(fromDt) - 10000)
+  const lyT = lyToDt || String(Number(toDt) - 10000)
+  const cyDateFilter = fromDt && toDt ? `AND v.SALEDT BETWEEN '${fromDt}' AND '${toDt}'` : `AND v.SALEDT >= '20${year}0101'`
+  const lyDateFilter = lyF && lyT ? `AND v.SALEDT BETWEEN '${lyF}' AND '${lyT}'` : `AND v.SALEDT >= '20${prevYear}0101'`
 
-  if (isCustom) {
-    const lyF = lyFromDt || String(Number(fromDt) - 10000)
-    const lyT = lyToDt || String(Number(toDt) - 10000)
-    cyDateFilter = `AND v.SALEDT BETWEEN '${fromDt}' AND '${toDt}'`
-    lyDateFilter = `AND v.SALEDT BETWEEN '${lyF}' AND '${lyT}'`
-    siJoin = '' // 커스텀 기간은 시즌 필터 없음
-  } else {
-    cyDateFilter = `AND v.SALEDT >= '20${year}0101'`
-    lyDateFilter = `AND v.SALEDT >= '20${prevYear}0101'`
-    siJoin = `JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD`
-  }
+  // 시즌 필터 (항상 적용 — SW_STYLEINFO JOIN)
+  const siJoin = `JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD`
+  const seasonFilter = `AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList})`
+  const lySeasonFilter = `AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList})`
 
-  const seasonFilter = isCustom ? '' : `AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList})`
-  const lySeasonFilter = isCustom ? '' : `AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList})`
+  // SW_SALEINFO용
+  const slSiJoin = `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD`
+  const slSeasonFilter = `AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList})`
+  const slLySeasonFilter = `AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList})`
 
-  // SW_SALEINFO용 si JOIN + 필터
-  const slSiJoin = isCustom ? '' : `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD`
-  const slSeasonFilter = isCustom ? '' : `AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList})`
-  const slLySeasonFilter = isCustom ? '' : `AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList})`
-
-  // 커스텀 기간용 날짜
-  const cySlDateFilter = isCustom ? `AND sl.SALEDT BETWEEN '${fromDt}' AND '${toDt}'` : `AND sl.SALEDT >= '20${year}0101'`
-  const lySlDateFilter = isCustom
-    ? `AND sl.SALEDT BETWEEN '${lyFromDt || String(Number(fromDt) - 10000)}' AND '${lyToDt || String(Number(toDt) - 10000)}'`
-    : `AND sl.SALEDT >= '20${prevYear}0101'`
+  const cySlDateFilter = fromDt && toDt ? `AND sl.SALEDT BETWEEN '${fromDt}' AND '${toDt}'` : `AND sl.SALEDT >= '20${year}0101'`
+  const lySlDateFilter = lyF && lyT ? `AND sl.SALEDT BETWEEN '${lyF}' AND '${lyT}'` : `AND sl.SALEDT >= '20${prevYear}0101'`
 
   try {
     const [cyRows, lyRows, cyDcRows, lyDcRows] = await Promise.all([

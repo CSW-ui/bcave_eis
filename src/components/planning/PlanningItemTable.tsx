@@ -54,8 +54,8 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
     it:a.it+i.invTagAmt,ic:a.ic+i.invCostAmt,
   }),{sc:0,sk:0,oq:0,ot:0,oc:0,iq:0,ia:0,sq:0,sa:0,ta:0,sp:0,ca:0,cw:0,pw:0,cc:0,ma:0,mq:0,si:0,wh:0,ti:0,it:0,ic:0})
   const t=s(items),ct=s(compItems??[])
-  const tSR=t.iq>0?Math.round(t.sq/t.iq*1000)/10:0
-  const ctSR=ct.iq>0?Math.round(ct.sq/ct.iq*1000)/10:0
+  const tSR=t.oq>0?Math.round(t.sq/t.oq*1000)/10:0
+  const ctSR=ct.oq>0?Math.round(ct.sq/ct.oq*1000)/10:0
   const tIR=t.oq>0?Math.round(t.iq/t.oq*1000)/10:0
   const tDC=t.ta>0?Math.round((1-t.sp/t.ta)*1000)/10:0
   const ctDC=ct.ta>0?Math.round((1-ct.sp/ct.ta)*1000)/10:0
@@ -111,7 +111,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th colSpan={4} className="text-center text-[11px] text-gray-200 font-bold py-1.5">상품</th>
             <th colSpan={5} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
             <th colSpan={9} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
-            <th colSpan={3} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
+            <th colSpan={2} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
             <th colSpan={3} className="text-center text-[11px] text-purple-300 font-bold py-1.5 border-l border-gray-600">주간 실적</th>
             <th colSpan={7} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">재고</th>
           </tr>
@@ -138,7 +138,6 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             {/* 당월 */}
             <H k="monthAmt" l="매출"/>
-            <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">YoY</th>
             <H k="monthQty" l="수량"/>
             {/* 주간 */}
             <H k="cwAmt" l="매출"/>
@@ -187,7 +186,6 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
                 <Pt c={r.salesRate} p={p?.salesRate}/>
                 {/* 당월 */}
                 <td className={cn(cell, 'text-cyan-700 font-semibold')}>{fmtM(r.monthAmt)}</td>
-                <Y c={r.monthAmt} p={p?.monthAmt}/>
                 <td className={cn(cell, 'text-cyan-600')}>{r.monthQty.toLocaleString()}</td>
                 {/* 주간 */}
                 <td className={cn(cell, 'text-purple-700 font-semibold')}>{fmtM(r.cwAmt)}</td>
@@ -227,7 +225,6 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <Pt c={tSR} p={ctSR}/>
             {/* 당월 */}
             <td className="py-1.5 px-1 text-right text-cyan-700">{fmtM(t.ma)}</td>
-            <Y c={t.ma} p={ct.ma}/>
             <td className="py-1.5 px-1 text-right">{t.mq.toLocaleString()}</td>
             {/* 주간 */}
             <td className="py-1.5 px-1 text-right text-purple-700">{fmtM(t.cw)}</td>

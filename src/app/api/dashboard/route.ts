@@ -320,14 +320,14 @@ export async function GET(req: NextRequest) {
     // YTD 누적 지표
     const ytd = (() => {
       const cmMm = String(curMonth).padStart(2, '0')
-      // 매출: 전일마감 누적 (당월 포함), 전년은 동기간
+      // 매출: 전일마감 누적 (당월까지만), 전년은 동기간
       let rev = 0, lyRev = 0, cost = 0, lyCost = 0, tag = 0, sale = 0, lyTag = 0, lySale = 0
       for (const [mm, v] of monthlyMap) {
+        if (mm > cmMm) continue // 미래 월 제외
         rev += v.actual; cost += v.cost; tag += v.tag; sale += v.sale
         if (mm === cmMm) {
           // 당월 전년은 KPI의 동기간 값 사용
           lyRev += Number(k.LY_REV) || 0
-          // 당월 전년 원가/할인율은 별도 동기간 쿼리 없으므로 비율 역산 불가 — 월별 데이터 그대로 사용하되 비율에서 보정
           lyCost += v.lyCost; lyTag += v.lyTag; lySale += v.lySale
         } else {
           lyRev += v.lastYear; lyCost += v.lyCost; lyTag += v.lyTag; lySale += v.lySale

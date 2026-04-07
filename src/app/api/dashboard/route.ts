@@ -317,6 +317,23 @@ export async function GET(req: NextRequest) {
       lyDcRate: v.lyTag > 0 ? Math.round((1 - v.lySale / v.lyTag) * 1000) / 10 : null,
     }))
 
+    // YTD 누적 지표
+    const ytd = (() => {
+      let rev = 0, lyRev = 0, cost = 0, lyCost = 0, tag = 0, sale = 0, lyTag = 0, lySale = 0, target = 0
+      for (const [, v] of monthlyMap) {
+        rev += v.actual; lyRev += v.lastYear; cost += v.cost; lyCost += v.lyCost
+        tag += v.tag; sale += v.sale; lyTag += v.lyTag; lySale += v.lySale
+      }
+      return {
+        rev, lyRev,
+        yoy: lyRev > 0 ? Math.round((rev - lyRev) / lyRev * 1000) / 10 : 0,
+        cogsRate: rev > 0 ? Math.round(cost / rev * 1000) / 10 : 0,
+        lyCogsRate: lyRev > 0 ? Math.round(lyCost / lyRev * 1000) / 10 : 0,
+        dcRate: tag > 0 ? Math.round((1 - sale / tag) * 1000) / 10 : 0,
+        lyDcRate: lyTag > 0 ? Math.round((1 - lySale / lyTag) * 1000) / 10 : 0,
+      }
+    })()
+
     const brands = brandRaw.map(r => ({
       brand: r.BRANDNM,
       revenue: Number(r.REV) || 0,
@@ -367,7 +384,7 @@ export async function GET(req: NextRequest) {
       return { year: yr, baseTag, baseCost, baseQty, inTag, inCost, inQty, saleTag, saleQty, saleAmt, dcRate, cogsRate, remTag, remCost, remQty }
     })
 
-    return NextResponse.json({ kpi, monthly, brands, brandMonth, invTable })
+    return NextResponse.json({ kpi, monthly, brands, brandMonth, invTable, ytd })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

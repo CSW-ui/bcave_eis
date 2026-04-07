@@ -149,6 +149,43 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* YTD 누적 KPI */}
+      {!loading && data?.ytd && (() => {
+        const y = data.ytd
+        // YTD 목표 합산
+        const ytdTarget = (() => {
+          let total = 0
+          for (let m = 1; m <= (data.kpi?.curMonth ?? 12); m++) {
+            const yyyymm = `${data.kpi?.curYear}${String(m).padStart(2, '0')}`
+            total += getFilteredMonthlyTarget(yyyymm)
+          }
+          return total
+        })()
+        const achPct = ytdTarget > 0 ? Math.round(y.rev / ytdTarget * 100) : null
+        const cogsChg = Math.round((y.cogsRate - y.lyCogsRate) * 10) / 10
+        const dcChg = Math.round((y.dcRate - y.lyDcRate) * 10) / 10
+        const cards = [
+          { label: 'YTD 매출', value: fmtW(y.rev), sub: `전년 ${fmtW(y.lyRev)}`, badge: y.yoy >= 0 ? `+${y.yoy}%` : `${y.yoy}%`, positive: y.yoy >= 0 },
+          ...(achPct !== null ? [{ label: 'YTD 달성률', value: `${achPct}%`, sub: `목표 ${fmtW(ytdTarget)}`, badge: null, positive: achPct >= 90 }] : []),
+          { label: 'YTD 원가율', value: `${y.cogsRate}%`, sub: `전년 ${y.lyCogsRate}%`, badge: cogsChg !== 0 ? `${cogsChg > 0 ? '+' : ''}${cogsChg}p` : '0p', positive: cogsChg <= 0 },
+          { label: 'YTD 할인율', value: `${y.dcRate}%`, sub: `전년 ${y.lyDcRate}%`, badge: dcChg !== 0 ? `${dcChg > 0 ? '+' : ''}${dcChg}p` : '0p', positive: dcChg <= 0 },
+        ]
+        return (
+          <div className={cn('grid gap-3', achPct !== null ? 'grid-cols-4' : 'grid-cols-3')}>
+            {cards.map(c => (
+              <div key={c.label} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{c.label}</p>
+                <p className="text-xl font-bold text-gray-900 mt-1">{c.value}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">{c.sub}</p>
+                {c.badge && (
+                  <span className={cn('text-[10px] font-semibold', c.positive ? 'text-emerald-600' : 'text-red-500')}>{c.badge}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      })()}
+
       {/* 차트 영역 */}
       <div className="grid grid-cols-3 gap-4">
         {/* 월별 매출 추이 */}

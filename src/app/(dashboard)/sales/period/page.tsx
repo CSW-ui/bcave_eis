@@ -204,6 +204,7 @@ export default function PeriodPage() {
       {/* 정상 매출 */}
       <td className={cn(cellBase, 'font-semibold text-gray-800', bg(isTotal))}>{fmtE(a.normRev)}</td>
       <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{a.normRatio}%</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.normRatio, a.lyRev > 0 ? Math.round(a.lyNormRev / a.lyRev * 1000) / 10 : a.normRatio)}</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderYoy(a.normYoy)}</td>
       <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.normDcRate}%</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.normDcRate, a.lyNormDcRate)}</td>
@@ -269,7 +270,7 @@ export default function PeriodPage() {
                 <tr className="bg-gray-800">
                   <th rowSpan={2} className="text-left px-1.5 py-1.5 sticky left-0 bg-gray-800 z-20 w-[160px] min-w-[160px] text-[11px] text-gray-300 font-bold" style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.2)' }}>구분</th>
                   <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
-                  <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
+                  <th colSpan={8} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
                   <th colSpan={6} className="text-center px-1.5 py-1.5 text-[11px] text-amber-300 font-bold border-l border-gray-600">이월 매출</th>
                 </tr>
                 <tr className="bg-gray-700 border-b-2 border-gray-400 text-[11px] text-gray-300 font-medium">
@@ -284,6 +285,7 @@ export default function PeriodPage() {
                   {/* 정상 */}
                   <th className="text-right px-1.5 py-1.5 border-l border-gray-500">매출</th>
                   <th className="text-right px-1.5 py-1.5">비중</th>
+                  <th className="text-right px-1.5 py-1.5">전년비</th>
                   <th className="text-right px-1.5 py-1.5">신장률</th>
                   <th className="text-right px-1.5 py-1.5">할인율</th>
                   <th className="text-right px-1.5 py-1.5">전년비</th>

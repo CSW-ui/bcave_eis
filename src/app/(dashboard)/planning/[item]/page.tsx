@@ -340,12 +340,12 @@ export default function ItemDetailPage() {
         </div>
         <div className="overflow-auto" style={{ maxHeight: 500 }}>
           {styles.length > 0 ? (
-            <table className="w-full text-[10px] border-collapse" style={{minWidth:1100}}>
+            <table className="w-full text-[10px] border-collapse" style={{minWidth:1350}}>
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-800 border-b-2 border-gray-900">
-                  <th colSpan={4} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
+                  <th colSpan={5} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">발주/입고</th>
-                  <th colSpan={4} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출</th>
+                  <th colSpan={6} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출</th>
                   <th colSpan={3} className="text-center text-[10px] text-purple-300 font-bold py-1 border-r border-gray-600">전주</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1">재고</th>
                 </tr>
@@ -354,11 +354,14 @@ export default function ItemDetailPage() {
                   <th className="text-left px-2 py-2">상품명</th>
                   <th className="text-center px-1 py-2">BR</th>
                   <th className="text-right px-1 py-2">정가</th>
+                  <th className="text-right px-1 py-2">제조원가</th>
                   <th className="text-right px-1 py-2 border-l border-gray-200">발주수량</th>
                   <th className="text-right px-1 py-2">입고수량</th>
                   <th className="text-right px-1 py-2">입고율</th>
                   <th className="text-right px-1 py-2 border-l border-gray-200">판매수량</th>
                   <th className="text-right px-1 py-2">매출</th>
+                  <th className="text-right px-1 py-2">매출원가</th>
+                  <th className="text-right px-1 py-2">원가율</th>
                   <th className="text-right px-1 py-2">DC%</th>
                   <th className="text-right px-1 py-2">판매율</th>
                   <th className="text-right px-1 py-2 border-l border-gray-200">매출</th>
@@ -381,6 +384,7 @@ export default function ItemDetailPage() {
                       <td className={cn('px-2 py-1.5 font-medium truncate max-w-[160px]', isSel ? 'text-purple-700' : 'text-gray-800')}>{s.stylenm}</td>
                       <td className="px-1 py-1.5 text-center"><span className="px-1 py-px rounded-full text-[8px] font-bold text-white" style={{ background: BRAND_COLORS[s.brandcd]??'#999' }}>{s.brandcd}</span></td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-600">₩{s.tagPrice.toLocaleString()}</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-500">₩{(s.prodCost||0).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-700 border-l border-gray-100">{(s.ordQty||0).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-green-700">{(s.inQty||0).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right">
@@ -391,6 +395,8 @@ export default function ItemDetailPage() {
                       </td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-700 border-l border-gray-100">{s.saleQty.toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono font-semibold text-blue-700">{fmtW(s.saleAmt)}</td>
+                      <td className="px-1 py-1.5 text-right font-mono text-gray-500">{fmtW(s.costAmt)}</td>
+                      <td className="px-1 py-1.5 text-right text-gray-600">{s.cogsRate}%</td>
                       <td className="px-1 py-1.5 text-right text-gray-600">{s.dcRate}%</td>
                       <td className="px-1 py-1.5 text-right">
                         <span className={cn('px-1 py-px rounded-full text-[9px] font-semibold',

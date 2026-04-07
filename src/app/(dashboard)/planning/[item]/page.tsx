@@ -99,6 +99,7 @@ export default function ItemDetailPage() {
       oq: a.reduce((s:number,r:any)=>s+(r.ordQty||0),0),
       ot: a.reduce((s:number,r:any)=>s+(r.ordTagAmt||0),0),
       iq: a.reduce((s:number,r:any)=>s+(r.inQty||0),0),
+      ia: a.reduce((s:number,r:any)=>s+(r.inAmt||0),0),
       sa: a.reduce((s:number,r:any)=>s+r.saleAmt,0),
       sq: a.reduce((s:number,r:any)=>s+r.saleQty,0),
       ca: a.reduce((s:number,r:any)=>s+r.costAmt,0),
@@ -110,17 +111,19 @@ export default function ItemDetailPage() {
     const lir = ly.oq>0 ? Math.round(ly.iq/ly.oq*1000)/10 : 0
     const dc = styles.length ? Math.round(styles.reduce((s:number,r:any)=>s+r.dcRate,0)/styles.length*10)/10 : 0
     const ldc = lyStyles.length ? Math.round(lyStyles.reduce((s:number,r:any)=>s+r.dcRate,0)/lyStyles.length*10)/10 : 0
-    const _cg = cy.sa>0 ? Math.round(cy.ca/cy.sa*1000)/10 : 0
-    const _lcg = ly.sa>0 ? Math.round(ly.ca/ly.sa*1000)/10 : 0
+    const cg = cy.sa>0 ? Math.round(cy.ca/cy.sa*1000)/10 : 0
+    const lcg = ly.sa>0 ? Math.round(ly.ca/ly.sa*1000)/10 : 0
     const cyWeekTotal = weekMeta?.cyTotal ?? 0
     const lyWeekMatch = weeks.filter(w => w.weekNum <= maxCyWeek).reduce((s, w) => s + (w.ly ?? 0), 0)
     return [
       { t:'스타일수', v:`${cy.n}개`, d:fmtDelta(cy.n,ly.n) },
       { t:'발주금액', v:fmtW(cy.ot), d:fmtDelta(cy.ot,ly.ot) },
+      { t:'입고금액', v:fmtW(cy.ia), d:fmtDelta(cy.ia,ly.ia) },
       { t:'입고율', v:`${ir}%`, d:fmtDeltaPt(ir,lir) },
       { t:'매출', v:fmtW(cyWeekTotal || cy.sa), d:fmtDelta(cyWeekTotal || cy.sa, lyWeekMatch || ly.sa) },
       { t:'판매율', v:`${st}%`, d:fmtDeltaPt(st,lst) },
-      { t:'DC%', v:`${dc}%`, d:fmtDeltaPt(dc,ldc) },
+      { t:'할인율', v:`${dc}%`, d:fmtDeltaPt(dc,ldc) },
+      { t:'매출원가율', v:`${cg}%`, d:fmtDeltaPt(cg,lcg) },
     ]
   }, [styles, lyStyles, weeks, maxCyWeek, weekMeta])
 
@@ -186,8 +189,8 @@ export default function ItemDetailPage() {
       )}
 
       {/* KPI */}
-      <div className="grid grid-cols-6 gap-3">
-        {loading ? Array.from({length:6}).map((_,i) => <div key={i} className="h-20 bg-surface-subtle animate-pulse rounded-xl" />) :
+      <div className="grid grid-cols-8 gap-3">
+        {loading ? Array.from({length:8}).map((_,i) => <div key={i} className="h-20 bg-surface-subtle animate-pulse rounded-xl" />) :
         kpi.map(k => (
           <div key={k.t} className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
             <p className="text-[10px] text-gray-400 uppercase tracking-wide">{k.t}</p>

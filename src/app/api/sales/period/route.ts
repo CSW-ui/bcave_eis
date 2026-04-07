@@ -40,7 +40,7 @@ export async function GET(req: Request) {
         SELECT v.BRANDCD, v.BRANDNM, v.SHOPTYPENM,
           SUM(v.SALEAMT_VAT_EX) AS REV,
           SUM(v.SALEQTY) AS QTY,
-          COUNT(DISTINCT v.SHOPCD) AS SHOP_CNT,
+          COUNT(DISTINCT CASE WHEN sh.SHOPNM NOT LIKE '(폐)%' THEN v.SHOPCD END) AS SHOP_CNT,
           SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS COST,
           SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
           SUM(CASE WHEN ${isNorm} THEN v.SALEQTY ELSE 0 END) AS NORM_QTY,
@@ -50,6 +50,7 @@ export async function GET(req: Request) {
           SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS CO_COST
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD = sh.SHOPCD
         WHERE v.BRANDCD IN ${inClause}
           ${cyDateFilter}
         GROUP BY v.BRANDCD, v.BRANDNM, v.SHOPTYPENM
@@ -59,7 +60,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT v.BRANDCD, v.BRANDNM, v.SHOPTYPENM,
           SUM(v.SALEAMT_VAT_EX) AS REV,
-          COUNT(DISTINCT v.SHOPCD) AS SHOP_CNT,
+          COUNT(DISTINCT CASE WHEN sh.SHOPNM NOT LIKE '(폐)%' THEN v.SHOPCD END) AS SHOP_CNT,
           SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS COST,
           SUM(CASE WHEN ${lyIsNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
           SUM(CASE WHEN ${lyIsNorm} THEN COALESCE(si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS NORM_COST,
@@ -67,6 +68,7 @@ export async function GET(req: Request) {
           SUM(CASE WHEN NOT ${lyIsNorm} THEN COALESCE(si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS CO_COST
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        LEFT JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD = sh.SHOPCD
         WHERE v.BRANDCD IN ${inClause}
           ${lyDateFilter}
         GROUP BY v.BRANDCD, v.BRANDNM, v.SHOPTYPENM

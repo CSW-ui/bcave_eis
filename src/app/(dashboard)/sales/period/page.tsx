@@ -137,13 +137,19 @@ export default function PeriodPage() {
       const base = `/api/sales/period?year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}&fromDt=${fromDt.replace(/-/g, '')}&toDt=${toDt.replace(/-/g, '')}&lyFromDt=${lyFromDt.replace(/-/g, '')}&lyToDt=${lyToDt.replace(/-/g, '')}`
 
       if (individualBrands.length > 1) {
+        const adultCodes = individualBrands.filter(b => ADULT_BRANDS.includes(b.value)).map(b => b.value).join(',')
+        const kidsCodes = individualBrands.filter(b => KIDS_BRANDS.includes(b.value)).map(b => b.value).join(',')
         const results = await Promise.all([
           fetch(`${base}&brand=${apiBrand}`).then(r => r.json()),
+          ...(adultCodes ? [fetch(`${base}&brand=${adultCodes}`).then(r => r.json())] : [Promise.resolve({ rows: [] })]),
+          ...(kidsCodes ? [fetch(`${base}&brand=${kidsCodes}`).then(r => r.json())] : [Promise.resolve({ rows: [] })]),
           ...individualBrands.map(b => fetch(`${base}&brand=${b.value}`).then(r => r.json())),
         ])
         const map = new Map<string, ChannelRow[]>()
         map.set('all', results[0].rows ?? [])
-        individualBrands.forEach((b, i) => map.set(b.value, results[i + 1].rows ?? []))
+        map.set('adult', results[1].rows ?? [])
+        map.set('kids', results[2].rows ?? [])
+        individualBrands.forEach((b, i) => map.set(b.value, results[i + 3].rows ?? []))
         setBrandData(map)
       } else {
         const res = await fetch(`${base}&brand=${apiBrand}`)
@@ -169,11 +175,12 @@ export default function PeriodPage() {
       const adult = individualBrands.filter(b => ADULT_BRANDS.includes(b.value))
       const kids = individualBrands.filter(b => KIDS_BRANDS.includes(b.value))
       if (adult.length > 0) {
-        result.push({ key: 'adult', label: '성인 합산', rows: adult.flatMap(b => brandData.get(b.value) ?? []), isSummary: true })
+        // 성인합산: API에서 DISTINCT로 집계된 데이터 사용 (점포수 중복 제거)
+        result.push({ key: 'adult', label: '성인 합산', rows: brandData.get('adult') ?? adult.flatMap(b => brandData.get(b.value) ?? []), isSummary: true })
         for (const b of adult) result.push({ key: b.value, label: b.label, rows: brandData.get(b.value) ?? [], indent: 1 })
       }
       if (kids.length > 0) {
-        result.push({ key: 'kids', label: '키즈 합산', rows: kids.flatMap(b => brandData.get(b.value) ?? []), isSummary: true })
+        result.push({ key: 'kids', label: '키즈 합산', rows: brandData.get('kids') ?? kids.flatMap(b => brandData.get(b.value) ?? []), isSummary: true })
         for (const b of kids) result.push({ key: b.value, label: b.label, rows: brandData.get(b.value) ?? [], indent: 1 })
       }
     }

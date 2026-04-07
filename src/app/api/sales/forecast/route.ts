@@ -226,6 +226,9 @@ export async function GET(req: Request) {
     }
 
     // 채널별 예측
+    // 대량 단건 거래 채널은 모멘텀 변동이 크므로 반영률 축소
+    const isBulkChannel = (ch: string) => /면세|해외|사입|수출|위탁/.test(ch)
+
     const channelForecasts = (channelRaw as Record<string, string>[]).map(r => {
       const channel = r.SHOPTYPENM
       const cyRev = Number(r.CY_REV) || 0
@@ -235,10 +238,11 @@ export async function GET(req: Request) {
       const pwRev = Number(r.PW_REV) || 0
 
       const chGrowth = lyElapsed > 0 ? cyRev / lyElapsed : overallGrowth
+      const momWeight = isBulkChannel(channel) ? 0.08 : 0.25 // 면세/해외: 8%, 일반: 25%
       let chMomentum = 1
       if (pwRev > 0 && cwRev > 0) {
-        chMomentum = 1 + (cwRev / pwRev - 1) * 0.25
-        chMomentum = Math.max(0.6, Math.min(1.5, chMomentum))
+        chMomentum = 1 + (cwRev / pwRev - 1) * momWeight
+        chMomentum = Math.max(0.7, Math.min(1.3, chMomentum))
       }
 
       let chForecast: number

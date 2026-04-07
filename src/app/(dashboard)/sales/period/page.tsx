@@ -21,7 +21,7 @@ const SEASON_OPTIONS = [
 const ADULT_BRANDS = ['CO', 'LE', 'WA']
 const KIDS_BRANDS = ['CK', 'LK']
 
-const CHANNEL_OPTIONS = ['백화점', '아울렛', '직영점', '쇼핑몰', '대리점', '면세점', '온라인(무신사)', '온라인(위드플)', '온라인(자사몰)', '온라인B2B', '해외 사입', '해외 위탁']
+const CHANNEL_OPTIONS = ['백화점', '아울렛', '직영점', '쇼핑몰', '대리점', '면세점', '본사매장', '팝업', '오프라인 사입', '오프라인 위탁', '온라인(무신사)', '온라인(위탁몰)', '온라인(자사몰)', '온라인B2B', '해외 사입', '해외 위탁']
 
 interface ChannelRow {
   brandcd: string; brandnm: string; channel: string

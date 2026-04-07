@@ -25,26 +25,43 @@ const GROUP_COLORS: Record<string, string> = { '오프라인': '#3b82f6', '온�
 
 interface ChannelRow {
   brandcd: string; brandnm: string; channel: string
-  rev: number; lyRev: number; qty: number; lyQty: number
-  yoy: number | null; dcRate: number; lyDcRate: number; cogsRate: number; lyCogsRate: number
+  rev: number; lyRev: number; yoy: number | null
+  normRev: number; lyNormRev: number; normYoy: number | null
+  normDcRate: number; lyNormDcRate: number; normCogsRate: number; lyNormCogsRate: number; normRatio: number
+  coRev: number; lyCoRev: number; coYoy: number | null
+  coDcRate: number; lyCoDcRate: number; coCogsRate: number; lyCoCogsRate: number
 }
 
-interface AggRow { rev: number; lyRev: number; qty: number; lyQty: number; yoy: number | null; dcRate: number; lyDcRate: number; cogsRate: number; lyCogsRate: number }
+interface AggRow {
+  rev: number; lyRev: number; yoy: number | null
+  normRev: number; lyNormRev: number; normYoy: number | null
+  normDcRate: number; lyNormDcRate: number; normCogsRate: number; lyNormCogsRate: number; normRatio: number
+  coRev: number; lyCoRev: number; coYoy: number | null
+  coDcRate: number; lyCoDcRate: number; coCogsRate: number; lyCoCogsRate: number
+}
 
-function sumRows(rows: { rev: number; lyRev: number; qty: number; lyQty: number; dcRate: number; lyDcRate: number; cogsRate: number; lyCogsRate: number }[]): AggRow {
-  let rev = 0, lyRev = 0, qty = 0, lyQty = 0, wDc = 0, wCogs = 0, wLyDc = 0, wLyCogs = 0
+function sumRows(rows: ChannelRow[]): AggRow {
+  let rev = 0, lyRev = 0, nRev = 0, lyNRev = 0, cRev = 0, lyCRev = 0
+  let nDcW = 0, nCgW = 0, lyNDcW = 0, lyNCgW = 0, cDcW = 0, cCgW = 0, lyCDcW = 0, lyCCgW = 0
   for (const r of rows) {
-    rev += r.rev; lyRev += r.lyRev; qty += r.qty; lyQty += r.lyQty
-    wDc += r.dcRate * r.rev; wCogs += r.cogsRate * r.rev
-    wLyDc += r.lyDcRate * r.lyRev; wLyCogs += r.lyCogsRate * r.lyRev
+    rev += r.rev; lyRev += r.lyRev
+    nRev += r.normRev; lyNRev += r.lyNormRev; cRev += r.coRev; lyCRev += r.lyCoRev
+    nDcW += r.normDcRate * r.normRev; nCgW += r.normCogsRate * r.normRev
+    lyNDcW += r.lyNormDcRate * r.lyNormRev; lyNCgW += r.lyNormCogsRate * r.lyNormRev
+    cDcW += r.coDcRate * r.coRev; cCgW += r.coCogsRate * r.coRev
+    lyCDcW += r.lyCoDcRate * r.lyCoRev; lyCCgW += r.lyCoCogsRate * r.lyCoRev
   }
+  const y = (a: number, b: number) => b > 0 ? Math.round((a - b) / b * 1000) / 10 : null
+  const w = (v: number, d: number) => d > 0 ? Math.round(v / d * 10) / 10 : 0
   return {
-    rev, lyRev, qty, lyQty,
-    yoy: lyRev > 0 ? Math.round((rev - lyRev) / lyRev * 1000) / 10 : null,
-    dcRate: rev > 0 ? Math.round(wDc / rev * 10) / 10 : 0,
-    lyDcRate: lyRev > 0 ? Math.round(wLyDc / lyRev * 10) / 10 : 0,
-    cogsRate: rev > 0 ? Math.round(wCogs / rev * 10) / 10 : 0,
-    lyCogsRate: lyRev > 0 ? Math.round(wLyCogs / lyRev * 10) / 10 : 0,
+    rev, lyRev, yoy: y(rev, lyRev),
+    normRev: nRev, lyNormRev: lyNRev, normYoy: y(nRev, lyNRev),
+    normDcRate: w(nDcW, nRev), lyNormDcRate: w(lyNDcW, lyNRev),
+    normCogsRate: w(nCgW, nRev), lyNormCogsRate: w(lyNCgW, lyNRev),
+    normRatio: rev > 0 ? Math.round(nRev / rev * 1000) / 10 : 0,
+    coRev: cRev, lyCoRev: lyCRev, coYoy: y(cRev, lyCRev),
+    coDcRate: w(cDcW, cRev), lyCoDcRate: w(lyCDcW, lyCRev),
+    coCogsRate: w(cCgW, cRev), lyCoCogsRate: w(lyCCgW, lyCRev),
   }
 }
 
@@ -165,16 +182,29 @@ export default function PeriodPage() {
     return <span className={cn('font-semibold', yoy >= 0 ? 'text-red-500' : 'text-blue-500')}>{yoy >= 0 ? '+' : ''}{yoy}%</span>
   }
 
-  const renderRow = (label: React.ReactNode, agg: AggRow, isTotal: boolean) => (
+  const bg = (isTotal: boolean) => isTotal ? 'bg-gray-100' : ''
+  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean) => (
     <>
-      <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[180px] min-w-[180px]', isTotal ? 'bg-gray-100' : '')}>{label}</td>
-      <td className={cn(cellBase, 'font-semibold text-gray-900', isTotal && 'bg-gray-100')}>{fmtE(agg.rev)}</td>
-      <td className={cn(cellBase, 'text-gray-500', isTotal && 'bg-gray-100')}>{fmtE(agg.lyRev)}</td>
-      <td className={cn(cellBase, isTotal && 'bg-gray-100')}>{renderYoy(agg.yoy)}</td>
-      <td className={cn(cellBase, 'text-gray-700', isTotal && 'bg-gray-100')}>{agg.dcRate}%</td>
-      <td className={cn(cellBase, isTotal && 'bg-gray-100')}>{renderPt(agg.dcRate, agg.lyDcRate)}</td>
-      <td className={cn(cellBase, 'text-gray-700', isTotal && 'bg-gray-100')}>{agg.cogsRate}%</td>
-      <td className={cn(cellBase, isTotal && 'bg-gray-100')}>{renderPt(agg.cogsRate, agg.lyCogsRate)}</td>
+      <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
+      {/* 총 매출 */}
+      <td className={cn(cellBase, 'font-semibold text-gray-900', bg(isTotal))}>{fmtE(a.rev)}</td>
+      <td className={cn(cellBase, 'text-gray-500', bg(isTotal))}>{fmtE(a.lyRev)}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderYoy(a.yoy)}</td>
+      {/* 정상 매출 */}
+      <td className={cn(cellBase, 'font-semibold text-gray-800', bg(isTotal))}>{fmtE(a.normRev)}</td>
+      <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{a.normRatio}%</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderYoy(a.normYoy)}</td>
+      <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.normDcRate}%</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.normDcRate, a.lyNormDcRate)}</td>
+      <td className={cn(cellBase, 'text-gray-700', bg(isTotal))}>{a.normCogsRate}%</td>
+      <td className={cn(cellBase, bg(isTotal))}>{renderPt(a.normCogsRate, a.lyNormCogsRate)}</td>
+      {/* 이월 매출 */}
+      <td className={cn(cellBase, 'font-semibold text-amber-700', bg(isTotal))}>{a.coRev ? fmtE(a.coRev) : '—'}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{a.coRev ? renderYoy(a.coYoy) : '—'}</td>
+      <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.coRev ? `${a.coDcRate}%` : '—'}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{a.coRev ? renderPt(a.coDcRate, a.lyCoDcRate) : '—'}</td>
+      <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.coRev ? `${a.coCogsRate}%` : '—'}</td>
+      <td className={cn(cellBase, bg(isTotal))}>{a.coRev ? renderPt(a.coCogsRate, a.lyCoCogsRate) : '—'}</td>
     </>
   )
 
@@ -223,17 +253,34 @@ export default function PeriodPage() {
           <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px] border-collapse" style={{ minWidth: 850 }}>
+            <table className="w-full text-[11px] border-collapse" style={{ minWidth: 1400 }}>
               <thead>
-                <tr className="bg-gray-800 text-gray-300 text-[11px] font-bold">
-                  <th className="text-left px-1.5 py-2 sticky left-0 bg-gray-800 z-20 w-[180px] min-w-[180px]">구분</th>
-                  <th className="text-right px-1.5 py-2">매출</th>
-                  <th className="text-right px-1.5 py-2">전년</th>
-                  <th className="text-right px-1.5 py-2">신장률</th>
-                  <th className="text-right px-1.5 py-2">할인율</th>
-                  <th className="text-right px-1.5 py-2">전년비</th>
-                  <th className="text-right px-1.5 py-2">원가율</th>
-                  <th className="text-right px-1.5 py-2">전년비</th>
+                <tr className="bg-gray-800">
+                  <th rowSpan={2} className="text-left px-1.5 py-1.5 sticky left-0 bg-gray-800 z-20 w-[160px] min-w-[160px] text-[11px] text-gray-300 font-bold" style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.2)' }}>구분</th>
+                  <th colSpan={3} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
+                  <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
+                  <th colSpan={6} className="text-center px-1.5 py-1.5 text-[11px] text-amber-300 font-bold border-l border-gray-600">이월 매출</th>
+                </tr>
+                <tr className="bg-gray-700 border-b-2 border-gray-400 text-[11px] text-gray-300 font-medium">
+                  {/* 총 매출 */}
+                  <th className="text-right px-1.5 py-1.5 border-l border-gray-500">매출</th>
+                  <th className="text-right px-1.5 py-1.5">전년</th>
+                  <th className="text-right px-1.5 py-1.5">신장률</th>
+                  {/* 정상 */}
+                  <th className="text-right px-1.5 py-1.5 border-l border-gray-500">매출</th>
+                  <th className="text-right px-1.5 py-1.5">비중</th>
+                  <th className="text-right px-1.5 py-1.5">신장률</th>
+                  <th className="text-right px-1.5 py-1.5">할인율</th>
+                  <th className="text-right px-1.5 py-1.5">전년비</th>
+                  <th className="text-right px-1.5 py-1.5">원가율</th>
+                  <th className="text-right px-1.5 py-1.5">전년비</th>
+                  {/* 이월 */}
+                  <th className="text-right px-1.5 py-1.5 border-l border-gray-500 text-amber-400/80">매출</th>
+                  <th className="text-right px-1.5 py-1.5 text-amber-400/80">신장률</th>
+                  <th className="text-right px-1.5 py-1.5 text-amber-400/80">할인율</th>
+                  <th className="text-right px-1.5 py-1.5 text-amber-400/80">전년비</th>
+                  <th className="text-right px-1.5 py-1.5 text-amber-400/80">원가율</th>
+                  <th className="text-right px-1.5 py-1.5 text-amber-400/80">전년비</th>
                 </tr>
               </thead>
               <tbody>

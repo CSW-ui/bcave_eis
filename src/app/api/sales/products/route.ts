@@ -63,7 +63,7 @@ export async function GET(req: Request) {
 
 
 
-  // SW_SALEINFO용 채널 필터
+  // VW_SALES_VAT용 채널 필터 (chFilterSl 변수명 유지 — 현재 미사용)
   let chFilterSl = ''
   const slCol = 'sh.SHOPTYPENM'
   if (channels) {
@@ -103,21 +103,20 @@ export async function GET(req: Request) {
          ORDER BY REVENUE DESC
          LIMIT 20`
       ),
-      // 할인율용: SW_SALEINFO (스타일별 TAG·SALEAMT)
+      // 할인율용: VW_SALES_VAT (스타일별 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(
-        `SELECT sl.STYLECD,
-           SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG_TOTAL,
-           SUM(sl.SALEAMT) AS SALE_TOTAL
-         FROM BCAVE.SEWON.SW_SALEINFO sl
-         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         ${(itemNm || genderWhere) ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD` : ''}
-         WHERE sl.BRANDCD IN ${brandInClause}
-           AND sl.SALEDT BETWEEN '${fromDt}' AND '${defaultToDt}'
-           ${weekFilterSl}
-           ${chFilterSl}
+        `SELECT v.STYLECD,
+           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_TOTAL,
+           SUM(v.SALEAMT_VAT_EX) AS SALE_TOTAL
+         FROM ${SALES_VIEW} v
+         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+         WHERE v.BRANDCD IN ${brandInClause}
+           AND v.SALEDT BETWEEN '${fromDt}' AND '${defaultToDt}'
+           ${weekNum ? `AND WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) = ${parseInt(weekNum)}` : ''}
+           ${chFilter.replace(/s\.SHOPTYPENM/g, 'v.SHOPTYPENM')}
            ${itemNm ? `AND si.ITEMNM = '${itemNm.replace(/'/g, "''")}'` : ''}
            ${genderWhere}
-         GROUP BY sl.STYLECD`
+         GROUP BY v.STYLECD`
       ),
     ])
 

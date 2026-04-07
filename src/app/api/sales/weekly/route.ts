@@ -57,7 +57,7 @@ export async function GET(req: Request) {
   const chFilter = buildChannelFilter()
 
   try {
-    // 채널 필터 (SW_SALEINFO용: SHOPINFO 조인)
+    // 채널 필터 (VW_SALES_VAT용)
     const chFilterSl = buildChannelFilter('sh')
 
     const [cyRows, lyRows, cyDcRows, lyDcRows] = await Promise.all([
@@ -91,35 +91,35 @@ export async function GET(req: Request) {
          GROUP BY WEEK_NUM
          ORDER BY WEEK_NUM`
       ),
-      // 할인율용: 금년 주간 SW_SALEINFO
+      // 할인율용: 금년 주간 VW_SALES_VAT
       snowflakeQuery<{ WEEK_NUM: number; TAG: number; SALE: number }>(
         `SELECT
-           WEEKOFYEAR(TO_DATE(sl.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
-           SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG,
-           SUM(sl.SALEAMT) AS SALE
-         FROM BCAVE.SEWON.SW_SALEINFO sl
-         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE sl.BRANDCD IN ${brandInClause}
-           AND sl.SALEDT BETWEEN '${fromDt}' AND '${toDt}'
-           ${chFilterSl}
-           ${styleFilter ? styleFilter.replace(/STYLECD/g, 'sl.STYLECD') : ''}
-           ${genderFilterSl}
+           WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
+           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG,
+           SUM(v.SALEAMT_VAT_EX) AS SALE
+         FROM ${SALES_VIEW} v
+         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+         WHERE v.BRANDCD IN ${brandInClause}
+           AND v.SALEDT BETWEEN '${fromDt}' AND '${toDt}'
+           ${buildChannelFilter('v')}
+           ${styleFilter ? styleFilter.replace(/STYLECD/g, 'v.STYLECD') : ''}
+           ${genderValues ? `AND v.STYLECD IN (SELECT STYLECD FROM BCAVE.SEWON.SW_STYLEINFO WHERE GENDERNM IN (${genderValues}))` : ''}
          GROUP BY WEEK_NUM
          ORDER BY WEEK_NUM`
       ),
-      // 할인율용: 전년 주간 SW_SALEINFO
+      // 할인율용: 전년 주간 VW_SALES_VAT
       snowflakeQuery<{ WEEK_NUM: number; TAG: number; SALE: number }>(
         `SELECT
-           WEEKOFYEAR(TO_DATE(sl.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
-           SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG,
-           SUM(sl.SALEAMT) AS SALE
-         FROM BCAVE.SEWON.SW_SALEINFO sl
-         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE sl.BRANDCD IN ${brandInClause}
-           AND sl.SALEDT BETWEEN '${lyFromDt}' AND '${lyToDt}'
-           ${chFilterSl}
-           ${styleFilter ? styleFilter.replace(/STYLECD/g, 'sl.STYLECD') : ''}
-           ${genderFilterSl}
+           WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
+           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG,
+           SUM(v.SALEAMT_VAT_EX) AS SALE
+         FROM ${SALES_VIEW} v
+         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+         WHERE v.BRANDCD IN ${brandInClause}
+           AND v.SALEDT BETWEEN '${lyFromDt}' AND '${lyToDt}'
+           ${buildChannelFilter('v')}
+           ${styleFilter ? styleFilter.replace(/STYLECD/g, 'v.STYLECD') : ''}
+           ${genderValues ? `AND v.STYLECD IN (SELECT STYLECD FROM BCAVE.SEWON.SW_STYLEINFO WHERE GENDERNM IN (${genderValues}))` : ''}
          GROUP BY WEEK_NUM
          ORDER BY WEEK_NUM`
       ),

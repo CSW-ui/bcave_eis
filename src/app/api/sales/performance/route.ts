@@ -156,7 +156,7 @@ export async function GET(req: Request) {
     `
   }
 
-  // SW_SALEINFO 기반 할인율 쿼리 (BRANDCD×SHOPTYPENM별)
+  // VW_SALES_VAT 기반 할인율 쿼리 (BRANDCD×SHOPTYPENM별)
   function buildDcSql(yearOffset: number) {
     const off = yearOffset * 10000
     const ms = String(parseInt(dates.monthStart) - off)
@@ -167,25 +167,24 @@ export async function GET(req: Request) {
     const pe = String(parseInt(dates.pwEnd) - off)
     const rs = String(parseInt(rangeStart) - off)
     const re = String(parseInt(rangeEnd) - off)
-    const siBrandWhere = brandWhere.replace(/s\.BRANDCD/g, 'sl.BRANDCD')
+    const dcBrandWhere = brandWhere.replace(/s\.BRANDCD/g, 'v.BRANDCD')
 
     return `
-      SELECT sl.BRANDCD, sh.SHOPTYPENM,
-        SUM(CASE WHEN sl.SALEDT BETWEEN '${ms}' AND '${me}' THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS MTD_TAG,
-        SUM(CASE WHEN sl.SALEDT BETWEEN '${ms}' AND '${me}' THEN sl.SALEAMT ELSE 0 END) AS MTD_SALE,
-        SUM(CASE WHEN sl.SALEDT BETWEEN '${cs}' AND '${ce}' THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS CW_TAG,
-        SUM(CASE WHEN sl.SALEDT BETWEEN '${cs}' AND '${ce}' THEN sl.SALEAMT ELSE 0 END) AS CW_SALE,
-        SUM(CASE WHEN sl.SALEDT BETWEEN '${ps}' AND '${pe}' THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS PW_TAG,
-        SUM(CASE WHEN sl.SALEDT BETWEEN '${ps}' AND '${pe}' THEN sl.SALEAMT ELSE 0 END) AS PW_SALE
-      FROM BCAVE.SEWON.SW_SALEINFO sl
-      JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-      ${(itemFilter || genderWhere) ? `JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD` : ''}
-      WHERE ${siBrandWhere}
-        AND sl.SALEDT BETWEEN '${rs}' AND '${re}'
-        ${styleFilter ? styleFilter.replace(/s\./g, 'sl.') : ''}
-        ${itemFilter ? itemFilter.replace(/si\./g, 'si.') : ''}
+      SELECT v.BRANDCD, v.SHOPTYPENM,
+        SUM(CASE WHEN v.SALEDT BETWEEN '${ms}' AND '${me}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS MTD_TAG,
+        SUM(CASE WHEN v.SALEDT BETWEEN '${ms}' AND '${me}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS MTD_SALE,
+        SUM(CASE WHEN v.SALEDT BETWEEN '${cs}' AND '${ce}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CW_TAG,
+        SUM(CASE WHEN v.SALEDT BETWEEN '${cs}' AND '${ce}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CW_SALE,
+        SUM(CASE WHEN v.SALEDT BETWEEN '${ps}' AND '${pe}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS PW_TAG,
+        SUM(CASE WHEN v.SALEDT BETWEEN '${ps}' AND '${pe}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS PW_SALE
+      FROM ${SALES_VIEW} v
+      JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+      WHERE ${dcBrandWhere}
+        AND v.SALEDT BETWEEN '${rs}' AND '${re}'
+        ${styleFilter ? styleFilter.replace(/s\./g, 'v.') : ''}
+        ${itemFilter}
         ${genderWhere}
-      GROUP BY sl.BRANDCD, sh.SHOPTYPENM
+      GROUP BY v.BRANDCD, v.SHOPTYPENM
     `
   }
 

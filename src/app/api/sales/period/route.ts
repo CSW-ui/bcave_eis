@@ -30,9 +30,6 @@ export async function GET(req: Request) {
   const isNorm = `(si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}))`
   const lyIsNorm = `(si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}))`
 
-  const cySlDate = fromDt && toDt ? `AND sl.SALEDT BETWEEN '${fromDt}' AND '${toDt}'` : `AND sl.SALEDT >= '20${year}0101'`
-  const lySlDate = lyF && lyT ? `AND sl.SALEDT BETWEEN '${lyF}' AND '${lyT}'` : `AND sl.SALEDT >= '20${prevYear}0101'`
-
   try {
     const [cyRows, lyRows, cyDcRows, lyDcRows] = await Promise.all([
       // 금년: 브랜드×채널 — 정상/이월 분리
@@ -76,34 +73,32 @@ export async function GET(req: Request) {
         GROUP BY v.BRANDCD, v.BRANDNM, v.SHOPTYPENM
       `),
 
-      // 금년 할인율: 정상/이월 분리
+      // 금년 할인율: 정상/이월 분리 (VW_SALES_VAT)
       snowflakeQuery<Record<string, string>>(`
-        SELECT sl.BRANDCD, sh.SHOPTYPENM,
-          SUM(CASE WHEN ${isNorm} THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS NORM_TAG,
-          SUM(CASE WHEN ${isNorm} THEN sl.SALEAMT ELSE 0 END) AS NORM_SALE,
-          SUM(CASE WHEN NOT ${isNorm} THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS CO_TAG,
-          SUM(CASE WHEN NOT ${isNorm} THEN sl.SALEAMT ELSE 0 END) AS CO_SALE
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD
-        WHERE sl.BRANDCD IN ${inClause}
-          ${cySlDate}
-        GROUP BY sl.BRANDCD, sh.SHOPTYPENM
+        SELECT v.BRANDCD, v.SHOPTYPENM,
+          SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS NORM_TAG,
+          SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_SALE,
+          SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CO_TAG,
+          SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_SALE
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE v.BRANDCD IN ${inClause}
+          ${cyDateFilter}
+        GROUP BY v.BRANDCD, v.SHOPTYPENM
       `),
 
-      // 전년 할인율
+      // 전년 할인율 (VW_SALES_VAT)
       snowflakeQuery<Record<string, string>>(`
-        SELECT sl.BRANDCD, sh.SHOPTYPENM,
-          SUM(CASE WHEN ${lyIsNorm} THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS NORM_TAG,
-          SUM(CASE WHEN ${lyIsNorm} THEN sl.SALEAMT ELSE 0 END) AS NORM_SALE,
-          SUM(CASE WHEN NOT ${lyIsNorm} THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS CO_TAG,
-          SUM(CASE WHEN NOT ${lyIsNorm} THEN sl.SALEAMT ELSE 0 END) AS CO_SALE
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD
-        WHERE sl.BRANDCD IN ${inClause}
-          ${lySlDate}
-        GROUP BY sl.BRANDCD, sh.SHOPTYPENM
+        SELECT v.BRANDCD, v.SHOPTYPENM,
+          SUM(CASE WHEN ${lyIsNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS NORM_TAG,
+          SUM(CASE WHEN ${lyIsNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_SALE,
+          SUM(CASE WHEN NOT ${lyIsNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CO_TAG,
+          SUM(CASE WHEN NOT ${lyIsNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_SALE
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE v.BRANDCD IN ${inClause}
+          ${lyDateFilter}
+        GROUP BY v.BRANDCD, v.SHOPTYPENM
       `),
     ])
 

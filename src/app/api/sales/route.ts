@@ -84,28 +84,28 @@ export async function GET(req: Request) {
          LIMIT 10`
       ),
 
-      // 4. 할인율용: SW_SALEINFO (브랜드×채널×월)
+      // 4. 할인율용: VW_SALES_VAT (브랜드×채널×월)
       snowflakeQuery<Record<string, string>>(
-        `SELECT SUBSTRING(sl.SALEDT, 1, 6) AS YYYYMM, sl.BRANDCD, sh.SHOPTYPENM,
-           SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG_AMT,
-           SUM(sl.SALEAMT) AS SALE_AMT
-         FROM BCAVE.SEWON.SW_SALEINFO sl
-         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE sl.BRANDCD IN ${brandInClause}
-           AND ${dateClause.replace(/SALEDT/g, 'sl.SALEDT').replace(/YYYYMM/g, 'SUBSTRING(sl.SALEDT, 1, 6)')}
-         GROUP BY SUBSTRING(sl.SALEDT, 1, 6), sl.BRANDCD, sh.SHOPTYPENM`
+        `SELECT SUBSTRING(v.SALEDT, 1, 6) AS YYYYMM, v.BRANDCD, v.SHOPTYPENM,
+           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
+         FROM ${SALES_VIEW} v
+         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+         WHERE v.BRANDCD IN ${brandInClause}
+           AND ${dateClause.replace(/SALEDT/g, 'v.SALEDT').replace(/YYYYMM/g, 'SUBSTRING(v.SALEDT, 1, 6)')}
+         GROUP BY SUBSTRING(v.SALEDT, 1, 6), v.BRANDCD, v.SHOPTYPENM`
       ),
 
-      // 5. 할인율용: 전년 SW_SALEINFO
+      // 5. 할인율용: 전년 VW_SALES_VAT
       snowflakeQuery<Record<string, string>>(
-        `SELECT SUBSTRING(sl.SALEDT, 1, 6) AS YYYYMM, sl.BRANDCD, sh.SHOPTYPENM,
-           SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG_AMT,
-           SUM(sl.SALEAMT) AS SALE_AMT
-         FROM BCAVE.SEWON.SW_SALEINFO sl
-         JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-         WHERE sl.BRANDCD IN ${brandInClause}
-           AND ${lyDateClause.replace(/SALEDT/g, 'sl.SALEDT').replace(/YYYYMM/g, 'SUBSTRING(sl.SALEDT, 1, 6)')}
-         GROUP BY SUBSTRING(sl.SALEDT, 1, 6), sl.BRANDCD, sh.SHOPTYPENM`
+        `SELECT SUBSTRING(v.SALEDT, 1, 6) AS YYYYMM, v.BRANDCD, v.SHOPTYPENM,
+           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
+         FROM ${SALES_VIEW} v
+         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+         WHERE v.BRANDCD IN ${brandInClause}
+           AND ${lyDateClause.replace(/SALEDT/g, 'v.SALEDT').replace(/YYYYMM/g, 'SUBSTRING(v.SALEDT, 1, 6)')}
+         GROUP BY SUBSTRING(v.SALEDT, 1, 6), v.BRANDCD, v.SHOPTYPENM`
       ),
     ])
 

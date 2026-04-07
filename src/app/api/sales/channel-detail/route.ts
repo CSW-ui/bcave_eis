@@ -102,49 +102,47 @@ export async function GET(req: Request) {
         ORDER BY MTD_REV DESC
       `),
 
-      // 할인율용: 매장별 SW_SALEINFO (SHOPCD별 TAG·SALEAMT)
+      // 할인율용: 매장별 VW_SALES_VAT (SHOPCD별 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(`
-        SELECT s.SHOPCD,
-          SUM(CASE WHEN s.SALEDT >= '${monthStart}' THEN (s.TAGPRICE / 1.1) * s.SALEQTY ELSE 0 END) as MTD_TAG,
-          SUM(CASE WHEN s.SALEDT >= '${monthStart}' THEN s.SALEAMT ELSE 0 END) as MTD_SALE
-        FROM BCAVE.SEWON.SW_SALEINFO s
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        ${selItem ? `JOIN BCAVE.SEWON.SW_STYLEINFO sti ON s.STYLECD = sti.STYLECD AND s.BRANDCD = sti.BRANDCD` : ''}
-        WHERE s.BRANDCD IN ${brandInClause}
-          AND sh.SHOPTYPENM = '${channelSafe}'
-          AND s.SALEDT >= '${monthStart < pwStart ? monthStart : pwStart}'
-          AND s.SALEDT <= '${cwEnd}'
-          ${selItem ? `AND sti.ITEMNM = '${selItem.replace(/'/g, "''")}'` : ''}
-        GROUP BY s.SHOPCD
+        SELECT v.SHOPCD,
+          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
+          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandWhere}
+          AND v.SHOPTYPENM = '${channelSafe}'
+          AND v.SALEDT >= '${monthStart < pwStart ? monthStart : pwStart}'
+          AND v.SALEDT <= '${cwEnd}'
+          ${selItem ? `AND si.ITEMNM = '${selItem.replace(/'/g, "''")}'` : ''}
+        GROUP BY v.SHOPCD
       `),
 
-      // 할인율용: 상품별 SW_SALEINFO (STYLECD별)
+      // 할인율용: 상품별 VW_SALES_VAT (STYLECD별)
       snowflakeQuery<Record<string, string>>(`
-        SELECT s.STYLECD,
-          SUM((s.TAGPRICE / 1.1) * s.SALEQTY) as TAG_TOTAL,
-          SUM(s.SALEAMT) as SALE_TOTAL
-        FROM BCAVE.SEWON.SW_SALEINFO s
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        WHERE s.BRANDCD IN ${brandInClause}
-          AND sh.SHOPTYPENM = '${channelSafe}'
-          AND s.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}'
-          ${selShopCd ? `AND s.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
-          ${selItem ? `AND s.STYLECD IN (SELECT STYLECD FROM BCAVE.SEWON.SW_STYLEINFO WHERE ITEMNM = '${selItem.replace(/'/g, "''")}')` : ''}
-        GROUP BY s.STYLECD
+        SELECT v.STYLECD,
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_TOTAL,
+          SUM(v.SALEAMT_VAT_EX) as SALE_TOTAL
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandWhere}
+          AND v.SHOPTYPENM = '${channelSafe}'
+          AND v.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}'
+          ${selShopCd ? `AND v.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
+          ${selItem ? `AND si.ITEMNM = '${selItem.replace(/'/g, "''")}' ` : ''}
+        GROUP BY v.STYLECD
       `),
 
-      // 할인율용: 품목별 SW_SALEINFO (ITEMNM별)
+      // 할인율용: 품목별 VW_SALES_VAT (ITEMNM별)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
-          SUM(CASE WHEN s.SALEDT >= '${monthStart}' THEN (s.TAGPRICE / 1.1) * s.SALEQTY ELSE 0 END) as MTD_TAG,
-          SUM(CASE WHEN s.SALEDT >= '${monthStart}' THEN s.SALEAMT ELSE 0 END) as MTD_SALE
-        FROM BCAVE.SEWON.SW_SALEINFO s
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        WHERE s.BRANDCD IN ${brandInClause}
-          AND sh.SHOPTYPENM = '${channelSafe}'
-          AND (s.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}' OR s.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}')
-          ${selShopCd ? `AND s.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
+          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
+          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandWhere}
+          AND v.SHOPTYPENM = '${channelSafe}'
+          AND (v.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}' OR v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}')
+          ${selShopCd ? `AND v.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
         GROUP BY si.ITEMNM
       `),
     ])

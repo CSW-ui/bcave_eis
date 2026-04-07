@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery } from '@/lib/snowflake'
+import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
 import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 
 // 입판재현황 API: 입고·판매·재고를 품목별·차수별로 상세 집계
@@ -268,35 +268,33 @@ export async function GET(req: Request) {
         GROUP BY si.ITEMNM
       `),
 
-      // 15. 할인율용: SW_SALEINFO 기반 TAG·SALEAMT (정상 + 이월 + 해외사입)
+      // 15. 할인율용: VW_SALES_VAT 기반 TAG·SALEAMT_VAT_EX (정상 + 이월 + 해외사입)
       snowflakeQuery<Record<string, string>>(`
-        SELECT si.ITEMNM, sh.SHOPTYPENM,
+        SELECT si.ITEMNM, v.SHOPTYPENM,
           CASE WHEN si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere} THEN 'NORM'
-               WHEN sh.SHOPTYPENM = '해외 사입' THEN 'OV'
+               WHEN v.SHOPTYPENM = '해외 사입' THEN 'OV'
                ELSE 'CO' END as SALE_TYPE,
-          SUM((s.TAGPRICE / 1.1) * s.SALEQTY) as TAG_AMT,
-          SUM(s.SALEAMT) as SALE_PRICE_AMT
-        FROM BCAVE.SEWON.SW_SALEINFO s
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        WHERE ${sBrandClause}
-          AND s.SALEDT >= '${fromDt}' ${toDt ? `AND s.SALEDT <= '${toDt}'` : ''}
-        GROUP BY si.ITEMNM, SALE_TYPE, sh.SHOPTYPENM
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_AMT,
+          SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND v.SALEDT >= '${fromDt}' ${toDt ? `AND v.SALEDT <= '${toDt}'` : ''}
+        GROUP BY si.ITEMNM, SALE_TYPE, v.SHOPTYPENM
       `),
 
-      // 16. 할인율용: 전년 SW_SALEINFO (정상 + 이월)
+      // 16. 할인율용: 전년 VW_SALES_VAT (정상 + 이월)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           CASE WHEN si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}) ${genderWhere} THEN 'NORM'
                ELSE 'CO' END as SALE_TYPE,
-          SUM((s.TAGPRICE / 1.1) * s.SALEQTY) as TAG_AMT,
-          SUM(s.SALEAMT) as SALE_PRICE_AMT
-        FROM BCAVE.SEWON.SW_SALEINFO s
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-        WHERE ${sBrandClause}
-          AND s.SALEDT >= '${lyFromDt}' ${lyToDt ? `AND s.SALEDT <= '${lyToDt}'` : ''}
-          AND sh.SHOPTYPENM != '해외 사입'
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_AMT,
+          SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND v.SALEDT >= '${lyFromDt}' ${lyToDt ? `AND v.SALEDT <= '${lyToDt}'` : ''}
+          AND v.SHOPTYPENM != '해외 사입'
         GROUP BY si.ITEMNM, SALE_TYPE
       `),
 
@@ -348,7 +346,7 @@ export async function GET(req: Request) {
     const ovMap = new Map(overseasData.map(r => [r.ITEMNM, r]))
     const lyOvMap = new Map(lyOverseasData.map(r => [r.ITEMNM, r]))
 
-    // 할인율용 SW_SALEINFO 데이터를 품목×유형별 맵으로 변환
+    // 할인율용 VW_SALES_VAT 데이터를 품목×유형별 맵으로 변환
     const dcMap = new Map<string, { TAG_AMT: number; SALE_PRICE_AMT: number }>()
     const buildDcKey = (item: string, type: string) => `${item}::${type}`
     dcRateData.forEach(r => {
@@ -410,7 +408,7 @@ export async function GET(req: Request) {
       const inQty = N(ib?.IN_QTY); const inAmt = N(ib?.IN_AMT)
       // 당시즌 판매
       const saleQty = N(s?.SALE_QTY); const saleAmt = N(s?.SALE_AMT); const costAmt = N(s?.COST_AMT)
-      // 할인율용 (SW_SALEINFO 기반: TAGPRICE·SALEAMT 모두 VAT포함)
+      // 할인율용 (VW_SALES_VAT 기반: TAGPRICE/1.1 · SALEAMT_VAT_EX 모두 VAT제외)
       const normDc = dcMap.get(buildDcKey(itemNm, 'NORM')) || { TAG_AMT: 0, SALE_PRICE_AMT: 0 }
       const tagAmt = normDc.TAG_AMT; const salePriceAmt = normDc.SALE_PRICE_AMT
       // 온라인
@@ -488,7 +486,7 @@ export async function GET(req: Request) {
         lyCoSaleAmt: N(lyCoS?.LY_CO_SALE_AMT),
         lyOvSaleAmt: N(lyOv?.LY_OV_SALE_AMT), lyOvSaleQty: N(lyOv?.LY_OV_SALE_QTY),
         lyTotalSaleAmt: N(lyS?.LY_SALE_AMT) + N(lyCoS?.LY_CO_SALE_AMT) + N(lyOv?.LY_OV_SALE_AMT),
-        // 전년 할인율·원가율 산출용 (SW_SALEINFO 기반)
+        // 전년 할인율·원가율 산출용 (VW_SALES_VAT 기반)
         lyTagAmt: (lyDcMap.get(buildDcKey(itemNm, 'NORM')) || { TAG_AMT: 0 }).TAG_AMT,
         lySalePriceAmt: (lyDcMap.get(buildDcKey(itemNm, 'NORM')) || { SALE_PRICE_AMT: 0 }).SALE_PRICE_AMT,
         lyCostAmt: N(lyS?.LY_COST_AMT),

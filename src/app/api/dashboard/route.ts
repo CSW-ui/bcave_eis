@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { snowflakeQuery, BRAND_FILTER } from '@/lib/snowflake'
+import { snowflakeQuery, BRAND_FILTER, SALES_VIEW } from '@/lib/snowflake'
 import { fmtDateSf } from '@/lib/formatters'
 
 export async function GET(req: NextRequest) {
@@ -109,30 +109,30 @@ export async function GET(req: NextRequest) {
         ORDER BY si.YEARCD DESC
       `),
 
-      // 6. 할인율용: SW_SALEINFO 기반 KPI (금월/전년동월 TAG·SALEAMT)
+      // 6. 할인율용: VW_SALES_VAT 기반 KPI (금월/전년동월 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(`
         SELECT
-          SUM(CASE WHEN sl.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS CM_TAG,
-          SUM(CASE WHEN sl.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN sl.SALEAMT ELSE 0 END) AS CM_SALE,
-          SUM(CASE WHEN sl.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN (sl.TAGPRICE / 1.1) * sl.SALEQTY ELSE 0 END) AS LY_TAG,
-          SUM(CASE WHEN sl.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN sl.SALEAMT ELSE 0 END) AS LY_SALE
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-        WHERE ${brandFilter.replace(/BRANDCD/g, 'sl.BRANDCD')}
-          ${regionFilter.replace(/SHOPTYPENM/g, 'sh.SHOPTYPENM')}
+          SUM(CASE WHEN v.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CM_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CM_SALE,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS LY_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS LY_SALE
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')}
+          ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
       `),
 
-      // 7. 할인율용: 월별 SW_SALEINFO (올해+전년)
+      // 7. 할인율용: 월별 VW_SALES_VAT (올해+전년)
       snowflakeQuery<{ M: string; TAG: number; SALE: number }>(`
-        SELECT SUBSTRING(sl.SALEDT, 1, 6) AS M,
-          SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG,
-          SUM(sl.SALEAMT) AS SALE
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-        WHERE ${brandFilter.replace(/BRANDCD/g, 'sl.BRANDCD')}
-          ${regionFilter.replace(/SHOPTYPENM/g, 'sh.SHOPTYPENM')}
-          AND sl.SALEDT >= '${curYear - 1}0101'
-        GROUP BY SUBSTRING(sl.SALEDT, 1, 6)
+        SELECT SUBSTRING(v.SALEDT, 1, 6) AS M,
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG,
+          SUM(v.SALEAMT_VAT_EX) AS SALE
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')}
+          ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
+          AND v.SALEDT >= '${curYear - 1}0101'
+        GROUP BY SUBSTRING(v.SALEDT, 1, 6)
         ORDER BY M
       `),
 
@@ -194,17 +194,16 @@ export async function GET(req: NextRequest) {
         GROUP BY si.YEARCD
       `),
 
-      // 11. 2026년 판매 할인율 — 상품 YEARCD별 (SW_SALEINFO)
+      // 11. 2026년 판매 할인율 — 상품 YEARCD별 (VW_SALES_VAT)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.YEARCD AS YR,
-          SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG_AMT,
-          SUM(sl.SALEAMT) AS SALE_PRICE_AMT
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
-        WHERE ${brandFilter.replace(/BRANDCD/g, 'sl.BRANDCD')}
-          ${regionFilter.replace(/SHOPTYPENM/g, 'sh.SHOPTYPENM')}
-          AND sl.SALEDT >= '20260101'
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+          SUM(v.SALEAMT_VAT_EX) AS SALE_PRICE_AMT
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')}
+          ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
+          AND v.SALEDT >= '20260101'
         GROUP BY si.YEARCD
       `),
 

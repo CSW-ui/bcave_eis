@@ -94,13 +94,13 @@ export async function GET(req: Request) {
         GROUP BY si.ITEMNM
         ORDER BY CW_REV DESC`
     }
-    // 할인율용: SW_SALEINFO 기반 품목별 TAG·SALEAMT
-    const dcBrandWhere = `sl.BRANDCD IN ${brandInClause}`
-    // 다중 채널 필터 (SW_SALEINFO용)
-    let chFilterSl = ''
+    // 할인율용: VW_SALES_VAT 기반 품목별 TAG·SALEAMT_VAT_EX
+    const dcBrandWhere = `v.BRANDCD IN ${brandInClause}`
+    // 다중 채널 필터 (VW_SALES_VAT용)
+    let chFilterDc = ''
     if (channels) {
       const chList = channels.split(',').map(c => `'${c.trim().replace(/'/g, "''")}'`).join(',')
-      chFilterSl = `AND sh.SHOPTYPENM IN (${chList})`
+      chFilterDc = `AND v.SHOPTYPENM IN (${chList})`
     }
 
     let dcSql: string
@@ -108,27 +108,25 @@ export async function GET(req: Request) {
       const wn = parseInt(weekNum)
       dcSql = `
         SELECT si.ITEMNM,
-          SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG_AMT,
-          SUM(sl.SALEAMT) AS SALE_AMT
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+          SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${dcBrandWhere}
-          AND YEAR(TO_DATE(sl.SALEDT,'YYYYMMDD'))=${yr}
-          AND WEEKOFYEAR(TO_DATE(sl.SALEDT,'YYYYMMDD'))=${wn}
-          ${chFilterSl} ${genderWhere}
+          AND YEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${yr}
+          AND WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${wn}
+          ${chFilterDc} ${genderWhere}
         GROUP BY si.ITEMNM`
     } else {
       dcSql = `
         SELECT si.ITEMNM,
-          SUM((sl.TAGPRICE / 1.1) * sl.SALEQTY) AS TAG_AMT,
-          SUM(sl.SALEAMT) AS SALE_AMT
-        FROM BCAVE.SEWON.SW_SALEINFO sl
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON sl.STYLECD = si.STYLECD AND sl.BRANDCD = si.BRANDCD
-        JOIN BCAVE.SEWON.SW_SHOPINFO sh ON sl.SHOPCD = sh.SHOPCD
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+          SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${dcBrandWhere}
-          AND sl.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}'
-          ${chFilterSl} ${genderWhere}
+          AND v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}'
+          ${chFilterDc} ${genderWhere}
         GROUP BY si.ITEMNM`
     }
 

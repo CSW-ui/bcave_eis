@@ -128,19 +128,19 @@ export async function GET(req: Request) {
         GROUP BY v.SHOPTYPENM ORDER BY SALE_AMT DESC
       `),
 
-      // 6. 할인율용: SW_SALEINFO 기반 TAG·SALEAMT (스타일별)
+      // 6. 할인율용: VW_SALES_VAT 기반 TAG·SALEAMT_VAT_EX (스타일별)
       snowflakeQuery<Record<string, string>>(`
-        SELECT s.STYLECD,
-          SUM((s.TAGPRICE / 1.1) * s.SALEQTY) as TAG_AMT,
-          SUM(s.SALEAMT) as SALE_PRICE_AMT
-        FROM BCAVE.SEWON.SW_SALEINFO s
-        JOIN BCAVE.SEWON.SW_STYLEINFO si ON s.STYLECD = si.STYLECD AND s.BRANDCD = si.BRANDCD
-        WHERE s.BRANDCD IN ${brandInClause}
+        SELECT v.STYLECD,
+          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_AMT,
+          SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT
+        FROM ${SALES_VIEW} v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE v.BRANDCD IN ${brandInClause}
           AND si.YEARCD IN ('${year}','${compYear}')
           AND si.SEASONNM IN (${seasonList})
           AND si.ITEMNM = '${itemSafe}'
-          AND s.SALEDT >= '20${compYear}0101'
-        GROUP BY s.STYLECD
+          AND v.SALEDT >= '20${compYear}0101'
+        GROUP BY v.STYLECD
       `),
     ])
 

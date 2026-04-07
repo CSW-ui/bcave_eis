@@ -33,7 +33,6 @@ type Region = 'all' | 'domestic' | 'overseas' | 'online' | 'offline'
 export default function DashboardPage() {
   const { targets } = useTargetData()
   const [data, setData] = useState<any>(null)
-  const [forecast, setForecast] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [region, setRegion] = useState<Region>('all')
 
@@ -49,13 +48,6 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(region) }, [region, fetchData])
 
-  // 예측 데이터 fetch
-  useEffect(() => {
-    fetch('/api/sales/forecast?brand=all')
-      .then(r => r.json())
-      .then(j => { if (j.forecast) setForecast(j) })
-      .catch(() => {})
-  }, [])
 
   const handleRegion = (r: Region) => {
     if (r === region) return
@@ -196,85 +188,6 @@ export default function DashboardPage() {
         )
       })()}
 
-      {/* 월 예상 달성률 */}
-      {forecast?.forecast && (() => {
-        const f = forecast.forecast
-        const m = forecast.meta
-        const curMonth = data?.kpi?.curMonth ?? new Date().getMonth() + 1
-        const yyyymm = `${data?.kpi?.curYear ?? new Date().getFullYear()}${String(curMonth).padStart(2, '0')}`
-        const monthTarget = getFilteredMonthlyTarget(yyyymm)
-        const achPct = monthTarget > 0 ? Math.round(f.forecastRev / monthTarget * 100) : null
-        const achMinPct = monthTarget > 0 ? Math.round(f.forecastMin / monthTarget * 100) : null
-        const achMaxPct = monthTarget > 0 ? Math.round(f.forecastMax / monthTarget * 100) : null
-
-        return (
-          <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">
-                {curMonth}월 예상 달성률
-                <span className="text-xs font-normal text-gray-400 ml-1.5">
-                  {m.asOfDate?.slice(4,6)}/{m.asOfDate?.slice(6)} 기준 · 잔여 {m.daysRemaining}일
-                </span>
-              </h3>
-              <div className="flex items-center gap-3 text-[10px] text-gray-400">
-                <span>전년패턴 {Math.round(f.signals.weights.a * 100)}%</span>
-                <span>요일가중 {Math.round(f.signals.weights.b * 100)}%</span>
-                <span>상품모멘텀 {Math.round(f.signals.weights.c * 100)}%</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-5 gap-4">
-              {/* 경과 실적 */}
-              <div>
-                <p className="text-[10px] text-gray-400">경과 실적</p>
-                <p className="text-lg font-bold text-gray-900">{fmtW(f.elapsedRev)}</p>
-                <p className="text-[10px] text-gray-500">전년동기 {fmtW(f.lyElapsedRev)}</p>
-                <span className={cn('text-[10px] font-semibold', f.growth >= 100 ? 'text-emerald-600' : 'text-red-500')}>
-                  {f.growth >= 100 ? '+' : ''}{Math.round(f.growth - 100)}%
-                </span>
-              </div>
-              {/* 예상 매출 */}
-              <div>
-                <p className="text-[10px] text-gray-400">월말 예상</p>
-                <p className="text-lg font-bold text-blue-600">{fmtW(f.forecastRev)}</p>
-                <p className="text-[10px] text-gray-400">{fmtW(f.forecastMin)} ~ {fmtW(f.forecastMax)}</p>
-              </div>
-              {/* 달성률 */}
-              <div>
-                <p className="text-[10px] text-gray-400">예상 달성률</p>
-                {achPct !== null ? (
-                  <>
-                    <p className={cn('text-lg font-bold', achPct >= 100 ? 'text-emerald-600' : achPct >= 90 ? 'text-amber-500' : 'text-red-500')}>
-                      {achPct}%
-                    </p>
-                    <p className="text-[10px] text-gray-400">목표 {fmtW(monthTarget)}</p>
-                    <p className="text-[10px] text-gray-400">{achMinPct}% ~ {achMaxPct}%</p>
-                  </>
-                ) : (
-                  <p className="text-lg font-bold text-gray-300">—</p>
-                )}
-              </div>
-              {/* 전년 동월 */}
-              <div>
-                <p className="text-[10px] text-gray-400">전년 동월 전체</p>
-                <p className="text-lg font-bold text-gray-600">{fmtW(f.lyFullRev)}</p>
-                <span className={cn('text-[10px] font-semibold', f.forecastRev >= f.lyFullRev ? 'text-emerald-600' : 'text-red-500')}>
-                  vs 예상 {f.forecastRev >= f.lyFullRev ? '+' : ''}{Math.round((f.forecastRev - f.lyFullRev) / (f.lyFullRev || 1) * 100)}%
-                </span>
-              </div>
-              {/* TOP 상품 기여 */}
-              <div>
-                <p className="text-[10px] text-gray-400 mb-1">예상 기여 TOP 5</p>
-                {f.topItems?.slice(0, 5).map((item: any) => (
-                  <div key={item.item} className="flex justify-between text-[10px]">
-                    <span className="text-gray-600 truncate max-w-[80px]">{item.item}</span>
-                    <span className="text-gray-800 font-mono">{item.share}%</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
 
       {/* 차트 영역 */}
       <div className="grid grid-cols-3 gap-4">

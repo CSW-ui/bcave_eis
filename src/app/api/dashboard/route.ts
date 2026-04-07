@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   const brandFilter = BRAND_FILTER
 
   try {
-    const [kpiRaw, monthlyRaw, brandRaw, brandMonthRaw, yearlySales, dcKpiRaw, dcMonthlyRaw, costMonthlyRaw, yearlyInbound, baseInvRaw, yearlyDcRate, currentInvRaw] = await Promise.all([
+    const [kpiRaw, monthlyRaw, brandRaw, brandMonthRaw, yearlySales, dcKpiRaw, dcMonthlyRaw, costMonthlyRaw, yearlyInbound, baseInvRaw, yearlyDcRate, currentInvRaw, lyCmCostRaw] = await Promise.all([
       // 1. KPI: 이번달/지난달/전년동월 매출·수량
       snowflakeQuery<Record<string, string>>(`
         SELECT
@@ -228,6 +228,15 @@ export async function GET(req: NextRequest) {
         WHERE ${brandFilter.replace(/BRANDCD/g, 'si.BRANDCD')}
         GROUP BY si.YEARCD
       `),
+
+      // 13. 전년 당월 동기간 원가 (YTD 매출원가율 동기간 보정용)
+      snowflakeQuery<Record<string, string>>(`
+        SELECT SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS LY_CM_COST
+        FROM BCAVE.SEWON.VW_SALES_VAT v
+        LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
+          AND v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}'
+      `),
     ])
 
     const k = kpiRaw[0] || {}
@@ -326,9 +335,11 @@ export async function GET(req: NextRequest) {
         if (mm > cmMm) continue // 미래 월 제외
         rev += v.actual; cost += v.cost; tag += v.tag; sale += v.sale
         if (mm === cmMm) {
-          // 당월 전년은 KPI의 동기간 값 사용
+          // 당월 전년은 동기간 값 사용
           lyRev += Number(k.LY_REV) || 0
-          lyCost += v.lyCost; lyTag += v.lyTag; lySale += v.lySale
+          lyCost += Number(lyCmCostRaw[0]?.LY_CM_COST) || 0
+          lyTag += Number(dk.LY_TAG) || 0
+          lySale += Number(dk.LY_SALE) || 0
         } else {
           lyRev += v.lastYear; lyCost += v.lyCost; lyTag += v.lyTag; lySale += v.lySale
         }

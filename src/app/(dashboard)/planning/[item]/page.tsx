@@ -127,8 +127,6 @@ export default function ItemDetailPage() {
     ]
   }, [styles, lyStyles, weeks, maxCyWeek, weekMeta])
 
-  const cyBest = styles.slice(0, 10)
-  const lyBest = lyStyles.slice(0, 10)
   const chTotal = channels.reduce((s:number, c:any) => s + c.amt, 0)
   const hasFilter = selWeek || selStyle || selChannel
 
@@ -269,68 +267,6 @@ export default function ItemDetailPage() {
       </div>
 
 
-      {/* 베스트 TOP 10 */}
-      <div className="grid grid-cols-2 gap-3">
-        {[{ title: `금년 베스트 TOP 10`, data: cyBest }, { title: `전년 베스트 TOP 10`, data: lyBest }].map((panel,pi) => (
-          <div key={pi} className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
-            <div className="px-4 py-2 border-b border-surface-border bg-surface-subtle">
-              <h3 className="text-xs font-semibold text-gray-700">{panel.title}</h3>
-            </div>
-            <div className="overflow-auto" style={{ maxHeight: 300 }}>
-              {panel.data.length > 0 ? (
-                <table className="w-full text-[10px]">
-                  <thead className="sticky top-0 bg-surface-subtle">
-                    <tr className="border-b border-surface-border text-gray-400">
-                      <th className="text-left px-3 py-1.5 w-5">#</th>
-                      <th className="text-left px-2 py-1.5">상품명</th>
-                      <th className="text-right px-1 py-1.5">발주수량</th>
-                      <th className="text-right px-1 py-1.5">입고율</th>
-                      <th className="text-right px-1 py-1.5">누적매출</th>
-                      <th className="text-right px-1 py-1.5">전주매출</th>
-                      <th className="text-right px-1 py-1.5">WoW</th>
-                      <th className="text-right px-2 py-1.5">판매율</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {panel.data.map((s:any,i:number) => {
-                      const isSel = pi === 0 && selStyle?.code === s.stylecd
-                      return (
-                        <tr key={s.stylecd}
-                          onClick={() => pi === 0 && setSelStyle(prev => prev?.code === s.stylecd ? null : { code: s.stylecd, name: s.stylenm })}
-                          className={cn('border-b border-surface-border/50 transition-colors',
-                            pi === 0 ? 'cursor-pointer' : '',
-                            isSel ? 'bg-purple-50' : 'hover:bg-surface-subtle')}>
-                          <td className="px-3 py-1.5 text-gray-400 font-mono">{i+1}</td>
-                          <td className="px-2 py-1.5">
-                            <div className={cn('font-medium truncate max-w-[180px]', isSel ? 'text-purple-700' : 'text-gray-800')}>{s.stylenm}</div>
-                            <span className="px-1 py-px rounded-full text-[8px] font-bold text-white" style={{ background: BRAND_COLORS[s.brandcd]??'#999' }}>{s.brandcd}</span>
-                          </td>
-                          <td className="px-1 py-1.5 text-right font-mono text-gray-700">{(s.ordQty||0).toLocaleString()}</td>
-                          <td className="px-1 py-1.5 text-right">
-                            {s.ordQty > 0 ? (
-                              <span className={cn('px-1 py-px rounded-full text-[9px] font-semibold',
-                                (s.inboundRate||0)>=90?'bg-green-100 text-green-700':(s.inboundRate||0)>=50?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700')}>{s.inboundRate||0}%</span>
-                            ) : '—'}
-                          </td>
-                          <td className="px-1 py-1.5 text-right font-mono font-semibold text-gray-800">{fmtW(s.saleAmt)}</td>
-                          <td className="px-1 py-1.5 text-right font-mono text-purple-700 font-semibold">{s.cwAmt ? fmtW(s.cwAmt) : '—'}</td>
-                          <td className={cn('px-1 py-1.5 text-right font-mono text-[9px]', (s.wow??0) >= 0 ? 'text-emerald-600' : 'text-red-500')}>
-                            {s.pwAmt > 0 ? `${s.wow >= 0 ? '+' : ''}${s.wow}%` : '—'}
-                          </td>
-                          <td className="px-2 py-1.5 text-right">
-                            <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
-                              s.sellThrough>=70?'bg-emerald-100 text-emerald-700':s.sellThrough>=40?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700')}>{s.sellThrough}%</span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              ) : <div className="py-8 text-center text-xs text-gray-400">데이터 없음</div>}
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* 전체 상품 테이블 */}
       <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">

@@ -40,6 +40,7 @@ export async function GET(req: Request) {
         SELECT v.BRANDCD, v.BRANDNM, v.SHOPTYPENM,
           SUM(v.SALEAMT_VAT_EX) AS REV,
           SUM(v.SALEQTY) AS QTY,
+          COUNT(DISTINCT v.SHOPCD) AS SHOP_CNT,
           SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS COST,
           SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
           SUM(CASE WHEN ${isNorm} THEN v.SALEQTY ELSE 0 END) AS NORM_QTY,
@@ -58,6 +59,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT v.BRANDCD, v.BRANDNM, v.SHOPTYPENM,
           SUM(v.SALEAMT_VAT_EX) AS REV,
+          COUNT(DISTINCT v.SHOPCD) AS SHOP_CNT,
           SUM(COALESCE(si.PRODCOST, 0) * v.SALEQTY) AS COST,
           SUM(CASE WHEN ${lyIsNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
           SUM(CASE WHEN ${lyIsNorm} THEN COALESCE(si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS NORM_COST,
@@ -104,12 +106,10 @@ export async function GET(req: Request) {
     // 결과 조합
     type Row = {
       brandcd: string; brandnm: string; channel: string
-      // 총 매출
       rev: number; lyRev: number; cost: number; lyCost: number
-      // 정상
+      shopCnt: number; lyShopCnt: number
       normRev: number; lyNormRev: number; normCost: number; lyNormCost: number
       normTag: number; normSale: number; lyNormTag: number; lyNormSale: number
-      // 이월
       coRev: number; lyCoRev: number; coCost: number; lyCoCost: number
       coTag: number; coSale: number; lyCoTag: number; lyCoSale: number
     }
@@ -118,7 +118,7 @@ export async function GET(req: Request) {
     const key = (b: string, c: string) => `${b}::${c}`
     const empty = (brandcd: string, brandnm: string, channel: string): Row => ({
       brandcd, brandnm, channel,
-      rev: 0, lyRev: 0, cost: 0, lyCost: 0,
+      rev: 0, lyRev: 0, cost: 0, lyCost: 0, shopCnt: 0, lyShopCnt: 0,
       normRev: 0, lyNormRev: 0, normCost: 0, lyNormCost: 0,
       normTag: 0, normSale: 0, lyNormTag: 0, lyNormSale: 0,
       coRev: 0, lyCoRev: 0, coCost: 0, lyCoCost: 0,
@@ -128,7 +128,7 @@ export async function GET(req: Request) {
     for (const r of cyRows) {
       const k = key(r.BRANDCD, r.SHOPTYPENM)
       const row = map.get(k) || empty(r.BRANDCD, r.BRANDNM, r.SHOPTYPENM)
-      row.rev += N(r.REV); row.cost += N(r.COST)
+      row.rev += N(r.REV); row.cost += N(r.COST); row.shopCnt += N(r.SHOP_CNT)
       row.normRev += N(r.NORM_REV); row.normCost += N(r.NORM_COST)
       row.coRev += N(r.CO_REV); row.coCost += N(r.CO_COST)
       map.set(k, row)
@@ -136,7 +136,7 @@ export async function GET(req: Request) {
     for (const r of lyRows) {
       const k = key(r.BRANDCD, r.SHOPTYPENM)
       const row = map.get(k) || empty(r.BRANDCD, r.BRANDNM, r.SHOPTYPENM)
-      row.lyRev += N(r.REV); row.lyCost += N(r.COST)
+      row.lyRev += N(r.REV); row.lyCost += N(r.COST); row.lyShopCnt += N(r.SHOP_CNT)
       row.lyNormRev += N(r.NORM_REV); row.lyNormCost += N(r.NORM_COST)
       row.lyCoRev += N(r.CO_REV); row.lyCoCost += N(r.CO_COST)
       map.set(k, row)
@@ -162,6 +162,7 @@ export async function GET(req: Request) {
       brandcd: r.brandcd, brandnm: r.brandnm, channel: r.channel,
       // 총 매출
       rev: r.rev, lyRev: r.lyRev, yoy: yoy(r.rev, r.lyRev),
+      shopCnt: r.shopCnt, lyShopCnt: r.lyShopCnt,
       dcRate: dc(r.normTag + r.coTag, r.normSale + r.coSale),
       lyDcRate: dc(r.lyNormTag + r.lyCoTag, r.lyNormSale + r.lyCoSale),
       cogsRate: cogs(r.cost, r.rev), lyCogsRate: cogs(r.lyCost, r.lyRev),

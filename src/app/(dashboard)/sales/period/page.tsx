@@ -26,6 +26,7 @@ const CHANNEL_OPTIONS = ['백화점', '아울렛', '직영점', '쇼핑몰', '�
 interface ChannelRow {
   brandcd: string; brandnm: string; channel: string
   rev: number; lyRev: number; yoy: number | null
+  shopCnt: number; lyShopCnt: number
   dcRate: number; lyDcRate: number; cogsRate: number; lyCogsRate: number
   normRev: number; lyNormRev: number; normYoy: number | null
   normDcRate: number; lyNormDcRate: number; normCogsRate: number; lyNormCogsRate: number; normRatio: number
@@ -35,6 +36,7 @@ interface ChannelRow {
 
 interface AggRow {
   rev: number; lyRev: number; yoy: number | null
+  shopCnt: number; lyShopCnt: number
   dcRate: number; lyDcRate: number; cogsRate: number; lyCogsRate: number
   normRev: number; lyNormRev: number; normYoy: number | null
   normDcRate: number; lyNormDcRate: number; normCogsRate: number; lyNormCogsRate: number; normRatio: number
@@ -44,10 +46,11 @@ interface AggRow {
 
 function sumRows(rows: ChannelRow[]): AggRow {
   let rev = 0, lyRev = 0, nRev = 0, lyNRev = 0, cRev = 0, lyCRev = 0
+  let shopCnt = 0, lyShopCnt = 0
   let dcW = 0, cgW = 0, lyDcW = 0, lyCgW = 0
   let nDcW = 0, nCgW = 0, lyNDcW = 0, lyNCgW = 0, cDcW = 0, cCgW = 0, lyCDcW = 0, lyCCgW = 0
   for (const r of rows) {
-    rev += r.rev; lyRev += r.lyRev
+    rev += r.rev; lyRev += r.lyRev; shopCnt += r.shopCnt; lyShopCnt += r.lyShopCnt
     dcW += r.dcRate * r.rev; cgW += r.cogsRate * r.rev
     lyDcW += r.lyDcRate * r.lyRev; lyCgW += r.lyCogsRate * r.lyRev
     nRev += r.normRev; lyNRev += r.lyNormRev; cRev += r.coRev; lyCRev += r.lyCoRev
@@ -59,7 +62,7 @@ function sumRows(rows: ChannelRow[]): AggRow {
   const y = (a: number, b: number) => b > 0 ? Math.round((a - b) / b * 1000) / 10 : null
   const w = (v: number, d: number) => d > 0 ? Math.round(v / d * 10) / 10 : 0
   return {
-    rev, lyRev, yoy: y(rev, lyRev),
+    rev, lyRev, yoy: y(rev, lyRev), shopCnt, lyShopCnt,
     dcRate: w(dcW, rev), lyDcRate: w(lyDcW, lyRev),
     cogsRate: w(cgW, rev), lyCogsRate: w(lyCgW, lyRev),
     normRev: nRev, lyNormRev: lyNRev, normYoy: y(nRev, lyNRev),
@@ -219,9 +222,17 @@ export default function PeriodPage() {
     if (ly === 0 && cy === 0) return '—'
     return <span className={cn('font-mono', gap >= 0 ? 'text-red-500' : 'text-blue-500')}>{gap >= 0 ? '+' : ''}{fmtE(gap)}</span>
   }
-  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean) => (
+  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean, totalRev?: number) => {
+    const share = totalRev && totalRev > 0 ? Math.round(a.rev / totalRev * 1000) / 10 : null
+    return (
     <>
       <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
+      {/* 점포·비중 */}
+      <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.shopCnt || '—'}</td>
+      <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>
+        {a.shopCnt && a.lyShopCnt ? <span className={cn('font-semibold', a.shopCnt >= a.lyShopCnt ? 'text-red-500' : 'text-blue-500')}>{a.shopCnt >= a.lyShopCnt ? '+' : ''}{a.shopCnt - a.lyShopCnt}</span> : '—'}
+      </td>
+      <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{share !== null ? `${share}%` : ''}</td>
       {/* 총 매출 */}
       <td className={cn(cellBase, 'font-semibold text-gray-900', bg(isTotal))}>{fmtE(a.rev)}</td>
       <td className={cn(cellBase, 'text-gray-500', bg(isTotal))}>{fmtE(a.lyRev)}</td>
@@ -250,7 +261,7 @@ export default function PeriodPage() {
       <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.coRev ? `${a.coCogsRate}%` : '—'}</td>
       <td className={cn(cellBase, bg(isTotal))}>{a.coRev ? renderPt(a.coCogsRate, a.lyCoCogsRate) : '—'}</td>
     </>
-  )
+  )}
 
   return (
     <div className="p-4 space-y-4 animate-fade-in">
@@ -338,11 +349,16 @@ export default function PeriodPage() {
               <thead>
                 <tr className="bg-gray-800">
                   <th rowSpan={2} className="text-left px-1.5 py-1.5 sticky left-0 bg-gray-800 z-20 w-[160px] min-w-[160px] text-[11px] text-gray-300 font-bold" style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.2)' }}>구분</th>
+                  <th colSpan={3} className="text-center px-1.5 py-1.5 text-[11px] text-gray-300 font-bold border-l border-gray-600">점포</th>
                   <th colSpan={8} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
                   <th colSpan={9} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
                   <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-amber-300 font-bold border-l border-gray-600">이월 매출</th>
                 </tr>
                 <tr className="bg-gray-700 border-b-2 border-gray-400 text-[11px] text-gray-300 font-medium">
+                  {/* 점포 */}
+                  <th className="text-right px-1.5 py-1.5 border-l border-gray-500">점포수</th>
+                  <th className="text-right px-1.5 py-1.5">전년비</th>
+                  <th className="text-right px-1.5 py-1.5">비중</th>
                   {/* 총 매출 */}
                   <th className="text-right px-1.5 py-1.5 border-l border-gray-500">매출</th>
                   <th className="text-right px-1.5 py-1.5">전년</th>
@@ -396,7 +412,7 @@ export default function PeriodPage() {
                             {isBrand && (isBrandCollapsed ? <ChevronRight size={12} className="text-gray-400" /> : <ChevronDown size={12} className="text-gray-400" />)}
                             <span className={cn('font-bold', isTotal ? 'text-gray-900' : isGroupSummary ? 'text-gray-800' : 'text-gray-700')}>{sec.label}</span>
                           </div>,
-                          secAgg, isTotal || isGroupSummary,
+                          secAgg, isTotal || isGroupSummary, secAgg.rev,
                         )}
                       </tr>
 
@@ -413,7 +429,7 @@ export default function PeriodPage() {
                                   <span className="text-[11px] font-semibold text-gray-700">{g.group}</span>
                                   <span className="text-[10px] text-gray-400">{g.channels.length}</span>
                                 </div>,
-                                g.agg, false,
+                                g.agg, false, secAgg.rev,
                               )}
                             </tr>
                             {isOpen && g.channels.map((ch, ci) => (
@@ -422,7 +438,7 @@ export default function PeriodPage() {
                                   <div style={{ paddingLeft: (indent + 2) * 16 }}>
                                     <span className="text-[11px] text-gray-600">{ch.channel}</span>
                                   </div>,
-                                  ch.agg, false,
+                                  ch.agg, false, secAgg.rev,
                                 )}
                               </tr>
                             ))}

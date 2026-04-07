@@ -53,7 +53,6 @@ export default function PeriodPage() {
   const { targets } = useTargetData()
   const [brand, setBrand] = useState('all')
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
-  const [mode, setMode] = useState<'season' | 'custom'>('season')
   const [fromDt, setFromDt] = useState('')
   const [toDt, setToDt] = useState('')
   const [lyFromDt, setLyFromDt] = useState('')
@@ -73,12 +72,14 @@ export default function PeriodPage() {
 
   const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
 
+  const isCustomPeriod = !!(fromDt && toDt)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const base = mode === 'season'
-        ? `/api/sales/period?year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}`
-        : `/api/sales/period?fromDt=${fromDt.replace(/-/g, '')}&toDt=${toDt.replace(/-/g, '')}&lyFromDt=${lyFromDt.replace(/-/g, '')}&lyToDt=${lyToDt.replace(/-/g, '')}`
+      const base = isCustomPeriod
+        ? `/api/sales/period?fromDt=${fromDt.replace(/-/g, '')}&toDt=${toDt.replace(/-/g, '')}${lyFromDt ? `&lyFromDt=${lyFromDt.replace(/-/g, '')}` : ''}${lyToDt ? `&lyToDt=${lyToDt.replace(/-/g, '')}` : ''}`
+        : `/api/sales/period?year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}`
 
       if (individualBrands.length > 1) {
         const results = await Promise.all([
@@ -98,7 +99,7 @@ export default function PeriodPage() {
       }
     } catch {}
     finally { setLoading(false) }
-  }, [brand, apiBrand, selSeason, mode, fromDt, toDt, lyFromDt, lyToDt, individualBrands])
+  }, [brand, apiBrand, selSeason, isCustomPeriod, fromDt, toDt, lyFromDt, lyToDt, individualBrands])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -195,31 +196,23 @@ export default function PeriodPage() {
                 brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
           ))}
         </div>
-        <span className="text-xs text-gray-400 ml-2">모드</span>
-        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
-          <button onClick={() => setMode('season')} className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors', mode === 'season' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500')}>시즌</button>
-          <button onClick={() => setMode('custom')} className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors', mode === 'custom' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500')}>기간비교</button>
-        </div>
-        {mode === 'season' ? (
-          <>
-            <span className="text-xs text-gray-400 ml-2">시즌</span>
-            <select value={SEASON_OPTIONS.indexOf(selSeason)} onChange={e => setSelSeason(SEASON_OPTIONS[Number(e.target.value)])}
-              className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
-              {SEASON_OPTIONS.map((s, i) => <option key={i} value={i}>{s.label}</option>)}
-            </select>
-          </>
-        ) : (
-          <>
-            <span className="text-xs text-gray-400 ml-2">금년</span>
-            <input type="date" value={fromDt} onChange={e => setFromDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-            <span className="text-xs text-gray-300">~</span>
-            <input type="date" value={toDt} onChange={e => setToDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-            <span className="text-xs text-gray-400 ml-2">전년</span>
-            <input type="date" value={lyFromDt} onChange={e => setLyFromDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-            <span className="text-xs text-gray-300">~</span>
-            <input type="date" value={lyToDt} onChange={e => setLyToDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
-            <button onClick={fetchData} className="text-xs text-white bg-brand-accent rounded-lg px-3 py-1.5">조회</button>
-          </>
+        <span className="text-xs text-gray-400 ml-2">시즌</span>
+        <select value={SEASON_OPTIONS.indexOf(selSeason)} onChange={e => { setSelSeason(SEASON_OPTIONS[Number(e.target.value)]); setFromDt(''); setToDt(''); setLyFromDt(''); setLyToDt('') }}
+          className={cn('text-xs border rounded-lg px-2 py-1.5 bg-white', isCustomPeriod ? 'border-gray-100 text-gray-300' : 'border-gray-200 text-gray-900')}>
+          {SEASON_OPTIONS.map((s, i) => <option key={i} value={i}>{s.label}</option>)}
+        </select>
+
+        <span className="text-xs text-gray-400 ml-3">기간비교</span>
+        <input type="date" value={fromDt} onChange={e => setFromDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" placeholder="금년 시작" />
+        <span className="text-xs text-gray-300">~</span>
+        <input type="date" value={toDt} onChange={e => setToDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" placeholder="금년 종료" />
+        <span className="text-xs text-gray-400 ml-1">전년</span>
+        <input type="date" value={lyFromDt} onChange={e => setLyFromDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
+        <span className="text-xs text-gray-300">~</span>
+        <input type="date" value={lyToDt} onChange={e => setLyToDt(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
+        {isCustomPeriod && (
+          <button onClick={() => { setFromDt(''); setToDt(''); setLyFromDt(''); setLyToDt('') }}
+            className="text-[10px] text-gray-400 hover:text-gray-600 underline">시즌으로 복귀</button>
         )}
       </div>
 

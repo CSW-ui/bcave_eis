@@ -65,6 +65,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
   const tWow=t.pw>0?Math.round((t.cw-t.pw)/t.pw*1000)/10:0
   const _tCwCg=t.cw>0?Math.round(t.cc/t.cw*1000)/10:0
   const tOcR=t.ot>0?Math.round(t.oc/t.ot*1000)/10:0
+  const ctSR=ct.iq>0?Math.round(ct.sq/ct.iq*1000)/10:0
 
   const downloadExcel = () => {
     const rows = sorted.map(r => {
@@ -154,6 +155,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">GAP</th>
             <H k="dcRate" l="할인율"/>
             <H k="salesRate" l="판매율"/>
+            <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             {/* 당월 */}
             <H k="monthAmt" l="매출"/>
             <H k="monthQty" l="수량"/>
@@ -212,6 +214,12 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
                     {r.salesRate}%
                   </span>
                 </td>
+                <td className="py-1.5 px-0.5 text-right text-[10px]">
+                  {p?.salesRate != null ? (() => {
+                    const diff = Math.round((r.salesRate - p.salesRate) * 10) / 10
+                    return diff === 0 ? <span className="text-gray-400">0p</span> : <span className={cn('font-semibold', diff > 0 ? 'text-red-500' : 'text-blue-500')}>{diff > 0 ? '+' : ''}{diff}p</span>
+                  })() : '—'}
+                </td>
                 {/* 당월 */}
                 <td className="py-1.5 px-1 text-right font-mono text-cyan-700 font-semibold">{fmtM(r.monthAmt)}</td>
                 <td className="py-1.5 px-1 text-right font-mono text-cyan-600">{r.monthQty.toLocaleString()}</td>
@@ -251,6 +259,12 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <G c={t.sa} p={ct.sa}/>
             <td className="py-1.5 px-1 text-right text-gray-700 text-[10px]">{tDC}%</td>
             <td className="py-1.5 px-1 text-right"><span className="px-1 py-px rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700">{tSR}%</span></td>
+            <td className="py-1.5 px-0.5 text-right text-[10px]">
+              {ctSR > 0 ? (() => {
+                const diff = Math.round((tSR - ctSR) * 10) / 10
+                return diff === 0 ? <span className="text-gray-400">0p</span> : <span className={cn('font-semibold', diff > 0 ? 'text-red-500' : 'text-blue-500')}>{diff > 0 ? '+' : ''}{diff}p</span>
+              })() : '—'}
+            </td>
             {/* 당월 */}
             <td className="py-1.5 px-1 text-right text-cyan-700">{fmtM(t.ma)}</td>
             <td className="py-1.5 px-1 text-right">{t.mq.toLocaleString()}</td>

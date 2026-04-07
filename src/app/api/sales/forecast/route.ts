@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   const brandWhere = `BRANDCD IN ${inClause}`
 
   try {
-    const [cyDaily, lyDaily, cyItemDaily, lyItemFull, momentumItems] = await Promise.all([
+    const [cyDaily, lyDaily, cyItemDaily, lyItemFull, channelRaw] = await Promise.all([
       // 1. 금년 당월 일별 매출 합계
       snowflakeQuery<{ SALEDT: string; REV: number }>(`
         SELECT SALEDT, SUM(SALEAMT_VAT_EX) AS REV
@@ -94,9 +94,22 @@ export async function GET(req: Request) {
         GROUP BY si.ITEMNM
       `),
 
-      // 5. 직근 14일 상품별 매출 (모멘텀 보정) — 쿼리3과 중복이지만 명확성을 위해 유지
-      // (쿼리 3에서 이미 CW_REV / PW_REV 가져오므로 실제로는 4개 쿼리)
-      Promise.resolve([]),  // placeholder — 쿼리 3에서 처리
+      // 5. 채널별 경과 매출 + 전년 동월 전체/경과 + 모멘텀
+      snowflakeQuery<Record<string, string>>(`
+        SELECT SHOPTYPENM,
+          SUM(CASE WHEN SALEDT BETWEEN '${monthStart}' AND '${elapsedEnd}' THEN SALEAMT_VAT_EX ELSE 0 END) AS CY_REV,
+          SUM(CASE WHEN SALEDT BETWEEN '${lyMonthStart}' AND '${lyElapsedEnd}' THEN SALEAMT_VAT_EX ELSE 0 END) AS LY_ELAPSED_REV,
+          SUM(CASE WHEN SALEDT BETWEEN '${lyMonthStart}' AND '${lyMonthEnd}' THEN SALEAMT_VAT_EX ELSE 0 END) AS LY_FULL_REV,
+          SUM(CASE WHEN SALEDT BETWEEN '${momentum7Split}' AND '${fmtDateSf(yesterday)}' THEN SALEAMT_VAT_EX ELSE 0 END) AS CW_REV,
+          SUM(CASE WHEN SALEDT BETWEEN '${momentum14Start}' AND '${fmtDateSf(new Date(d7ago.getTime() - 86400000))}' THEN SALEAMT_VAT_EX ELSE 0 END) AS PW_REV
+        FROM ${SALES_VIEW}
+        WHERE ${brandWhere}
+          AND (SALEDT BETWEEN '${monthStart}' AND '${elapsedEnd}'
+            OR SALEDT BETWEEN '${lyMonthStart}' AND '${lyMonthEnd}'
+            OR SALEDT BETWEEN '${momentum14Start}' AND '${fmtDateSf(yesterday)}')
+        GROUP BY SHOPTYPENM
+        ORDER BY CY_REV DESC
+      `),
     ])
 
     // ── Signal A: 전년 동월 패턴 스케일링 (전체 레벨) ──
@@ -212,6 +225,41 @@ export async function GET(req: Request) {
       ly: lyDaily.map(r => ({ date: r.SALEDT, rev: Number(r.REV) })),
     }
 
+    // 채널별 예측
+    const channelForecasts = (channelRaw as Record<string, string>[]).map(r => {
+      const channel = r.SHOPTYPENM
+      const cyRev = Number(r.CY_REV) || 0
+      const lyElapsed = Number(r.LY_ELAPSED_REV) || 0
+      const lyFull = Number(r.LY_FULL_REV) || 0
+      const cwRev = Number(r.CW_REV) || 0
+      const pwRev = Number(r.PW_REV) || 0
+
+      const chGrowth = lyElapsed > 0 ? cyRev / lyElapsed : overallGrowth
+      let chMomentum = 1
+      if (pwRev > 0 && cwRev > 0) {
+        chMomentum = 1 + (cwRev / pwRev - 1) * 0.25
+        chMomentum = Math.max(0.6, Math.min(1.5, chMomentum))
+      }
+
+      let chForecast: number
+      if (lyFull > lyElapsed && lyElapsed > 0) {
+        chForecast = cyRev + (lyFull - lyElapsed) * chGrowth * chMomentum
+      } else {
+        const dailyAvg = daysElapsed > 0 ? cyRev / daysElapsed : 0
+        chForecast = cyRev + dailyAvg * (daysTotal - daysElapsed) * chMomentum
+      }
+
+      return {
+        channel,
+        cyRev,
+        lyFull,
+        forecast: Math.round(chForecast),
+        share: forecastRev > 0 ? Math.round(chForecast / forecastRev * 1000) / 10 : 0,
+        growth: Math.round(chGrowth * 1000) / 10,
+        momentum: Math.round(chMomentum * 100) / 100,
+      }
+    }).sort((a, b) => b.forecast - a.forecast)
+
     return NextResponse.json({
       forecast: {
         elapsedRev: cyElapsedTotal,
@@ -228,6 +276,7 @@ export async function GET(req: Request) {
         lyFullRev: lyFullTotal,
         growth: Math.round(overallGrowth * 1000) / 10,
         topItems,
+        channelForecasts,
         dailyCurve,
       },
       meta: {

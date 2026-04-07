@@ -7,7 +7,7 @@ import {
   ResponsiveContainer, ReferenceLine, Area,
 } from 'recharts'
 import { cn } from '@/lib/utils'
-import { BRAND_TABS, BRAND_COLORS } from '@/lib/constants'
+import { BRAND_TABS, BRAND_COLORS, brandNameToCode } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTargetData } from '@/hooks/useTargetData'
 
@@ -44,13 +44,23 @@ export default function ForecastPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // 목표 금액
+  // 목표 금액 (브랜드 필터 반영)
   const monthTarget = useMemo(() => {
     if (!data?.meta) return 0
     const now = new Date()
     const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-    return targets.filter(t => t.yyyymm === yyyymm).reduce((s, t) => s + t.target, 0)
-  }, [data, targets])
+    const brandCodes = brand === 'all' ? null : (allowedBrands && brand === 'all' ? allowedBrands : [brand])
+    return targets
+      .filter(t => {
+        if (t.yyyymm !== yyyymm) return false
+        if (brandCodes) {
+          const tCode = brandNameToCode(t.brandnm)
+          if (!tCode || !brandCodes.includes(tCode)) return false
+        }
+        return true
+      })
+      .reduce((s, t) => s + t.target, 0)
+  }, [data, targets, brand, allowedBrands])
 
   const f = data?.forecast
   const m = data?.meta
@@ -296,44 +306,53 @@ export default function ForecastPage() {
               </div>
             </div>
 
-            {/* 일별 매출 상세 */}
+            {/* 채널별 예상 기여 */}
             <div className="bg-white rounded-xl border border-surface-border shadow-sm">
               <div className="px-4 py-3 border-b border-surface-border">
-                <h3 className="text-sm font-semibold text-gray-700">일별 매출 상세</h3>
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+                  <BarChart3 size={14} className="text-gray-400" /> 채널별 예상 기여
+                </h3>
               </div>
               <div className="overflow-auto" style={{ maxHeight: 400 }}>
                 <table className="w-full text-[11px]">
                   <thead className="bg-surface-subtle sticky top-0">
                     <tr className="border-b border-surface-border text-gray-400 font-semibold">
-                      <th className="text-center px-2 py-2">일</th>
-                      <th className="text-center px-2 py-2">요일</th>
-                      <th className="text-right px-2 py-2">금년</th>
-                      <th className="text-right px-2 py-2">전년</th>
-                      <th className="text-right px-2 py-2">YoY</th>
+                      <th className="text-left px-3 py-2">채널</th>
+                      <th className="text-right px-2 py-2">경과 매출</th>
+                      <th className="text-right px-2 py-2">예상 매출</th>
+                      <th className="text-right px-2 py-2">비중</th>
+                      <th className="text-right px-2 py-2">성장률</th>
+                      <th className="text-right px-2 py-2">모멘텀</th>
+                      <th className="text-right px-2 py-2">전년동월</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {chartData.map((d, i) => {
-                      const dow = ['일', '월', '화', '수', '목', '금', '토']
-                      const date = new Date(parseInt(m.asOfDate.slice(0, 4)), parseInt(m.asOfDate.slice(4, 6)) - 1, d.day)
-                      const dayName = dow[date.getDay()]
-                      const isWeekend = date.getDay() === 0 || date.getDay() === 6
-                      const isFuture = d.day > m.daysElapsed
-                      const yoy = d.cy && d.ly ? Math.round((d.cy - d.ly) / d.ly * 100) : null
+                    {f.channelForecasts?.map((ch: any, i: number) => {
+                      const vsLy = ch.lyFull > 0 ? Math.round((ch.forecast - ch.lyFull) / ch.lyFull * 100) : null
                       return (
-                        <tr key={d.day} className={cn('border-b border-surface-border/50',
-                          isFuture ? 'bg-gray-50/50 text-gray-300' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30')}>
-                          <td className="px-2 py-1.5 text-center font-mono text-gray-500">{d.day}</td>
-                          <td className={cn('px-2 py-1.5 text-center', isWeekend ? 'text-red-400 font-semibold' : 'text-gray-500')}>{dayName}</td>
-                          <td className="px-2 py-1.5 text-right font-mono font-semibold text-gray-800">
-                            {d.cy != null ? fmtM(d.cy) : '—'}
-                          </td>
-                          <td className="px-2 py-1.5 text-right font-mono text-gray-500">
-                            {d.ly != null ? fmtM(d.ly) : '—'}
-                          </td>
+                        <tr key={ch.channel} className={cn('border-b border-surface-border/50', i % 2 === 0 ? 'bg-white' : 'bg-gray-50/30')}>
+                          <td className="px-3 py-1.5 font-medium text-gray-800">{ch.channel}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-gray-600">{fmtM(ch.cyRev)}</td>
+                          <td className="px-2 py-1.5 text-right font-mono font-semibold text-blue-600">{fmtM(ch.forecast)}</td>
+                          <td className="px-2 py-1.5 text-right font-mono text-gray-500">{ch.share}%</td>
                           <td className={cn('px-2 py-1.5 text-right font-mono font-semibold',
-                            yoy === null ? 'text-gray-300' : yoy >= 0 ? 'text-emerald-600' : 'text-red-500')}>
-                            {yoy !== null ? `${yoy >= 0 ? '+' : ''}${yoy}%` : '—'}
+                            ch.growth >= 100 ? 'text-emerald-600' : 'text-red-500')}>
+                            {ch.growth >= 100 ? '+' : ''}{Math.round(ch.growth - 100)}%
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            <span className={cn('px-1.5 py-0.5 rounded-full text-[9px] font-semibold',
+                              ch.momentum >= 1.1 ? 'bg-emerald-100 text-emerald-700' :
+                              ch.momentum >= 0.95 ? 'bg-gray-100 text-gray-600' :
+                              'bg-red-100 text-red-700')}>
+                              {ch.momentum >= 1 ? '+' : ''}{Math.round((ch.momentum - 1) * 100)}%
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            {vsLy !== null ? (
+                              <span className={cn('font-mono font-semibold', vsLy >= 0 ? 'text-emerald-600' : 'text-red-500')}>
+                                {vsLy >= 0 ? '+' : ''}{vsLy}%
+                              </span>
+                            ) : '—'}
                           </td>
                         </tr>
                       )

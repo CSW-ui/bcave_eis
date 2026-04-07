@@ -239,14 +239,14 @@ export default function PeriodPage() {
     return (
     <>
       <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
-      {/* 점포·비중 */}
+      {/* 점포 */}
       <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{hideShop ? '—' : (dispShopCnt || '—')}</td>
       <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>
         {hideShop ? '—' : (dispShopCnt && dispLyShopCnt ? <span className={cn('font-semibold', dispShopCnt >= dispLyShopCnt ? 'text-red-500' : 'text-blue-500')}>{dispShopCnt >= dispLyShopCnt ? '+' : ''}{dispShopCnt - dispLyShopCnt}</span> : '—')}
       </td>
-      <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{share !== null ? `${share}%` : ''}</td>
       {/* 총 매출 */}
       <td className={cn(cellBase, 'font-semibold text-gray-900', bg(isTotal))}>{fmtE(a.rev)}</td>
+      <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{share !== null ? `${share}%` : ''}</td>
       <td className={cn(cellBase, 'text-gray-500', bg(isTotal))}>{fmtE(a.lyRev)}</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderYoy(a.yoy)}</td>
       <td className={cn(cellBase, bg(isTotal))}>{renderGap(a.rev, a.lyRev)}</td>
@@ -361,8 +361,8 @@ export default function PeriodPage() {
               <thead>
                 <tr className="bg-gray-800">
                   <th rowSpan={2} className="text-left px-1.5 py-1.5 sticky left-0 bg-gray-800 z-20 w-[160px] min-w-[160px] text-[11px] text-gray-300 font-bold" style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.2)' }}>구분</th>
-                  <th colSpan={3} className="text-center px-1.5 py-1.5 text-[11px] text-gray-300 font-bold border-l border-gray-600">점포</th>
-                  <th colSpan={8} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
+                  <th colSpan={2} className="text-center px-1.5 py-1.5 text-[11px] text-gray-300 font-bold border-l border-gray-600">점포</th>
+                  <th colSpan={9} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>
                   <th colSpan={9} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">정상 매출</th>
                   <th colSpan={7} className="text-center px-1.5 py-1.5 text-[11px] text-amber-300 font-bold border-l border-gray-600">이월 매출</th>
                 </tr>
@@ -370,9 +370,9 @@ export default function PeriodPage() {
                   {/* 점포 */}
                   <th className="text-right px-1.5 py-1.5 border-l border-gray-500">점포수</th>
                   <th className="text-right px-1.5 py-1.5">전년비</th>
-                  <th className="text-right px-1.5 py-1.5">비중</th>
                   {/* 총 매출 */}
                   <th className="text-right px-1.5 py-1.5 border-l border-gray-500">매출</th>
+                  <th className="text-right px-1.5 py-1.5">비중</th>
                   <th className="text-right px-1.5 py-1.5">전년</th>
                   <th className="text-right px-1.5 py-1.5">신장률</th>
                   <th className="text-right px-1.5 py-1.5">GAP</th>

@@ -222,15 +222,17 @@ export default function PeriodPage() {
     if (ly === 0 && cy === 0) return '—'
     return <span className={cn('font-mono', gap >= 0 ? 'text-red-500' : 'text-blue-500')}>{gap >= 0 ? '+' : ''}{fmtE(gap)}</span>
   }
-  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean, totalRev?: number) => {
+  const HIDE_SHOP_CHANNELS = ['오프라인 위탁', '온라인B2B', '해외 위탁', '해외 사입']
+  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean, totalRev?: number, channelName?: string) => {
     const share = totalRev && totalRev > 0 ? Math.round(a.rev / totalRev * 1000) / 10 : null
+    const hideShop = channelName && HIDE_SHOP_CHANNELS.includes(channelName)
     return (
     <>
       <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
       {/* 점포·비중 */}
-      <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{a.shopCnt || '—'}</td>
+      <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{hideShop ? '—' : (a.shopCnt || '—')}</td>
       <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>
-        {a.shopCnt && a.lyShopCnt ? <span className={cn('font-semibold', a.shopCnt >= a.lyShopCnt ? 'text-red-500' : 'text-blue-500')}>{a.shopCnt >= a.lyShopCnt ? '+' : ''}{a.shopCnt - a.lyShopCnt}</span> : '—'}
+        {hideShop ? '—' : (a.shopCnt && a.lyShopCnt ? <span className={cn('font-semibold', a.shopCnt >= a.lyShopCnt ? 'text-red-500' : 'text-blue-500')}>{a.shopCnt >= a.lyShopCnt ? '+' : ''}{a.shopCnt - a.lyShopCnt}</span> : '—')}
       </td>
       <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>{share !== null ? `${share}%` : ''}</td>
       {/* 총 매출 */}
@@ -438,7 +440,7 @@ export default function PeriodPage() {
                                   <div style={{ paddingLeft: (indent + 2) * 16 }}>
                                     <span className="text-[11px] text-gray-600">{ch.channel}</span>
                                   </div>,
-                                  ch.agg, false, secAgg.rev,
+                                  ch.agg, false, secAgg.rev, ch.channel,
                                 )}
                               </tr>
                             ))}

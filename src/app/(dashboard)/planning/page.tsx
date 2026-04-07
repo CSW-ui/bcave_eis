@@ -225,9 +225,8 @@ export default function PlanningDashboard() {
     const totalInvTagAmt = items.reduce((s, i) => s + i.invTagAmt, 0)
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
     const totalOrdTagAmt = items.reduce((s, i) => s + i.ordTagAmt, 0)
-    const totalOrdQty = items.reduce((s, i) => s + i.ordQty, 0)
 
-    const salesRate = totalOrdQty > 0 ? Math.round(totalSaleQty / totalOrdQty * 1000) / 10 : 0
+    const salesRate = totalInQty > 0 ? Math.round(totalSaleQty / totalInQty * 1000) / 10 : 0
     const dcRate = totalSaleTagAmt > 0 ? Math.round((1 - totalSalePriceAmt / totalSaleTagAmt) * 1000) / 10 : 0
     const cogsRate = totalSaleAmt > 0 ? Math.round(totalCostAmt / totalSaleAmt * 1000) / 10 : 0
 
@@ -249,9 +248,8 @@ export default function PlanningDashboard() {
     const totalSkus = items.reduce((s, i) => s + i.skuCnt, 0)
     const totalInvTagAmt = items.reduce((s, i) => s + i.invTagAmt, 0)
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
-    const totalOrdQty = items.reduce((s, i) => s + i.ordQty, 0)
 
-    const salesRate = totalOrdQty > 0 ? Math.round(totalSaleQty / totalOrdQty * 1000) / 10 : 0
+    const salesRate = totalInQty > 0 ? Math.round(totalSaleQty / totalInQty * 1000) / 10 : 0
     const dcRate = totalSaleTagAmt > 0 ? Math.round((1 - totalSalePriceAmt / totalSaleTagAmt) * 1000) / 10 : 0
     const cogsRate = totalSaleAmt > 0 ? Math.round(totalCostAmt / totalSaleAmt * 1000) / 10 : 0
 
@@ -275,12 +273,12 @@ export default function PlanningDashboard() {
     const apSale = sum(ap, 'saleAmt'); const gdSale = sum(gd, 'saleAmt')
     const apOrd = sum(ap, 'ordTagAmt'); const gdOrd = sum(gd, 'ordTagAmt')
     const apInv = sum(ap, 'invTagAmt'); const gdInv = sum(gd, 'invTagAmt')
-    const apOrdQty = sum(ap, 'ordQty'); const gdOrdQty = sum(gd, 'ordQty')
+    const apInQty = sum(ap, 'inQty'); const gdInQty = sum(gd, 'inQty')
     const apSaleQty = sum(ap, 'saleQty'); const gdSaleQty = sum(gd, 'saleQty')
     const apTag = sum(ap, 'tagAmt'); const gdTag = sum(gd, 'tagAmt')
     const apSalePrice = sum(ap, 'salePriceAmt'); const gdSalePrice = sum(gd, 'salePriceAmt')
-    const apSalesRate = apOrdQty > 0 ? Math.round(apSaleQty / apOrdQty * 1000) / 10 : 0
-    const gdSalesRate = gdOrdQty > 0 ? Math.round(gdSaleQty / gdOrdQty * 1000) / 10 : 0
+    const apSalesRate = apInQty > 0 ? Math.round(apSaleQty / apInQty * 1000) / 10 : 0
+    const gdSalesRate = gdInQty > 0 ? Math.round(gdSaleQty / gdInQty * 1000) / 10 : 0
     const apDc = apTag > 0 ? Math.round((1 - apSalePrice / apTag) * 1000) / 10 : 0
     const gdDc = gdTag > 0 ? Math.round((1 - gdSalePrice / gdTag) * 1000) / 10 : 0
 

@@ -104,8 +104,8 @@ export default function ItemDetailPage() {
       ca: a.reduce((s:number,r:any)=>s+r.costAmt,0),
     })
     const cy = s(styles); const ly = s(lyStyles)
-    const st = cy.oq>0 ? Math.round(cy.sq/cy.oq*1000)/10 : 0
-    const lst = ly.oq>0 ? Math.round(ly.sq/ly.oq*1000)/10 : 0
+    const st = cy.iq>0 ? Math.round(cy.sq/cy.iq*1000)/10 : 0
+    const lst = ly.iq>0 ? Math.round(ly.sq/ly.iq*1000)/10 : 0
     const ir = cy.oq>0 ? Math.round(cy.iq/cy.oq*1000)/10 : 0
     const lir = ly.oq>0 ? Math.round(ly.iq/ly.oq*1000)/10 : 0
     const dc = styles.length ? Math.round(styles.reduce((s:number,r:any)=>s+r.dcRate,0)/styles.length*10)/10 : 0

@@ -179,7 +179,7 @@ export async function GET(req: Request) {
           costAmt,
           cogsRate: saleAmt > 0 ? Math.round(costAmt / saleAmt * 1000) / 10 : 0,
           shopInv, whAvail, totalInv,
-          sellThrough: ordQty > 0 ? Math.round(saleQty / ordQty * 1000) / 10 : 0,
+          sellThrough: inQty > 0 ? Math.round(saleQty / inQty * 1000) / 10 : 0,
           cwAmt: Number(r.CW_AMT) || 0,
           cwQty: Number(r.CW_QTY) || 0,
           pwAmt: Number(r.PW_AMT) || 0,

@@ -374,8 +374,8 @@ export async function GET(req: Request) {
       const shopAvailQty = Number(shopInv?.SHOP_AVAIL || 0)
       const whAvailQty = Number(whInv?.WH_AVAIL || 0)
       const totalInv = shopInvQty + whAvailQty
-      // 판매율: 판매수량 / 발주수량 (발주 기준)
-      const salesRate = ordQty > 0 ? (saleQty / ordQty) * 100 : 0
+      // 판매율: 판매수량 / 입고수량 (입고 기준)
+      const salesRate = inQty > 0 ? (saleQty / inQty) * 100 : 0
       const avgTag = Math.round(Number(item.AVG_TAG))
       const avgCost = Math.round(Number(item.AVG_COST))
       const dcRate = tagAmt > 0 ? (1 - salePriceAmt / tagAmt) * 100 : 0
@@ -448,9 +448,9 @@ export async function GET(req: Request) {
     const totalInvTagAmt = items.reduce((s, i) => s + i.invTagAmt, 0)
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
 
-    // 판매율 = 판매수량 / 발주수량
-    const overallSalesRate = totalOrdQty > 0
-      ? Math.round((totalSaleQty / totalOrdQty) * 1000) / 10 : 0
+    // 판매율 = 판매수량 / 입고수량
+    const overallSalesRate = totalInQty > 0
+      ? Math.round((totalSaleQty / totalInQty) * 1000) / 10 : 0
     const overallInboundRate = totalOrdQty > 0
       ? Math.round((totalInQty / totalOrdQty) * 1000) / 10 : 0
     const overallDcRate = totalSaleTagAmt > 0

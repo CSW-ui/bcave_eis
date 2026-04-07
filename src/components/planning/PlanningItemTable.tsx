@@ -54,8 +54,8 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
     it:a.it+i.invTagAmt,ic:a.ic+i.invCostAmt,
   }),{sc:0,sk:0,oq:0,ot:0,oc:0,iq:0,ia:0,sq:0,sa:0,ta:0,sp:0,ca:0,cw:0,pw:0,cc:0,ma:0,mq:0,si:0,wh:0,ti:0,it:0,ic:0})
   const t=s(items),ct=s(compItems??[])
-  const tSR=t.oq>0?Math.round(t.sq/t.oq*1000)/10:0
-  const ctSR=ct.oq>0?Math.round(ct.sq/ct.oq*1000)/10:0
+  const tSR=t.iq>0?Math.round(t.sq/t.iq*1000)/10:0
+  const ctSR=ct.iq>0?Math.round(ct.sq/ct.iq*1000)/10:0
   const tIR=t.oq>0?Math.round(t.iq/t.oq*1000)/10:0
   const tDC=t.ta>0?Math.round((1-t.sp/t.ta)*1000)/10:0
   const ctDC=ct.ta>0?Math.round((1-ct.sp/ct.ta)*1000)/10:0

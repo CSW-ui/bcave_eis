@@ -120,7 +120,7 @@ export default function ItemDetailPage() {
       { t:'발주금액', v:fmtW(cy.ot), d:fmtDelta(cy.ot,ly.ot) },
       { t:'입고금액', v:fmtW(cy.ia), d:fmtDelta(cy.ia,ly.ia) },
       { t:'입고율', v:`${ir}%`, d:fmtDeltaPt(ir,lir) },
-      { t:'매출', v:fmtW(cyWeekTotal || cy.sa), d:fmtDelta(cyWeekTotal || cy.sa, lyWeekMatch || ly.sa) },
+      { t:'매출', v:fmtW(cy.sa), d:fmtDelta(cy.sa, ly.sa) },
       { t:'판매율', v:`${st}%`, d:fmtDeltaPt(st,lst) },
       { t:'할인율', v:`${dc}%`, d:fmtDeltaPt(dc,ldc) },
       { t:'매출원가율', v:`${cg}%`, d:fmtDeltaPt(cg,lcg) },

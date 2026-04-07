@@ -162,6 +162,9 @@ export async function GET(req: Request) {
       brandcd: r.brandcd, brandnm: r.brandnm, channel: r.channel,
       // 총 매출
       rev: r.rev, lyRev: r.lyRev, yoy: yoy(r.rev, r.lyRev),
+      dcRate: dc(r.normTag + r.coTag, r.normSale + r.coSale),
+      lyDcRate: dc(r.lyNormTag + r.lyCoTag, r.lyNormSale + r.lyCoSale),
+      cogsRate: cogs(r.cost, r.rev), lyCogsRate: cogs(r.lyCost, r.lyRev),
       // 정상
       normRev: r.normRev, lyNormRev: r.lyNormRev, normYoy: yoy(r.normRev, r.lyNormRev),
       normDcRate: dc(r.normTag, r.normSale), lyNormDcRate: dc(r.lyNormTag, r.lyNormSale),

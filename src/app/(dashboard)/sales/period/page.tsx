@@ -216,7 +216,7 @@ export default function PeriodPage() {
 
   const filterRowsByGroup = (rows: ChannelRow[]) => rows.filter(r => matchesChannelFilter(r.channel))
 
-  const [collapsedBrands, setCollapsedBrands] = useState<Set<string>>(new Set(['CO', 'LE', 'WA', 'CK', 'LK']))
+  const [collapsedBrands, setCollapsedBrands] = useState<Set<string>>(new Set(['all', 'adult', 'kids', 'CO', 'LE', 'WA', 'CK', 'LK']))
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const cellBase = 'py-1.5 px-1.5 text-right font-mono text-[11px] whitespace-nowrap'
@@ -420,22 +420,21 @@ export default function PeriodPage() {
 
                   return (
                     <Fragment key={sec.key}>
-                      <tr className={cn('font-semibold',
+                      <tr className={cn('font-semibold cursor-pointer',
                         isTotal ? 'bg-gray-100 border-b-2 border-gray-300' :
                         isGroupSummary ? 'bg-gray-50 border-b-2 border-gray-200' :
                         'bg-white border-b border-gray-200')}
-                        onClick={isBrand ? () => setCollapsedBrands(p => { const n = new Set(p); if (n.has(sec.key)) n.delete(sec.key); else n.add(sec.key); return n }) : undefined}
-                        style={isBrand ? { cursor: 'pointer' } : undefined}>
+                        onClick={() => setCollapsedBrands(p => { const n = new Set(p); if (n.has(sec.key)) n.delete(sec.key); else n.add(sec.key); return n })}>
                         {renderRow(
                           <div className="flex items-center gap-1.5" style={{ paddingLeft: indent * 16 }}>
-                            {isBrand && (isBrandCollapsed ? <ChevronRight size={12} className="text-gray-400" /> : <ChevronDown size={12} className="text-gray-400" />)}
+                            {isBrandCollapsed ? <ChevronRight size={12} className="text-gray-400" /> : <ChevronDown size={12} className="text-gray-400" />}
                             <span className={cn('font-bold', isTotal ? 'text-gray-900' : isGroupSummary ? 'text-gray-800' : 'text-gray-700')}>{sec.label}</span>
                           </div>,
                           secAgg, isTotal || isGroupSummary, secAgg.rev,
                         )}
                       </tr>
 
-                      {isBrand && !isBrandCollapsed && grouped.map(g => {
+                      {!isBrandCollapsed && grouped.map(g => {
                         const gKey = `${sec.key}::${g.group}`
                         const isOpen = expandedGroups.has(gKey)
                         return (

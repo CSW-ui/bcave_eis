@@ -111,7 +111,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th colSpan={4} className="text-center text-[11px] text-gray-200 font-bold py-1.5">상품</th>
             <th colSpan={5} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
             <th colSpan={9} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
-            <th colSpan={4} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
+            <th colSpan={3} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
             <th colSpan={3} className="text-center text-[11px] text-purple-300 font-bold py-1.5 border-l border-gray-600">주간 실적</th>
             <th colSpan={7} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">재고</th>
           </tr>
@@ -140,7 +140,6 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <H k="monthAmt" l="매출"/>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">YoY</th>
             <H k="monthQty" l="수량"/>
-            <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">YoY</th>
             {/* 주간 */}
             <H k="cwAmt" l="매출"/>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">WoW</th>
@@ -190,7 +189,6 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
                 <td className={cn(cell, 'text-cyan-700 font-semibold')}>{fmtM(r.monthAmt)}</td>
                 <Y c={r.monthAmt} p={p?.monthAmt}/>
                 <td className={cn(cell, 'text-cyan-600')}>{r.monthQty.toLocaleString()}</td>
-                <Y c={r.monthQty} p={p?.monthQty}/>
                 {/* 주간 */}
                 <td className={cn(cell, 'text-purple-700 font-semibold')}>{fmtM(r.cwAmt)}</td>
                 <td className={cn('py-1.5 px-0.5 text-right font-mono text-[10px]',r.wow>=0?'text-emerald-600':'text-red-500')}>{r.pwAmt>0?`${r.wow>=0?'+':''}${r.wow}%`:'—'}</td>
@@ -231,7 +229,6 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <td className="py-1.5 px-1 text-right text-cyan-700">{fmtM(t.ma)}</td>
             <Y c={t.ma} p={ct.ma}/>
             <td className="py-1.5 px-1 text-right">{t.mq.toLocaleString()}</td>
-            <Y c={t.mq} p={ct.mq}/>
             {/* 주간 */}
             <td className="py-1.5 px-1 text-right text-purple-700">{fmtM(t.cw)}</td>
             <td className={cn('py-1.5 px-0.5 text-right font-mono text-[10px]',tWow>=0?'text-emerald-600':'text-red-500')}>{t.pw>0?`${tWow>=0?'+':''}${tWow}%`:'—'}</td>

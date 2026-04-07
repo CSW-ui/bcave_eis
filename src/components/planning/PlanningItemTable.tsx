@@ -12,7 +12,7 @@ interface PlanningItem {
   ordQty: number; ordTagAmt: number; ordCostAmt: number
   inQty: number; inAmt: number; inboundRate: number
   saleQty: number; saleAmt: number; tagAmt: number; salePriceAmt: number; costAmt: number
-  dcRate: number; cogsRate: number; salesRate: number
+  dcRate: number; domDcRate?: number; cogsRate: number; salesRate: number
   cwAmt: number; pwAmt: number; cwQty: number; cwCost: number; cwCogsRate: number; wow: number
   monthAmt: number; monthQty: number
   shopInv: number; shopAvail?: number; whAvail: number; totalInv: number
@@ -63,6 +63,14 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
   const ctCG=ct.sa>0?Math.round(ct.ca/ct.sa*1000)/10:0
   const tWow=t.pw>0?Math.round((t.cw-t.pw)/t.pw*1000)/10:0
   const tOcR=t.ot>0?Math.round(t.oc/t.ot*1000)/10:0
+  // 해외제외 할인율 합계
+  const domDcCalc = (arr: PlanningItem[]) => {
+    let tag=0,sale=0; arr.forEach(r=>{ tag+=(r.domDcRate!=null&&r.dcRate>0)?r.tagAmt*(1-(r.domDcRate/100)/(1-(r.dcRate/100))):0 }); // 간접 역산 불가 — 가중평균 사용
+    let wDom=0,wTot=0; arr.forEach(r=>{ if(r.domDcRate!=null){wDom+=r.domDcRate*r.saleAmt; wTot+=r.saleAmt} })
+    return wTot>0?Math.round(wDom/wTot*10)/10:0
+  }
+  const tDomDC=domDcCalc(items)
+  const ctDomDC=domDcCalc(compItems??[])
 
   const downloadExcel = () => {
     const rows = sorted.map(r => {
@@ -110,7 +118,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
           <tr className="bg-gray-800 border-b-2 border-gray-900">
             <th colSpan={4} className="text-center text-[11px] text-gray-200 font-bold py-1.5">상품</th>
             <th colSpan={5} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
-            <th colSpan={9} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
+            <th colSpan={11} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
             <th colSpan={2} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
             <th colSpan={3} className="text-center text-[11px] text-purple-300 font-bold py-1.5 border-l border-gray-600">주간 실적</th>
             <th colSpan={7} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">재고</th>
@@ -131,6 +139,8 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">YoY</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">GAP</th>
             <H k="dcRate" l="할인율"/>
+            <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
+            <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">해외제외</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">매출원가율</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
@@ -180,6 +190,8 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
                 <G c={r.saleAmt} p={p?.saleAmt}/>
                 <td className="py-1.5 px-1 text-right text-gray-600 text-[10px]">{r.dcRate.toFixed(1)}%</td>
                 <Pt c={r.dcRate} p={p?.dcRate}/>
+                <td className="py-1.5 px-1 text-right text-blue-600 text-[10px]">{(r.domDcRate ?? r.dcRate).toFixed(1)}%</td>
+                <Pt c={r.domDcRate ?? r.dcRate} p={p?.domDcRate ?? p?.dcRate}/>
                 <td className="py-1.5 px-1 text-right text-gray-600 text-[10px]">{r.cogsRate.toFixed(1)}%</td>
                 <Pt c={r.cogsRate} p={p?.cogsRate}/>
                 <td className="py-1.5 px-1 text-right text-[10px]">{r.salesRate}%</td>
@@ -219,6 +231,8 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <G c={t.sa} p={ct.sa}/>
             <td className="py-1.5 px-1 text-right text-[10px]">{tDC}%</td>
             <Pt c={tDC} p={ctDC}/>
+            <td className="py-1.5 px-1 text-right text-blue-600 text-[10px]">{tDomDC}%</td>
+            <Pt c={tDomDC} p={ctDomDC}/>
             <td className="py-1.5 px-1 text-right text-[10px]">{tCG}%</td>
             <Pt c={tCG} p={ctCG}/>
             <td className="py-1.5 px-1 text-right text-[10px]">{tSR}%</td>

@@ -198,11 +198,13 @@ export async function GET(req: Request) {
         ORDER BY SALE_AMT DESC
       `),
 
-      // 8. 할인율용: VW_SALES_VAT 기반 TAG·SALEAMT_VAT_EX
+      // 8. 할인율용: VW_SALES_VAT 기반 TAG·SALEAMT_VAT_EX (전체 + 해외제외)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_AMT,
-          SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT
+          SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT,
+          SUM(CASE WHEN v.SHOPTYPENM != '해외 사입' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as DOM_TAG_AMT,
+          SUM(CASE WHEN v.SHOPTYPENM != '해외 사입' THEN v.SALEAMT_VAT_EX ELSE 0 END) as DOM_SALE_PRICE_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
@@ -379,6 +381,9 @@ export async function GET(req: Request) {
       const avgTag = Math.round(Number(item.AVG_TAG))
       const avgCost = Math.round(Number(item.AVG_COST))
       const dcRate = tagAmt > 0 ? (1 - salePriceAmt / tagAmt) * 100 : 0
+      const domTagAmt = Number(dc?.DOM_TAG_AMT || 0)
+      const domSalePriceAmt = Number(dc?.DOM_SALE_PRICE_AMT || 0)
+      const domDcRate = domTagAmt > 0 ? (1 - domSalePriceAmt / domTagAmt) * 100 : 0
       const cogsRate = saleAmt > 0 ? (costAmt / saleAmt) * 100 : 0
       // 입고율: 입고수량 / 발주수량
       const inboundRate = ordQty > 0 ? (inQty / ordQty) * 100 : 0
@@ -411,6 +416,7 @@ export async function GET(req: Request) {
         salePriceAmt,
         costAmt,
         dcRate: Math.round(dcRate * 10) / 10,
+        domDcRate: Math.round(domDcRate * 10) / 10,
         cogsRate: Math.round(cogsRate * 10) / 10,
         salesRate: Math.round(salesRate * 10) / 10,  // 판매율 (입고 기준)
         cwAmt, pwAmt, pw2Amt, cwQty, cwCost,

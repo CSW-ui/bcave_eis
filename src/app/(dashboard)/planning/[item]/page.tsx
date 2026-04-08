@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts'
-import { ArrowLeft, RefreshCw, Package, X } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Package, X, ArrowUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BRAND_COLORS, BRAND_TABS } from '@/lib/constants'
 import { fmtW, fmtDelta, fmtDeltaPt } from '@/lib/formatters'
@@ -37,6 +37,11 @@ export default function ItemDetailPage() {
 
   const [styles, setStyles] = useState<any[]>([])
   const [lyStyles, setLyStyles] = useState<any[]>([])
+
+  // 테이블 정렬
+  const [tblSortKey, setTblSortKey] = useState<string>('saleAmt')
+  const [tblSortDir, setTblSortDir] = useState<'asc' | 'desc'>('desc')
+  const toggleTblSort = (k: string) => { if (tblSortKey === k) setTblSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setTblSortKey(k); setTblSortDir('desc') } }
   const [channels, setChannels] = useState<any[]>([])
   const [weeks, setWeeks] = useState<any[]>([])
   const [weekMeta, setWeekMeta] = useState<{ cyTotal: number; lyTotal: number } | null>(null)
@@ -128,6 +133,14 @@ export default function ItemDetailPage() {
   }, [styles, lyStyles, weeks, maxCyWeek, weekMeta])
 
   const chTotal = channels.reduce((s:number, c:any) => s + c.amt, 0)
+
+  const sortedStyles = useMemo(() => {
+    const mul = tblSortDir === 'desc' ? -1 : 1
+    return [...styles].sort((a, b) => {
+      const av = a[tblSortKey] ?? 0, bv = b[tblSortKey] ?? 0
+      return (av - bv) * mul
+    })
+  }, [styles, tblSortKey, tblSortDir])
   const hasFilter = selWeek || selStyle || selChannel
 
   const clearFilters = () => { setSelWeek(null); setSelStyle(null); setSelChannel(null) }
@@ -278,7 +291,7 @@ export default function ItemDetailPage() {
           </h3>
         </div>
         <div className="overflow-auto" style={{ maxHeight: 500 }}>
-          {styles.length > 0 ? (
+          {sortedStyles.length > 0 ? (
             <table className="w-full text-[10px] border-collapse" style={{minWidth:1350}}>
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-800 border-b-2 border-gray-900">
@@ -289,30 +302,40 @@ export default function ItemDetailPage() {
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1">재고</th>
                 </tr>
                 <tr className="bg-gray-50 border-b border-surface-border text-gray-400 font-semibold">
-                  <th className="text-left px-3 py-2">코드</th>
-                  <th className="text-left px-2 py-2">상품명</th>
-                  <th className="text-center px-1 py-2">BR</th>
-                  <th className="text-right px-1 py-2">정가</th>
-                  <th className="text-right px-1 py-2">제조원가</th>
-                  <th className="text-right px-1 py-2">제조원가율</th>
-                  <th className="text-right px-1 py-2 border-l border-gray-200">발주수량</th>
-                  <th className="text-right px-1 py-2">입고수량</th>
-                  <th className="text-right px-1 py-2">입고율</th>
-                  <th className="text-right px-1 py-2 border-l border-gray-200">판매수량</th>
-                  <th className="text-right px-1 py-2">매출</th>
-                  <th className="text-right px-1 py-2">매출원가율</th>
-                  <th className="text-right px-1 py-2">할인율</th>
-                  <th className="text-right px-1 py-2">판매율</th>
-                  <th className="text-right px-1 py-2 border-l border-gray-200">매출</th>
-                  <th className="text-right px-1 py-2">수량</th>
-                  <th className="text-right px-1 py-2">WoW</th>
-                  <th className="text-right px-1 py-2 border-l border-gray-200">매장</th>
-                  <th className="text-right px-1 py-2">창고</th>
-                  <th className="text-right px-2 py-2">합계</th>
+                  {[
+                    { k: 'stylecd', l: '코드', a: 'left', px: 'px-3' },
+                    { k: 'stylenm', l: '상품명', a: 'left', px: 'px-2' },
+                    { k: 'brandcd', l: 'BR', a: 'center' },
+                    { k: 'tagPrice', l: '정가' },
+                    { k: 'prodCost', l: '제조원가' },
+                    { k: '_costRate', l: '제조원가율' },
+                    { k: 'ordQty', l: '발주수량', bl: true },
+                    { k: 'inQty', l: '입고수량' },
+                    { k: 'inboundRate', l: '입고율' },
+                    { k: 'saleQty', l: '판매수량', bl: true },
+                    { k: 'saleAmt', l: '매출' },
+                    { k: 'cogsRate', l: '매출원가율' },
+                    { k: 'dcRate', l: '할인율' },
+                    { k: 'sellThrough', l: '판매율' },
+                    { k: 'cwAmt', l: '매출', bl: true },
+                    { k: 'cwQty', l: '수량' },
+                    { k: 'wow', l: 'WoW' },
+                    { k: 'shopInv', l: '매장', bl: true },
+                    { k: 'whAvail', l: '창고' },
+                    { k: 'totalInv', l: '합계', px: 'px-2' },
+                  ].map(col => (
+                    <th key={col.k} className={cn('py-2 text-right cursor-pointer hover:text-gray-900 whitespace-nowrap',
+                      col.px || 'px-1', col.a === 'left' && 'text-left', col.a === 'center' && 'text-center', col.bl && 'border-l border-gray-200')}
+                      onClick={() => toggleTblSort(col.k)}>
+                      <span className="inline-flex items-center gap-px">{col.l}
+                        <ArrowUpDown size={8} className={cn(tblSortKey === col.k ? 'opacity-100 text-brand-accent' : 'opacity-20')} />
+                      </span>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {styles.map((s:any,i:number) => {
+                {sortedStyles.map((s:any,i:number) => {
                   const isSel = selStyle?.code === s.stylecd
                   return (
                     <tr key={s.stylecd}

@@ -49,7 +49,7 @@ export default function ForecastPage() {
     if (!data?.meta) return 0
     const now = new Date()
     const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-    const brandCodes = brand === 'all' ? null : (allowedBrands && brand === 'all' ? allowedBrands : [brand])
+    const brandCodes = brand === 'all' ? (allowedBrands ?? null) : [brand]
     return targets
       .filter(t => {
         if (t.yyyymm !== yyyymm) return false
@@ -334,7 +334,7 @@ export default function ForecastPage() {
                       // 채널 목표 매칭
                       const now = new Date()
                       const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
-                      const brandCodes = brand === 'all' ? null : [brand]
+                      const brandCodes = brand === 'all' ? (allowedBrands ?? null) : [brand]
                       const chTarget = targets
                         .filter(t => {
                           if (t.yyyymm !== yyyymm) return false

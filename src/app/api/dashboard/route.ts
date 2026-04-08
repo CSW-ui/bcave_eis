@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   const brandFilter = BRAND_FILTER
 
   try {
-    const [kpiRaw, monthlyRaw, brandRaw, brandMonthRaw, yearlySales, dcKpiRaw, dcMonthlyRaw, costMonthlyRaw, yearlyInbound, baseInvRaw, yearlyDcRate, currentInvRaw, lyCmCostRaw] = await Promise.all([
+    const [kpiRaw, monthlyRaw, brandRaw, brandMonthRaw, yearlySales, dcKpiRaw, dcMonthlyRaw, costMonthlyRaw, yearlyInbound, baseInvRaw, yearlyDcRate, currentInvRaw, lyCmCostRaw, normCoRaw, lyNormCoRaw] = await Promise.all([
       // 1. KPI: 이번달/지난달/전년동월 매출·수량
       snowflakeQuery<Record<string, string>>(`
         SELECT
@@ -242,6 +242,56 @@ export async function GET(req: NextRequest) {
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
           AND v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}'
       `),
+
+      // 14. 정상/이월 분리 YTD (금년)
+      (() => {
+        const yr = String(curYear).slice(2)
+        const seasonList = curMonth <= 6
+          ? `('봄','여름','상반기','스탠다드')`
+          : `('가을','겨울','하반기','스탠다드')`
+        const isNorm = `(si.YEARCD = '${yr}' AND si.SEASONNM IN ${seasonList})`
+        return snowflakeQuery<Record<string, string>>(`
+          SELECT
+            SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
+            SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_REV,
+            SUM(CASE WHEN ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS NORM_COST,
+            SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS CO_COST,
+            SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS NORM_TAG,
+            SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_SALE,
+            SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CO_TAG,
+            SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_SALE
+          FROM ${SALES_VIEW} v
+          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+          LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
+          WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
+            AND v.SALEDT >= '${curYear}0101' AND v.SALEDT <= '${cmEnd}'
+        `)
+      })(),
+
+      // 15. 정상/이월 분리 YTD (전년 동기간)
+      (() => {
+        const lyYr = String(curYear - 1).slice(2)
+        const seasonList = curMonth <= 6
+          ? `('봄','여름','상반기','스탠다드')`
+          : `('가을','겨울','하반기','스탠다드')`
+        const isNorm = `(si.YEARCD = '${lyYr}' AND si.SEASONNM IN ${seasonList})`
+        return snowflakeQuery<Record<string, string>>(`
+          SELECT
+            SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
+            SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_REV,
+            SUM(CASE WHEN ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS NORM_COST,
+            SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS CO_COST,
+            SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS NORM_TAG,
+            SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_SALE,
+            SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CO_TAG,
+            SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_SALE
+          FROM ${SALES_VIEW} v
+          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+          LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
+          WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
+            AND v.SALEDT >= '${curYear - 1}0101' AND v.SALEDT <= '${lyEnd}'
+        `)
+      })(),
     ])
 
     const k = kpiRaw[0] || {}
@@ -416,7 +466,26 @@ export async function GET(req: NextRequest) {
       return { year: yr, baseTag, baseCost, baseQty, inTag, inCost, inQty, saleTag, saleQty, saleAmt, dcRate, cogsRate, remTag, remCost, remQty }
     })
 
-    return NextResponse.json({ kpi, monthly, brands, brandMonth, invTable, ytd })
+    // 정상/이월 비중
+    const nc = normCoRaw[0] || {}
+    const lnc = lyNormCoRaw[0] || {}
+    const N = (v: any) => Number(v) || 0
+    const normCo = {
+      normRev: N(nc.NORM_REV), coRev: N(nc.CO_REV),
+      normRatio: (N(nc.NORM_REV) + N(nc.CO_REV)) > 0 ? Math.round(N(nc.NORM_REV) / (N(nc.NORM_REV) + N(nc.CO_REV)) * 1000) / 10 : 0,
+      normDcRate: N(nc.NORM_TAG) > 0 ? Math.round((1 - N(nc.NORM_SALE) / N(nc.NORM_TAG)) * 1000) / 10 : 0,
+      coDcRate: N(nc.CO_TAG) > 0 ? Math.round((1 - N(nc.CO_SALE) / N(nc.CO_TAG)) * 1000) / 10 : 0,
+      normCogsRate: N(nc.NORM_REV) > 0 ? Math.round(N(nc.NORM_COST) / N(nc.NORM_REV) * 1000) / 10 : 0,
+      coCogsRate: N(nc.CO_REV) > 0 ? Math.round(N(nc.CO_COST) / N(nc.CO_REV) * 1000) / 10 : 0,
+      // 전년
+      lyNormRatio: (N(lnc.NORM_REV) + N(lnc.CO_REV)) > 0 ? Math.round(N(lnc.NORM_REV) / (N(lnc.NORM_REV) + N(lnc.CO_REV)) * 1000) / 10 : 0,
+      lyNormDcRate: N(lnc.NORM_TAG) > 0 ? Math.round((1 - N(lnc.NORM_SALE) / N(lnc.NORM_TAG)) * 1000) / 10 : 0,
+      lyCoDcRate: N(lnc.CO_TAG) > 0 ? Math.round((1 - N(lnc.CO_SALE) / N(lnc.CO_TAG)) * 1000) / 10 : 0,
+      lyNormCogsRate: N(lnc.NORM_REV) > 0 ? Math.round(N(lnc.NORM_COST) / N(lnc.NORM_REV) * 1000) / 10 : 0,
+      lyCoCogsRate: N(lnc.CO_REV) > 0 ? Math.round(N(lnc.CO_COST) / N(lnc.CO_REV) * 1000) / 10 : 0,
+    }
+
+    return NextResponse.json({ kpi, monthly, brands, brandMonth, invTable, ytd, normCo })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

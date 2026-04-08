@@ -166,24 +166,60 @@ export default function DashboardPage() {
         const achPct = achTarget > 0 ? Math.round(y.achRev / achTarget * 100) : null
         const cogsChg = Math.round((y.cogsRate - y.lyCogsRate) * 10) / 10
         const dcChg = Math.round((y.dcRate - y.lyDcRate) * 10) / 10
-        const cards = [
-          { label: 'YTD 매출', value: fmtW(y.rev), sub: `전년동기 ${fmtW(y.lyRev)}`, badge: y.yoy >= 0 ? `+${y.yoy}%` : `${y.yoy}%`, positive: y.yoy >= 0 },
-          ...(achPct !== null ? [{ label: `${curMonth - 1}월까지 달성률`, value: `${achPct}%`, sub: `목표 ${fmtW(achTarget)}`, badge: `달성 ${fmtW(y.achRev)}`, positive: achPct >= 90 }] : []),
-          { label: 'YTD 매출원가율', value: `${y.cogsRate}%`, sub: `전년동기 ${y.lyCogsRate}%`, badge: cogsChg !== 0 ? `${cogsChg > 0 ? '+' : ''}${cogsChg}p` : '0p', positive: cogsChg <= 0 },
-          { label: 'YTD 할인율', value: `${y.dcRate}%`, sub: `전년동기 ${y.lyDcRate}%`, badge: dcChg !== 0 ? `${dcChg > 0 ? '+' : ''}${dcChg}p` : '0p', positive: dcChg <= 0 },
-        ]
+        const nc = data?.normCo
+        const ptFmt = (d: number) => d === 0 ? '0p' : `${d > 0 ? '+' : ''}${d}p`
+        const ptCls = (d: number, lowerBetter = false) => d === 0 ? 'text-gray-400' : (lowerBetter ? (d < 0 ? 'text-emerald-600' : 'text-red-500') : (d > 0 ? 'text-emerald-600' : 'text-red-500'))
+
         return (
-          <div className={cn('grid gap-3', achPct !== null ? 'grid-cols-4' : 'grid-cols-3')}>
-            {cards.map(c => (
-              <div key={c.label} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{c.label}</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{c.value}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{c.sub}</p>
-                {c.badge && (
-                  <span className={cn('text-[10px] font-semibold', c.positive ? 'text-emerald-600' : 'text-red-500')}>{c.badge}</span>
-                )}
+          <div className={cn('grid gap-3', achPct !== null ? 'grid-cols-5' : 'grid-cols-4')}>
+            {/* YTD 매출 */}
+            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">YTD 매출</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(y.rev)}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {fmtW(y.lyRev)}</p>
+              <span className={cn('text-[10px] font-semibold', y.yoy >= 0 ? 'text-emerald-600' : 'text-red-500')}>{y.yoy >= 0 ? '+' : ''}{y.yoy}%</span>
+            </div>
+            {/* 달성률 */}
+            {achPct !== null && (
+              <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{curMonth - 1}월까지 달성률</p>
+                <p className={cn('text-xl font-bold mt-1', achPct >= 90 ? 'text-emerald-600' : 'text-red-500')}>{achPct}%</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">목표 {fmtW(achTarget)}</p>
+                <span className="text-[10px] text-gray-500">달성 {fmtW(y.achRev)}</span>
               </div>
-            ))}
+            )}
+            {/* 정상/이월 비중 */}
+            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">정상/이월 비중</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{nc?.normRatio ?? 0}%</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {nc?.lyNormRatio ?? 0}%</p>
+              <span className={cn('text-[10px] font-semibold', ptCls(Math.round(((nc?.normRatio ?? 0) - (nc?.lyNormRatio ?? 0)) * 10) / 10))}>{ptFmt(Math.round(((nc?.normRatio ?? 0) - (nc?.lyNormRatio ?? 0)) * 10) / 10)}</span>
+              <p className="text-[9px] text-gray-400 mt-1">정상 {fmtW(nc?.normRev ?? 0)} · 이월 {fmtW(nc?.coRev ?? 0)}</p>
+            </div>
+            {/* YTD 매출원가율 + 정상/이월 */}
+            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">YTD 매출원가율</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{y.cogsRate}%</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {y.lyCogsRate}%</p>
+              <span className={cn('text-[10px] font-semibold', ptCls(cogsChg, true))}>{ptFmt(cogsChg)}</span>
+              {nc && (
+                <p className="text-[9px] text-gray-400 mt-1 border-t border-gray-100 pt-1">
+                  정상 <span className="text-gray-600 font-semibold">{nc.normCogsRate}%</span> · 이월 <span className="text-gray-600 font-semibold">{nc.coCogsRate}%</span>
+                </p>
+              )}
+            </div>
+            {/* YTD 할인율 + 정상/이월 */}
+            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">YTD 할인율</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{y.dcRate}%</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {y.lyDcRate}%</p>
+              <span className={cn('text-[10px] font-semibold', ptCls(dcChg, true))}>{ptFmt(dcChg)}</span>
+              {nc && (
+                <p className="text-[9px] text-gray-400 mt-1 border-t border-gray-100 pt-1">
+                  정상 <span className="text-gray-600 font-semibold">{nc.normDcRate}%</span> · 이월 <span className="text-gray-600 font-semibold">{nc.coDcRate}%</span>
+                </p>
+              )}
+            </div>
           </div>
         )
       })()}

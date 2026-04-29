@@ -122,11 +122,10 @@ export default function CarryoverPage() {
       const res = await fetch(`/api/planning/carryover?${params}`)
       const json = await res.json()
       if (res.ok) {
+        if (json.kpi) setData((prev: any) => prev ? { ...prev, kpi: json.kpi } : prev)
         setChannels(json.channels ?? [])
         setFilteredStaleStyles(json.staleStyles ?? [])
-        // 품목: 연도 필터 시 업데이트, 품목 클릭 시에는 유지
         if (!item) setFilteredItems(json.items ?? [])
-        // 연도: 품목 필터 시 업데이트, 연도 클릭 시에는 유지
         if (!year) setAllYears(json.years ?? [])
       }
     } catch {}

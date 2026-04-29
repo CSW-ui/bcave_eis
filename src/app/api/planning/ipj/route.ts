@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     : `AND v.SALEDT >= '${lyFromDt}'`
 
   try {
-    const [orderData, inboundData, salesData, salesOnlineData, invData, whInvData, carryoverSalesData, carryoverOnlineData, lyOrderData, coInvData, lySalesData, lyCoSalesData, overseasData, lyOverseasData, dcRateData, lyDcRateData, coBaseInvData, lyInboundData] = await Promise.all([
+    const [orderData, inboundData, salesData, salesOnlineData, invData, whInvData, carryoverSalesData, carryoverOnlineData, lyOrderData, coInvData, lySalesData, lyCoSalesData, overseasData, lyOverseasData, dcRateData, lyDcRateData, coBaseInvData, lyInboundData, cumSalesData] = await Promise.all([
       // 1. 발주 데이터: 품목별·차수별
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
@@ -327,6 +327,18 @@ export async function GET(req: Request) {
           AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
         GROUP BY si.ITEMNM
       `),
+
+      // 19. 누계 판매수량 (기간 무관, 해외사입 제외)
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.ITEMNM,
+          SUM(v.SALEQTY) as CUM_SALE_QTY
+        FROM BCAVE.SEWON.VW_SALES_VAT v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+          AND v.SHOPTYPENM != '해외 사입'
+        GROUP BY si.ITEMNM
+      `),
     ])
 
     const orderMap = new Map(orderData.map(r => [r.ITEMNM, r]))
@@ -339,6 +351,7 @@ export async function GET(req: Request) {
     const coOlMap = new Map(carryoverOnlineData.map(r => [r.ITEMNM, r]))
     const coBaseInvMap = new Map(coBaseInvData.map(r => [r.ITEMNM, { tagAmt: Number(r.CO_BASE_TAG_AMT) || 0 }]))
     const lyInboundMap = new Map(lyInboundData.map(r => [r.ITEMNM, Number(r.LY_IN_QTY) || 0]))
+    const cumSalesMap = new Map(cumSalesData.map(r => [r.ITEMNM, Number(r.CUM_SALE_QTY) || 0]))
     const lyOrderMap = new Map(lyOrderData.map(r => [r.ITEMNM, r]))
     const coInvMap = new Map(coInvData.map(r => [r.ITEMNM, r]))
     const lySalesMap = new Map(lySalesData.map(r => [r.ITEMNM, r]))
@@ -448,6 +461,11 @@ export async function GET(req: Request) {
       const coBaseTagAmt = coBaseInvMap.get(itemNm)?.tagAmt ?? 0
       // 비율
       const salesRate = (inQty - ovSaleQty) > 0 ? Math.round(saleQty / (inQty - ovSaleQty) * 1000) / 10 : 0
+      const cumSaleQty = cumSalesMap.get(itemNm) ?? 0
+      const cumSalesRate = (() => {
+        const base = inQty - ovSaleQty
+        return base > 0 ? Math.round(cumSaleQty / base * 1000) / 10 : 0
+      })()
       const dcRate = tagAmt > 0 ? Math.round((1 - salePriceAmt / tagAmt) * 1000) / 10 : 0
       const cogsRate = saleAmt > 0 ? Math.round(costAmt / saleAmt * 1000) / 10 : 0
       const onlineRatio = saleAmt > 0 ? Math.round(saleAmtOl / saleAmt * 1000) / 10 : 0
@@ -478,7 +496,7 @@ export async function GET(req: Request) {
         // 이월 재고
         coInvQty, coInvTagAmt, coInvCostAmt, coBaseTagAmt,
         // 비율
-        salesRate, dcRate, cogsRate, firstCostRate, qrCostRate,
+        salesRate, cumSaleQty, cumSalesRate, dcRate, cogsRate, firstCostRate, qrCostRate,
         // 전년 동시즌
         lyOrdTagAmt, lyOrdCostAmt, lyOrdTagQR, lyOrdCostRate,
         // 전년 동기간 매출

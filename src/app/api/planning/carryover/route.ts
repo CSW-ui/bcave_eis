@@ -226,14 +226,15 @@ export async function GET(req: Request) {
       }
     })
 
-    // KPI
-    const totalInv = items.reduce((s, i) => s + i.totalInv, 0)
-    const totalInvAmt = items.reduce((s, i) => s + i.invAmt, 0)
-    const totalCwRev = items.reduce((s, i) => s + i.cwRev, 0)
-    const avgSellThrough = items.length > 0
-      ? Math.round(items.reduce((s, i) => s + i.sellThrough, 0) / items.length * 10) / 10 : 0
+    // KPI — 품목/연도 필터가 있으면 해당 항목만으로 계산
+    const kpiItems = selItem ? items.filter(i => i.item === selItem) : items
+    const totalInv = kpiItems.reduce((s, i) => s + i.totalInv, 0)
+    const totalInvAmt = kpiItems.reduce((s, i) => s + i.invAmt, 0)
+    const totalCwRev = kpiItems.reduce((s, i) => s + i.cwRev, 0)
+    const avgSellThrough = kpiItems.length > 0
+      ? Math.round(kpiItems.reduce((s, i) => s + i.sellThrough, 0) / kpiItems.length * 10) / 10 : 0
     const staleCount = staleStyles.filter(s => s.sellThrough < 10).length
-    const validInvWeeks = items.filter(i => i.invWeeks < 999)
+    const validInvWeeks = kpiItems.filter(i => i.invWeeks < 999)
     const avgInvWeeks = validInvWeeks.length > 0
       ? Math.round(validInvWeeks.reduce((s, i) => s + i.invWeeks, 0) / validInvWeeks.length * 10) / 10 : 0
 
@@ -249,7 +250,7 @@ export async function GET(req: Request) {
     })
 
     return NextResponse.json({
-      kpi: { totalInv, totalInvAmt, totalCwRev, avgSellThrough, staleCount, itemCount: items.length, avgInvWeeks },
+      kpi: { totalInv, totalInvAmt, totalCwRev, avgSellThrough, staleCount, itemCount: kpiItems.length, avgInvWeeks },
       items, channels, staleStyles, years,
     })
   } catch (err) {

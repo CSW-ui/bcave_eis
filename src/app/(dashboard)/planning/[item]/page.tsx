@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine,
 } from 'recharts'
-import { ArrowLeft, RefreshCw, Package, X, ArrowUpDown } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Package, X, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BRAND_COLORS, BRAND_TABS } from '@/lib/constants'
 import { fmtW, fmtDelta, fmtDeltaPt } from '@/lib/formatters'
@@ -38,6 +38,9 @@ export default function ItemDetailPage() {
   const [styles, setStyles] = useState<any[]>([])
   const [lyStyles, setLyStyles] = useState<any[]>([])
 
+  // ST/SKU 단위 토글
+  const [unit, setUnit] = useState<'st' | 'sku'>('st')
+
   // 테이블 정렬
   const [tblSortKey, setTblSortKey] = useState<string>('saleAmt')
   const [tblSortDir, setTblSortDir] = useState<'asc' | 'desc'>('desc')
@@ -45,6 +48,21 @@ export default function ItemDetailPage() {
   const [channels, setChannels] = useState<any[]>([])
   const [weeks, setWeeks] = useState<any[]>([])
   const [weekMeta, setWeekMeta] = useState<{ cyTotal: number; lyTotal: number } | null>(null)
+
+  // 매장 드릴다운
+  const [shopData, setShopData] = useState<{ shop: string; amt: number; qty: number; invQty: number }[]>([])
+  const [shopLoading, setShopLoading] = useState(false)
+
+  const fetchShopData = async (ch: string) => {
+    setShopLoading(true)
+    try {
+      const sp = new URLSearchParams({ channel: ch, brand: apiBrand, year, season, item: itemName })
+      if (selStyle) sp.set('styleCd', selStyle.code)
+      const res = await fetch(`/api/planning/style-shops?${sp}`)
+      const json = await res.json()
+      setShopData(json.shops ?? [])
+    } catch {} finally { setShopLoading(false) }
+  }
   const [loading, setLoading] = useState(true)
 
   const visibleBrands = allowedBrands
@@ -63,18 +81,19 @@ export default function ItemDetailPage() {
     setWeekMeta(json.meta ?? null)
   }, [apiBrand, year, season, itemName, selStyle, selChannel])
 
-  // 스타일 테이블 + 채널 fetch (weekNum, channel, stylecd 필터 반영)
+  // 스타일 테이블 + 채널 fetch (weekNum, channel, stylecd, unit 필터 반영)
   const fetchStyles = useCallback(async () => {
     const sp = new URLSearchParams({ brand: apiBrand, year, season, item: itemName, compareYear: compYear })
     if (selWeek) sp.set('weekNum', String(selWeek))
     if (selChannel) sp.set('channel', selChannel)
     if (selStyle) sp.set('stylecd', selStyle.code)
+    if (unit === 'sku') sp.set('unit', 'sku')
     const res = await fetch(`/api/planning/styles?${sp}`)
     const json = await res.json()
     setStyles(json.styles ?? [])
     setLyStyles(json.lyStyles ?? [])
     setChannels(json.channels ?? [])
-  }, [apiBrand, year, season, itemName, compYear, selWeek, selChannel, selStyle])
+  }, [apiBrand, year, season, itemName, compYear, selWeek, selChannel, selStyle, unit])
 
   // 초기 로드
   useEffect(() => {
@@ -84,7 +103,7 @@ export default function ItemDetailPage() {
 
   // 필터 변경 시 re-fetch
   useEffect(() => { fetchWeekly() }, [selStyle, selChannel])
-  useEffect(() => { fetchStyles() }, [selWeek, selChannel, selStyle])
+  useEffect(() => { fetchStyles() }, [selWeek, selChannel, selStyle, unit])
 
   // 전주까지만 표시 (금년 데이터가 있는 마지막 주)
   const maxCyWeek = useMemo(() => {
@@ -143,7 +162,7 @@ export default function ItemDetailPage() {
   }, [styles, tblSortKey, tblSortDir])
   const hasFilter = selWeek || selStyle || selChannel
 
-  const clearFilters = () => { setSelWeek(null); setSelStyle(null); setSelChannel(null) }
+  const clearFilters = () => { setSelWeek(null); setSelStyle(null); setSelChannel(null); setShopData([]) }
 
   return (
     <div className="flex flex-col gap-3 p-4 min-h-0">
@@ -261,7 +280,12 @@ export default function ItemDetailPage() {
                 const isSel = selChannel === c.channel
                 return (
                   <div key={c.channel}
-                    onClick={() => setSelChannel(prev => prev === c.channel ? null : c.channel)}
+                    onClick={() => {
+                      const next = selChannel === c.channel ? null : c.channel
+                      setSelChannel(next)
+                      if (next) fetchShopData(next)
+                      else setShopData([])
+                    }}
                     className={cn('space-y-0.5 cursor-pointer rounded-lg px-2 py-1.5 -mx-2 transition-colors',
                       isSel ? 'bg-blue-50 ring-1 ring-blue-200' : 'hover:bg-gray-50')}>
                     <div className="flex justify-between text-[10px]">
@@ -276,6 +300,45 @@ export default function ItemDetailPage() {
               })}
             </div>
           ) : <div className="h-64 flex items-center justify-center text-xs text-gray-300">데이터 없음</div>}
+
+          {/* 매장 드릴다운 */}
+          {selChannel && (
+            <div className="mt-2 pt-2 border-t border-gray-100 shrink-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-semibold text-blue-600">{selChannel} 매장별</span>
+                <button onClick={() => { setSelChannel(null); setShopData([]) }}
+                  className="text-[9px] text-gray-400 hover:text-gray-600">닫기</button>
+              </div>
+              {shopLoading ? (
+                <div className="text-[10px] text-gray-300 text-center py-2">로딩 중...</div>
+              ) : shopData.length === 0 ? (
+                <div className="text-[10px] text-gray-300 text-center py-2">데이터 없음</div>
+              ) : (
+                <div className="overflow-y-auto" style={{ maxHeight: 200 }}>
+                  <table className="w-full text-[10px]">
+                    <thead className="sticky top-0 bg-white">
+                      <tr className="border-b border-gray-100 text-gray-400 font-semibold">
+                        <th className="text-left py-1 pr-1">매장명</th>
+                        <th className="text-right py-1 pr-1">매출</th>
+                        <th className="text-right py-1 pr-1">수량</th>
+                        <th className="text-right py-1">재고</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shopData.map(s => (
+                        <tr key={s.shop} className="border-b border-gray-50 hover:bg-gray-50/50">
+                          <td className="py-1 pr-1 text-gray-700 truncate max-w-[110px]" title={s.shop}>{s.shop}</td>
+                          <td className="py-1 pr-1 text-right font-mono text-gray-700">{fmtW(s.amt)}</td>
+                          <td className="py-1 pr-1 text-right font-mono text-gray-500">{s.qty.toLocaleString()}</td>
+                          <td className={cn('py-1 text-right font-mono', s.invQty > 0 ? 'text-emerald-600' : 'text-gray-300')}>{s.invQty}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -283,21 +346,36 @@ export default function ItemDetailPage() {
 
       {/* 전체 상품 테이블 */}
       <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-surface-border bg-surface-subtle">
+        <div className="px-4 py-2.5 border-b border-surface-border bg-surface-subtle flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700">
             전체 상품 상세 <span className="font-normal text-gray-400 ml-1">{styles.length}개</span>
             {selWeek && <span className="ml-2 font-normal text-brand-accent">· W{selWeek}</span>}
             {selChannel && <span className="ml-2 font-normal text-blue-500">· {selChannel}</span>}
           </h3>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
+              <button onClick={() => setUnit('st')}
+                className={cn('px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
+                  unit === 'st' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600')}>
+                ST 단위
+              </button>
+              <button onClick={() => setUnit('sku')}
+                className={cn('px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
+                  unit === 'sku' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600')}>
+                SKU 단위
+              </button>
+            </div>
+            <span className="text-[10px] text-gray-400">컬럼 클릭으로 정렬</span>
+          </div>
         </div>
         <div className="overflow-auto" style={{ maxHeight: 500 }}>
           {sortedStyles.length > 0 ? (
             <table className="w-full text-[10px] border-collapse" style={{minWidth:1350}}>
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-800 border-b-2 border-gray-900">
-                  <th colSpan={6} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
+                  <th colSpan={unit === 'sku' ? 7 : 6} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">발주/입고</th>
-                  <th colSpan={5} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출 (백만원)</th>
+                  <th colSpan={6} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출 (백만원)</th>
                   <th colSpan={3} className="text-center text-[10px] text-purple-300 font-bold py-1 border-r border-gray-600">전주</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1">재고</th>
                 </tr>
@@ -305,6 +383,7 @@ export default function ItemDetailPage() {
                   {[
                     { k: 'stylecd', l: '코드', a: 'left', px: 'px-3' },
                     { k: 'stylenm', l: '상품명', a: 'left', px: 'px-2' },
+                    ...(unit === 'sku' ? [{ k: 'colornm', l: '컬러', a: 'left' as const, px: 'px-2' }] : []),
                     { k: 'brandcd', l: 'BR', a: 'center' },
                     { k: 'tagPrice', l: '정가' },
                     { k: 'prodCost', l: '제조원가' },
@@ -315,6 +394,7 @@ export default function ItemDetailPage() {
                     { k: 'saleQty', l: '판매수량', bl: true },
                     { k: 'saleAmt', l: '매출' },
                     { k: 'cogsRate', l: '매출원가율' },
+                    { k: 'mfgProfit', l: '제조이익' },
                     { k: 'dcRate', l: '할인율' },
                     { k: 'sellThrough', l: '판매율' },
                     { k: 'cwAmt', l: '매출', bl: true },
@@ -324,11 +404,15 @@ export default function ItemDetailPage() {
                     { k: 'whAvail', l: '창고' },
                     { k: 'totalInv', l: '합계', px: 'px-2' },
                   ].map(col => (
-                    <th key={col.k} className={cn('py-2 text-right cursor-pointer hover:text-gray-900 whitespace-nowrap',
+                    <th key={col.k} className={cn('py-2 text-right cursor-pointer hover:text-gray-900 hover:bg-gray-100 whitespace-nowrap transition-colors',
                       col.px || 'px-1', col.a === 'left' && 'text-left', col.a === 'center' && 'text-center', col.bl && 'border-l border-gray-200')}
                       onClick={() => toggleTblSort(col.k)}>
-                      <span className="inline-flex items-center gap-px">{col.l}
-                        <ArrowUpDown size={8} className={cn(tblSortKey === col.k ? 'opacity-100 text-brand-accent' : 'opacity-20')} />
+                      <span className="inline-flex items-center gap-0.5">{col.l}
+                        {tblSortKey === col.k
+                          ? (tblSortDir === 'desc'
+                              ? <ChevronDown size={10} className="text-brand-accent" />
+                              : <ChevronUp size={10} className="text-brand-accent" />)
+                          : <ArrowUpDown size={10} className="opacity-30" />}
                       </span>
                     </th>
                   ))}
@@ -336,14 +420,18 @@ export default function ItemDetailPage() {
               </thead>
               <tbody>
                 {sortedStyles.map((s:any,i:number) => {
+                  const rowKey = unit === 'sku' ? `${s.stylecd}-${s.colorcd}` : s.stylecd
                   const isSel = selStyle?.code === s.stylecd
                   return (
-                    <tr key={s.stylecd}
+                    <tr key={rowKey}
                       onClick={() => setSelStyle(prev => prev?.code === s.stylecd ? null : { code: s.stylecd, name: s.stylenm })}
                       className={cn('border-b border-surface-border/50 cursor-pointer transition-colors',
                         isSel ? 'bg-purple-50' : i%2!==0 ? 'bg-gray-50/30 hover:bg-gray-50' : 'hover:bg-gray-50')}>
                       <td className="px-3 py-1.5 font-mono text-gray-400 text-[9px]">{s.stylecd}</td>
                       <td className={cn('px-2 py-1.5 font-medium truncate max-w-[160px]', isSel ? 'text-purple-700' : 'text-gray-800')}>{s.stylenm}</td>
+                      {unit === 'sku' && (
+                        <td className="px-2 py-1.5 text-[9px] text-gray-500 truncate max-w-[80px]" title={s.colornm}>{s.colornm || s.colorcd}</td>
+                      )}
                       <td className="px-1 py-1.5 text-center"><span className="px-1 py-px rounded-full text-[8px] font-bold text-white" style={{ background: BRAND_COLORS[s.brandcd]??'#999' }}>{s.brandcd}</span></td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-600">₩{Math.round(s.tagPrice).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-500">₩{Math.round(s.prodCost||0).toLocaleString()}</td>
@@ -359,6 +447,7 @@ export default function ItemDetailPage() {
                       <td className="px-1 py-1.5 text-right font-mono text-gray-700 border-l border-gray-100">{s.saleQty.toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono font-semibold text-blue-700">{Math.round(s.saleAmt / 1e6).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right text-gray-600">{s.cogsRate}%</td>
+                      <td className={cn('px-1 py-1.5 text-right font-mono font-semibold', (s.mfgProfit ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-500')}>{fmtW(s.mfgProfit ?? 0)}</td>
                       <td className="px-1 py-1.5 text-right text-gray-600">{s.dcRate}%</td>
                       <td className="px-1 py-1.5 text-right">
                         <span className={cn('px-1 py-px rounded-full text-[9px] font-semibold',

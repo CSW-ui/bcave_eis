@@ -12,7 +12,7 @@ interface PlanningItem {
   ordQty: number; ordTagAmt: number; ordCostAmt: number
   inQty: number; inAmt: number; inboundRate: number
   saleQty: number; saleAmt: number; tagAmt: number; salePriceAmt: number; costAmt: number
-  dcRate: number; domDcRate?: number; cogsRate: number; salesRate: number
+  dcRate: number; domDcRate?: number; cogsRate: number; salesRate: number; mfgProfit?: number
   cwAmt: number; pwAmt: number; cwQty: number; cwCost: number; cwCogsRate: number; wow: number
   monthAmt: number; monthQty: number
   shopInv: number; shopAvail?: number; whAvail: number; totalInv: number
@@ -52,7 +52,8 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
     ma:a.ma+i.monthAmt,mq:a.mq+i.monthQty,
     si:a.si+i.shopInv,wh:a.wh+i.whAvail,ti:a.ti+i.totalInv,
     it:a.it+i.invTagAmt,ic:a.ic+i.invCostAmt,
-  }),{sc:0,sk:0,oq:0,ot:0,oc:0,iq:0,ia:0,sq:0,sa:0,ta:0,sp:0,ca:0,cw:0,pw:0,cc:0,ma:0,mq:0,si:0,wh:0,ti:0,it:0,ic:0})
+    mp:a.mp+(i.mfgProfit??0),
+  }),{sc:0,sk:0,oq:0,ot:0,oc:0,iq:0,ia:0,sq:0,sa:0,ta:0,sp:0,ca:0,cw:0,pw:0,cc:0,ma:0,mq:0,si:0,wh:0,ti:0,it:0,ic:0,mp:0})
   const t=s(items),ct=s(compItems??[])
   const tSR=t.iq>0?Math.round(t.sq/t.iq*1000)/10:0
   const ctSR=ct.iq>0?Math.round(ct.sq/ct.iq*1000)/10:0
@@ -79,7 +80,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
         '발주금액': r.ordTagAmt, '원가': r.ordCostAmt, '원가율': `${r.ordTagAmt>0?Math.round(r.ordCostAmt/r.ordTagAmt*1000)/10:0}%`,
         '입고수량': r.inQty, '입고율': `${r.inboundRate}%`,
         '매출': r.saleAmt, 'YoY': p?.saleAmt?yoy(r.saleAmt,p.saleAmt):'', 'GAP': p?.saleAmt?r.saleAmt-p.saleAmt:'',
-        '할인율': `${r.dcRate}%`, '매출원가율': `${r.cogsRate}%`, '판매율': `${r.salesRate}%`,
+        '할인율': `${r.dcRate}%`, '매출원가율': `${r.cogsRate}%`, '제조이익': r.mfgProfit??0, '판매율': `${r.salesRate}%`,
         '당월매출': r.monthAmt, '당월수량': r.monthQty,
         '전주매출': r.cwAmt, 'WoW': r.pwAmt>0?`${r.wow}%`:'', '전주수량': r.cwQty??0,
         '총수량': r.totalInv, '총TAG': r.invTagAmt, '매장수량': r.shopInv, '창고수량': r.whAvail, '총원가': r.invCostAmt,
@@ -118,7 +119,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
           <tr className="bg-gray-800 border-b-2 border-gray-900">
             <th colSpan={4} className="text-center text-[11px] text-gray-200 font-bold py-1.5">상품</th>
             <th colSpan={5} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
-            <th colSpan={11} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
+            <th colSpan={12} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
             <th colSpan={2} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
             <th colSpan={3} className="text-center text-[11px] text-purple-300 font-bold py-1.5 border-l border-gray-600">주간 실적</th>
             <th colSpan={7} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">재고</th>
@@ -144,6 +145,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">매출원가율</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
+            <H k="mfgProfit" l="제조이익"/>
             <H k="salesRate" l="판매율"/>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             {/* 당월 */}
@@ -194,6 +196,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
                 <Pt c={r.domDcRate ?? r.dcRate} p={p?.domDcRate ?? p?.dcRate}/>
                 <td className="py-1.5 px-1 text-right text-gray-600 text-[10px]">{r.cogsRate.toFixed(1)}%</td>
                 <Pt c={r.cogsRate} p={p?.cogsRate}/>
+                <td className={cn(cell, 'font-semibold', (r.mfgProfit??0)>=0?'text-emerald-600':'text-red-500')}>{fmtM(r.mfgProfit??0)}</td>
                 <td className="py-1.5 px-1 text-right text-[10px]">{r.salesRate}%</td>
                 <Pt c={r.salesRate} p={p?.salesRate}/>
                 {/* 당월 */}
@@ -235,6 +238,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <Pt c={tDomDC} p={ctDomDC}/>
             <td className="py-1.5 px-1 text-right text-[10px]">{tCG}%</td>
             <Pt c={tCG} p={ctCG}/>
+            <td className={cn('py-1.5 px-1 text-right font-semibold', t.mp>=0?'text-emerald-600':'text-red-500')}>{fmtM(t.mp)}</td>
             <td className="py-1.5 px-1 text-right text-[10px]">{tSR}%</td>
             <Pt c={tSR} p={ctSR}/>
             {/* 당월 */}

@@ -33,7 +33,7 @@ interface IpjItem {
   invStCnt: number; invStclCnt: number; totalInvQty: number; invTagAmt: number; invCostAmt: number
   shopInvQty: number; whAvail: number
   coInvQty: number; coInvTagAmt: number; coInvCostAmt: number; coBaseTagAmt: number
-  salesRate: number; dcRate: number; cogsRate: number
+  salesRate: number; cumSaleQty: number; cumSalesRate: number; dcRate: number; cogsRate: number
   firstCostRate: number; qrCostRate: number
   lyOrdTagAmt: number; lyOrdCostAmt: number; lyOrdTagQR: number; lyOrdCostRate: number
   lySaleAmt: number; lyCoSaleAmt: number; lyOvSaleAmt: number; lyTotalSaleAmt: number
@@ -57,6 +57,7 @@ type SumKeys =
   | 'lyTagAmt' | 'lySalePriceAmt' | 'lyCostAmt'
   | 'lyCoTagAmt' | 'lyCoSalePriceAmt' | 'lyCoCostAmt'
   | 'ovSaleQty' | 'lyInQty' | 'lySaleQty' | 'lyOvSaleQty'
+  | 'cumSaleQty'
 
 const SUM_INIT: Record<SumKeys, number> = {
   ordTagAmt: 0, ordCostAmt: 0, ordTagQR: 0,
@@ -69,6 +70,7 @@ const SUM_INIT: Record<SumKeys, number> = {
   lyTagAmt: 0, lySalePriceAmt: 0, lyCostAmt: 0,
   lyCoTagAmt: 0, lyCoSalePriceAmt: 0, lyCoCostAmt: 0,
   ovSaleQty: 0, lyInQty: 0, lySaleQty: 0, lyOvSaleQty: 0,
+  cumSaleQty: 0,
 }
 
 function sumItems(arr: IpjItem[]): Record<SumKeys, number> {
@@ -90,6 +92,7 @@ function calcRates(s: Record<SumKeys, number>) {
   const normDcRate = s.tagAmt > 0 ? Math.round((1 - s.salePriceAmt / s.tagAmt) * 1000) / 10 : 0
   const normCogsRate = s.saleAmt > 0 ? Math.round(s.costAmt / s.saleAmt * 1000) / 10 : 0
   const normSalesRate = (s.inQty - s.ovSaleQty) > 0 ? Math.round(s.saleQty / (s.inQty - s.ovSaleQty) * 1000) / 10 : 0
+  const cumSalesRate = (s.inQty - s.ovSaleQty) > 0 ? Math.round(s.cumSaleQty / (s.inQty - s.ovSaleQty) * 1000) / 10 : 0
   const coDcRate = s.coTagAmt > 0 ? Math.round((1 - s.coSalePriceAmt / s.coTagAmt) * 1000) / 10 : 0
   const coCogsRate = s.coSaleAmt > 0 ? Math.round(s.coCostAmt / s.coSaleAmt * 1000) / 10 : 0
   const coSalesRate = s.coBaseTagAmt > 0 ? Math.round(s.coTagAmt / s.coBaseTagAmt * 1000) / 10 : 0
@@ -111,7 +114,7 @@ function calcRates(s: Record<SumKeys, number>) {
   const lySubCoCogsRate = s.lyCoSaleAmt > 0 ? Math.round(s.lyCoCostAmt / s.lyCoSaleAmt * 1000) / 10 : null
   // 전년 판매율
   const lyNormSalesRate = (s.lyInQty - s.lyOvSaleQty) > 0 ? Math.round(s.lySaleQty / (s.lyInQty - s.lyOvSaleQty) * 1000) / 10 : null
-  return { costRate, totalDcRate, totalCogsRate, normDcRate, normCogsRate, normSalesRate, coDcRate, coCogsRate, coSalesRate, ovDcRate, ovCogsRate, lyOrdYoy, lyQrYoy, lyCostRate, lyTotalDcRate, lyTotalCogsRate, lyNormDcRate, lyNormCogsRate, lySubCoDcRate, lySubCoCogsRate, lyNormSalesRate }
+  return { costRate, totalDcRate, totalCogsRate, normDcRate, normCogsRate, normSalesRate, cumSalesRate, coDcRate, coCogsRate, coSalesRate, ovDcRate, ovCogsRate, lyOrdYoy, lyQrYoy, lyCostRate, lyTotalDcRate, lyTotalCogsRate, lyNormDcRate, lyNormCogsRate, lySubCoDcRate, lySubCoCogsRate, lyNormSalesRate }
 }
 
 export default function IpjPage() {
@@ -260,7 +263,8 @@ export default function IpjPage() {
     if (sortKey === 'qrRate') return r.ordTagAmt > 0 ? r.ordTagQR / r.ordTagAmt : 0
     if (sortKey === 'normRatio') return r.totalSaleAmt > 0 ? r.saleAmt / r.totalSaleAmt : 0
     if (sortKey === 'coRatio') return r.totalSaleAmt > 0 ? r.coSaleAmt / r.totalSaleAmt : 0
-    return (r as Record<string, number>)[sortKey] ?? 0
+    if (sortKey === 'cumSalesRate') return r.cumSalesRate
+    return (r as unknown as Record<string, number>)[sortKey] ?? 0
   }, [sortKey])
 
   const getSubSortVal = useCallback((s: Record<SumKeys, number>): number => {
@@ -271,6 +275,7 @@ export default function IpjPage() {
     if (sortKey === 'qrRate') return s.ordTagAmt > 0 ? s.ordTagQR / s.ordTagAmt : 0
     if (sortKey === 'normRatio') return s.totalSaleAmt > 0 ? s.saleAmt / s.totalSaleAmt : 0
     if (sortKey === 'coRatio') return s.totalSaleAmt > 0 ? s.coSaleAmt / s.totalSaleAmt : 0
+    if (sortKey === 'cumSalesRate') return (s.inQty - s.ovSaleQty) > 0 ? s.cumSaleQty / (s.inQty - s.ovSaleQty) : 0
     return (s as Record<string, number>)[sortKey] ?? 0
   }, [sortKey])
 
@@ -301,7 +306,7 @@ export default function IpjPage() {
   }
   // 브랜드 섹션 접기/펼치기
   // 초기 상태: 브랜드 접힌 상태
-  const [collapsedBrands, setCollapsedBrands] = useState<Set<string>>(new Set(['CO', 'LE', 'WA', 'CK', 'LK']))
+  const [collapsedBrands, setCollapsedBrands] = useState<Set<string>>(new Set(['CO', 'LE', 'WA', 'CK', 'LK', 'all', 'adult', 'kids']))
   const toggleBrandSection = (key: string) => {
     setCollapsedBrands(prev => {
       const next = new Set(prev)
@@ -309,8 +314,8 @@ export default function IpjPage() {
       return next
     })
   }
-  const expandAll = () => { setExpanded(new Set(brandSections.filter(s => !s.isSummary).flatMap(s => groupItems(s.items).map(g => `${s.key}::${g.category}`)))); setCollapsedBrands(new Set()) }
-  const collapseAll = () => { setExpanded(new Set()); setCollapsedBrands(new Set(brandSections.filter(s => !s.isSummary).map(s => s.key))) }
+  const expandAll = () => { setExpanded(new Set(brandSections.flatMap(s => groupItems(s.items).map(g => `${s.key}::${g.category}`)))); setCollapsedBrands(new Set()) }
+  const collapseAll = () => { setExpanded(new Set()); setCollapsedBrands(new Set(brandSections.map(s => s.key))) }
 
   const pct = (v: number, total: number) => total > 0 ? (v / total * 100).toFixed(1) : '0.0'
 
@@ -449,6 +454,7 @@ export default function IpjPage() {
         <td className={cellBase}>{renderPtDiff(r.cogsRate, lyCogsRate)}</td>
         <td className={cn(cellBase, 'text-gray-700 font-semibold')}>{r.salesRate}%</td>
         <td className={cellBase}>{r.lySalesRate != null ? renderPtDiff(r.salesRate, r.lySalesRate) : '—'}</td>
+        <td className={cn(cellBase, 'font-semibold', r.cumSalesRate >= 70 ? 'text-emerald-600' : r.cumSalesRate >= 40 ? 'text-amber-600' : r.cumSalesRate > 0 ? 'text-red-600' : 'text-gray-400')}>{r.cumSalesRate > 0 ? `${r.cumSalesRate}%` : '—'}</td>
         {/* 이월 매출 */}
         <td className={cn(cellBase, 'text-gray-600 bg-gray-100')}>{r.coSaleAmt ? fmtE(r.coSaleAmt) : '—'}</td>
         <td className={cellBase}>{renderYoy(r.coSaleAmt, r.lyCoSaleAmt)}</td>
@@ -527,6 +533,7 @@ export default function IpjPage() {
         <td className={cellBase}>{renderPtDiff(r.normCogsRate, r.lyNormCogsRate)}</td>
         <td className={cn(cellBase, 'text-gray-700 font-semibold')}>{r.normSalesRate}%</td>
         <td className={cellBase}>{renderPtDiff(r.normSalesRate, r.lyNormSalesRate)}</td>
+        <td className={cn(cellBase, 'font-semibold', r.cumSalesRate >= 70 ? 'text-emerald-600' : r.cumSalesRate >= 40 ? 'text-amber-600' : r.cumSalesRate > 0 ? 'text-red-600' : 'text-gray-400')}>{r.cumSalesRate > 0 ? `${r.cumSalesRate}%` : '—'}</td>
         {/* 이월 매출 */}
         <td className={cn(cellBase, 'text-gray-600 bg-gray-200')}>{s.coSaleAmt ? fmtE(s.coSaleAmt) : '—'}</td>
         <td className={cellBase}>{renderYoy(s.coSaleAmt, s.lyCoSaleAmt)}</td>
@@ -628,14 +635,14 @@ export default function IpjPage() {
           <div className="space-y-2">{Array.from({ length: 10 }).map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[11px] border-collapse" style={{ minWidth: 2100 }}>
+            <table className="w-full text-[11px] border-collapse" style={{ minWidth: 2160 }}>
               <thead>
                 {/* 1행: 대분류 — 2개 큰 그룹 */}
                 <tr className="bg-gray-800">
                   <th rowSpan={3} className="text-center text-[11px] text-gray-300 font-bold py-1 sticky left-0 bg-gray-800 z-20 w-[32px] min-w-[32px] max-w-[32px]">구분</th>
                   <th rowSpan={3} className="text-center text-[11px] text-gray-300 font-bold py-1 sticky left-[32px] bg-gray-800 z-20 w-[120px] min-w-[120px] border-r-2 border-gray-500" style={{ boxShadow: '6px 0 12px -2px rgba(0,0,0,0.25)' }}>품목</th>
                   <th colSpan={14} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 재고 TAG 금액</th>
-                  <th colSpan={27} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 매출</th>
+                  <th colSpan={28} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 매출</th>
                 </tr>
                 {/* 2행: 중분류 */}
                 <tr className="bg-gray-700">
@@ -649,7 +656,7 @@ export default function IpjPage() {
                   <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">전년비</th>
                   <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">매출<br/>원가율</th>
                   <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">전년비</th>
-                  <th colSpan={9} className="text-center text-[11px] text-gray-300 font-medium py-1.5 border-l border-gray-500">정상 매출</th>
+                  <th colSpan={10} className="text-center text-[11px] text-gray-300 font-medium py-1.5 border-l border-gray-500">정상 매출</th>
                   <th colSpan={8} className="text-center text-[11px] text-gray-300 font-medium py-1.5 border-l border-gray-500">이월 매출</th>
                   <th colSpan={4} className="text-center text-[11px] text-amber-300 font-medium py-1.5 border-l border-gray-500">해외사입</th>
                 </tr>
@@ -679,6 +686,7 @@ export default function IpjPage() {
                   <th className="text-center text-[11px] text-gray-400 font-medium py-1.5">전년비</th>
                   <SortTh k="salesRate" className="text-center text-[11px] text-gray-400 font-medium py-1.5">판매율</SortTh>
                   <th className="text-center text-[11px] text-gray-400 font-medium py-1.5">전년비</th>
+                  <SortTh k="cumSalesRate" className="text-center text-[11px] text-emerald-300 font-medium py-1.5">누계<br/>판매율</SortTh>
                   {/* 이월 매출 */}
                   <SortTh k="coSaleAmt" className="text-center text-[11px] text-gray-300 font-medium py-1.5 border-l border-gray-500">매출액</SortTh>
                   <th className="text-center text-[11px] text-gray-400 font-medium py-1.5">전년비</th>
@@ -708,23 +716,22 @@ export default function IpjPage() {
                   return (
                     <Fragment key={sec.key}>
                       {/* 합산/브랜드 행 */}
-                      <tr className={cn('font-semibold',
-                          isTotal ? 'bg-gray-100 border-b-2 border-gray-300' :
-                          isGroupSummary ? 'bg-gray-50 border-b-2 border-gray-200' :
-                          'bg-white border-b border-gray-200')}
-                        onClick={isBrand ? () => toggleBrandSection(sec.key) : undefined}
-                        style={isBrand ? { cursor: 'pointer' } : undefined}>
+                      <tr className={cn('font-semibold cursor-pointer',
+                          isTotal ? 'bg-gray-100 border-b-2 border-gray-300 hover:bg-gray-200/50' :
+                          isGroupSummary ? 'bg-gray-50 border-b-2 border-gray-200 hover:bg-gray-100' :
+                          'bg-white border-b border-gray-200 hover:bg-gray-100')}
+                        onClick={() => toggleBrandSection(sec.key)}>
                         {renderSubRow(sec.totals, (
                           <div className="flex items-center gap-1.5" style={{ paddingLeft: indent * 16 }}>
-                            {isBrand && (isBrandCollapsed
+                            {isBrandCollapsed
                               ? <ChevronRight size={12} className="text-gray-400" />
-                              : <ChevronDown size={12} className="text-gray-400" />)}
+                              : <ChevronDown size={12} className="text-gray-400" />}
                             <span className={cn('text-xs font-bold', isTotal ? 'text-gray-900' : isGroupSummary ? 'text-gray-800' : 'text-gray-700')}>{sec.label}</span>
                           </div>
                         ), isTotal || isGroupSummary, sec.totals)}
                       </tr>
-                      {/* 브랜드 클릭 → 품목별 펼침 */}
-                      {isBrand && !isBrandCollapsed && grouped.map(g => {
+                      {/* 카테고리별 펼침 */}
+                      {!isBrandCollapsed && grouped.map(g => {
                         const expandKey = `${sec.key}::${g.category}`
                         const isOpen = expanded.has(expandKey)
                         return (

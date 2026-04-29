@@ -19,6 +19,7 @@ export async function GET(req: Request) {
   const channel    = searchParams.get('channel') || ''
   const weekNum    = searchParams.get('weekNum') || ''
   const stylecd    = searchParams.get('stylecd') || ''
+  const unit       = searchParams.get('unit') || 'st'
 
   if (!item) return NextResponse.json({ error: 'item parameter required' }, { status: 400 })
 
@@ -83,36 +84,106 @@ export async function GET(req: Request) {
     `
   }
 
+  function buildSkuQuery(yr: string, isCompYear?: boolean) {
+    const toDtFilter = isCompYear ? `AND v.SALEDT <= '${lyEndStr}'` : ''
+    return `
+      SELECT si.STYLECD, d_color.COLORCD, d_color.COLORNM, si.STYLENM, si.BRANDCD,
+        si.TAGPRICE / 1.1 as TAGPRICE, COALESCE(pc.PRECOST, si.PRODCOST, 0) as PRODCOST,
+        COALESCE(SUM(v.SALEQTY), 0) AS SALE_QTY,
+        COALESCE(SUM(v.SALEAMT_VAT_EX), 0) AS SALE_AMT,
+        COALESCE(SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY), 0) AS COST_AMT,
+        ${weekNum
+          ? `COALESCE(SUM(CASE WHEN WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${parseInt(weekNum)} THEN v.SALEAMT_VAT_EX ELSE 0 END), 0) AS CW_AMT,
+             COALESCE(SUM(CASE WHEN WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${parseInt(weekNum)} THEN v.SALEQTY ELSE 0 END), 0) AS CW_QTY,
+             COALESCE(SUM(CASE WHEN WEEKOFYEAR(TO_DATE(v.SALEDT,'YYYYMMDD'))=${parseInt(weekNum)-1 > 0 ? parseInt(weekNum)-1 : 52} THEN v.SALEAMT_VAT_EX ELSE 0 END), 0) AS PW_AMT,`
+          : `COALESCE(SUM(CASE WHEN v.SALEDT BETWEEN '${cwS}' AND '${cwE}' THEN v.SALEAMT_VAT_EX ELSE 0 END), 0) AS CW_AMT,
+             COALESCE(SUM(CASE WHEN v.SALEDT BETWEEN '${cwS}' AND '${cwE}' THEN v.SALEQTY ELSE 0 END), 0) AS CW_QTY,
+             COALESCE(SUM(CASE WHEN v.SALEDT BETWEEN '${pwS}' AND '${pwE}' THEN v.SALEAMT_VAT_EX ELSE 0 END), 0) AS PW_AMT,`
+        }
+        COALESCE(sinv.SHOP_INV, 0) AS SHOP_INV,
+        COALESCE(winv.WH_AVAIL, 0) AS WH_AVAIL
+      FROM BCAVE.SEWON.SW_STYLEINFO si
+      JOIN (SELECT DISTINCT STYLECD, BRANDCD, COLORCD, COLORNM FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL) d_color
+        ON si.STYLECD = d_color.STYLECD AND si.BRANDCD = d_color.BRANDCD
+      LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc
+        ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
+      LEFT JOIN ${SALES_VIEW} v
+        ON si.STYLECD = v.STYLECD AND si.BRANDCD = v.BRANDCD AND d_color.COLORCD = v.COLORCD
+        AND v.SALEDT >= '20${yr}0101' ${toDtFilter}
+        ${channelFilter} ${weekFilter}
+      LEFT JOIN (SELECT STYLECD, COLORCD, SUM(INVQTY) AS SHOP_INV FROM BCAVE.SEWON.SW_SHOPINV GROUP BY STYLECD, COLORCD) sinv
+        ON si.STYLECD = sinv.STYLECD AND d_color.COLORCD = sinv.COLORCD
+      LEFT JOIN (SELECT STYLECD, COLORCD, SUM(AVAILQTY) AS WH_AVAIL FROM BCAVE.SEWON.SW_WHINV GROUP BY STYLECD, COLORCD) winv
+        ON si.STYLECD = winv.STYLECD AND d_color.COLORCD = winv.COLORCD
+      WHERE ${brandWhere}
+        AND si.YEARCD = '${yr}'
+        AND si.SEASONNM IN (${seasonList})
+        AND si.ITEMNM = '${itemSafe}'
+      GROUP BY si.STYLECD, d_color.COLORCD, d_color.COLORNM, si.STYLENM, si.BRANDCD, si.TAGPRICE, si.PRODCOST, pc.PRECOST, sinv.SHOP_INV, winv.WH_AVAIL
+      ORDER BY SALE_AMT DESC
+    `
+  }
+
   try {
     const [cyRaw, lyRaw, orderData, lyOrderData, inboundData, lyInboundData, channelData, dcRateData] = await Promise.all([
-      snowflakeQuery<Record<string, string>>(buildStyleQuery(year)),
-      snowflakeQuery<Record<string, string>>(buildStyleQuery(compYear, true)),
+      unit === 'sku'
+        ? snowflakeQuery<Record<string, string>>(buildSkuQuery(year))
+        : snowflakeQuery<Record<string, string>>(buildStyleQuery(year)),
+      unit === 'sku'
+        ? snowflakeQuery<Record<string, string>>(buildSkuQuery(compYear, true))
+        : snowflakeQuery<Record<string, string>>(buildStyleQuery(compYear, true)),
       // 스타일별 발주 (수량, 택가금액, 원가)
-      snowflakeQuery<{ STYLECD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
-        SELECT STYLECD,
-          SUM(ORDQTY) AS ORD_QTY,
-          SUM(ORDQTY * (TAGPRICE / 1.1)) AS ORD_TAG_AMT,
-          SUM(ORDQTY * PRECOST) AS ORD_COST_AMT
-        FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
-        WHERE BRANDCD IN ${brandInClause}
-          AND YEARCD = '${year}'
-          AND SEASONNM IN (${seasonList})
-          AND ITEMNM = '${itemSafe}'
-        GROUP BY STYLECD
-      `),
+      unit === 'sku'
+        ? snowflakeQuery<{ STYLECD: string; COLORCD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
+          SELECT STYLECD, COLORCD,
+            SUM(ORDQTY) AS ORD_QTY,
+            SUM(ORDQTY * (TAGPRICE / 1.1)) AS ORD_TAG_AMT,
+            SUM(ORDQTY * PRECOST) AS ORD_COST_AMT
+          FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
+          WHERE BRANDCD IN ${brandInClause}
+            AND YEARCD = '${year}'
+            AND SEASONNM IN (${seasonList})
+            AND ITEMNM = '${itemSafe}'
+          GROUP BY STYLECD, COLORCD
+        `)
+        : snowflakeQuery<{ STYLECD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
+          SELECT STYLECD,
+            SUM(ORDQTY) AS ORD_QTY,
+            SUM(ORDQTY * (TAGPRICE / 1.1)) AS ORD_TAG_AMT,
+            SUM(ORDQTY * PRECOST) AS ORD_COST_AMT
+          FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
+          WHERE BRANDCD IN ${brandInClause}
+            AND YEARCD = '${year}'
+            AND SEASONNM IN (${seasonList})
+            AND ITEMNM = '${itemSafe}'
+          GROUP BY STYLECD
+        `),
       // 전년 스타일별 발주
-      snowflakeQuery<{ STYLECD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
-        SELECT STYLECD,
-          SUM(ORDQTY) AS ORD_QTY,
-          SUM(ORDQTY * (TAGPRICE / 1.1)) AS ORD_TAG_AMT,
-          SUM(ORDQTY * PRECOST) AS ORD_COST_AMT
-        FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
-        WHERE BRANDCD IN ${brandInClause}
-          AND YEARCD = '${compYear}'
-          AND SEASONNM IN (${seasonList})
-          AND ITEMNM = '${itemSafe}'
-        GROUP BY STYLECD
-      `),
+      unit === 'sku'
+        ? snowflakeQuery<{ STYLECD: string; COLORCD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
+          SELECT STYLECD, COLORCD,
+            SUM(ORDQTY) AS ORD_QTY,
+            SUM(ORDQTY * (TAGPRICE / 1.1)) AS ORD_TAG_AMT,
+            SUM(ORDQTY * PRECOST) AS ORD_COST_AMT
+          FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
+          WHERE BRANDCD IN ${brandInClause}
+            AND YEARCD = '${compYear}'
+            AND SEASONNM IN (${seasonList})
+            AND ITEMNM = '${itemSafe}'
+          GROUP BY STYLECD, COLORCD
+        `)
+        : snowflakeQuery<{ STYLECD: string; ORD_QTY: number; ORD_TAG_AMT: number; ORD_COST_AMT: number }>(`
+          SELECT STYLECD,
+            SUM(ORDQTY) AS ORD_QTY,
+            SUM(ORDQTY * (TAGPRICE / 1.1)) AS ORD_TAG_AMT,
+            SUM(ORDQTY * PRECOST) AS ORD_COST_AMT
+          FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL
+          WHERE BRANDCD IN ${brandInClause}
+            AND YEARCD = '${compYear}'
+            AND SEASONNM IN (${seasonList})
+            AND ITEMNM = '${itemSafe}'
+          GROUP BY STYLECD
+        `),
       // 스타일별 입고 (수량, TAG금액)
       snowflakeQuery<{ STYLECD: string; IN_QTY: number; IN_AMT: number }>(`
         SELECT w.STYLECD,
@@ -180,14 +251,18 @@ export async function GET(req: Request) {
       `),
     ])
 
-    const ordMap = new Map(orderData.map(r => [r.STYLECD, r]))
-    const lyOrdMap = new Map(lyOrderData.map(r => [r.STYLECD, r]))
+    const makeKey = (stylecd: string, colorcd?: string) =>
+      unit === 'sku' && colorcd ? `${stylecd}-${colorcd}` : stylecd
+
+    const ordMap = new Map(orderData.map(r => [makeKey(r.STYLECD, (r as any).COLORCD), r]))
+    const lyOrdMap = new Map(lyOrderData.map(r => [makeKey(r.STYLECD, (r as any).COLORCD), r]))
     const inMap = new Map(inboundData.map(r => [r.STYLECD, r]))
     const lyInMap = new Map(lyInboundData.map(r => [r.STYLECD, r]))
     const dcMap = new Map(dcRateData.map(r => [r.STYLECD, r]))
 
     const mapRows = (rows: Record<string, string>[], useOrderData = false, orderMap2?: Map<string, any>, inboundMap?: Map<string, any>) => {
       return rows.map(r => {
+        const rowKey = makeKey(r.STYLECD, r.COLORCD)
         const saleQty = Number(r.SALE_QTY) || 0
         const saleAmt = Number(r.SALE_AMT) || 0
         const dcr = dcMap.get(r.STYLECD)
@@ -199,22 +274,26 @@ export async function GET(req: Request) {
         const totalInv = shopInv + whAvail
         // 발주
         const activeOrdMap = orderMap2 ?? ordMap
-        const ord = activeOrdMap.get(r.STYLECD)
+        const ord = activeOrdMap.get(rowKey)
         const ordQty = ord ? Number(ord.ORD_QTY) || 0 : 0
         const ordTagAmt = ord ? Number(ord.ORD_TAG_AMT) || 0 : 0
         const ordCostAmt = ord ? Number(ord.ORD_COST_AMT) || 0 : 0
-        // 입고
+        // 입고 (inbound is still style-level)
         const activeInMap = inboundMap ?? inMap
         const inb = activeInMap.get(r.STYLECD)
         const inQty = inb ? Number(inb.IN_QTY) || 0 : 0
         const inAmt = inb ? Number(inb.IN_AMT) || 0 : 0
         const inboundRate = ordQty > 0 ? Math.round(inQty / ordQty * 1000) / 10 : 0
+        const precost = Number(r.PRODCOST) || 0
+        const mfgProfit = saleAmt - (inQty * precost)
         return {
           stylecd: r.STYLECD, stylenm: r.STYLENM ?? r.STYLECD, brandcd: r.BRANDCD,
+          ...(unit === 'sku' ? { colorcd: r.COLORCD ?? '', colornm: r.COLORNM ?? '' } : {}),
           tagPrice: Number(r.TAGPRICE) || 0, prodCost: Number(r.PRODCOST) || 0,
+          precost,
           ordQty, ordTagAmt, ordCostAmt,
           inQty, inAmt, inboundRate,
-          saleQty, saleAmt,
+          saleQty, saleAmt, mfgProfit,
           dcRate: tagAmt > 0 ? Math.round((1 - salePriceAmt / tagAmt) * 1000) / 10 : 0,
           costAmt,
           cogsRate: saleAmt > 0 ? Math.round(costAmt / saleAmt * 1000) / 10 : 0,

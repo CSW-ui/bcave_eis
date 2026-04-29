@@ -390,6 +390,8 @@ export async function GET(req: Request) {
       // 재고금액 (TAG·원가)
       const invTagAmt = totalInv * avgTag
       const invCostAmt = totalInv * avgCost
+      // 제조이익: 매출액 - (입고수량 × 입고원가)
+      const mfgProfit = saleAmt - (inQty * avgCost)
 
       // WoW 계산 (3주 데이터로 Rising 판별)
       const wow = pwAmt > 0 ? ((cwAmt - pwAmt) / pwAmt) * 100 : 0
@@ -433,6 +435,7 @@ export async function GET(req: Request) {
         invCostAmt,
         // 하위 호환: sellThrough는 salesRate로 대체하되, 기존 코드 호환용 유지
         sellThrough: Math.round(salesRate * 10) / 10,
+        mfgProfit,
       }
     })
 
@@ -453,6 +456,7 @@ export async function GET(req: Request) {
     const totalMonthQty = items.reduce((s, i) => s + i.monthQty, 0)
     const totalInvTagAmt = items.reduce((s, i) => s + i.invTagAmt, 0)
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
+    const totalMfgProfit = items.reduce((s, i) => s + i.mfgProfit, 0)
 
     // 판매율 = 판매수량 / 입고수량
     const overallSalesRate = totalInQty > 0
@@ -501,6 +505,7 @@ export async function GET(req: Request) {
         totalInvQty, totalCostAmt,
         totalMonthAmt, totalMonthQty,
         totalInvTagAmt, totalInvCostAmt,
+        totalMfgProfit,
         salesRate: overallSalesRate,
         sellThrough: overallSalesRate, // 하위 호환
         inboundRate: overallInboundRate,

@@ -113,6 +113,9 @@ export default function PlanningDashboard() {
   const [styleWeekly, setStyleWeekly] = useState<{ week: number; cy: number }[] | null>(null)
   const [styleChLoading, setStyleChLoading] = useState(false)
   const [bestSort, setBestSort] = useState<'season' | 'week' | 'month' | 'rising'>('season')
+  const [selChannel, setSelChannel] = useState<string | null>(null)
+  const [shopData, setShopData] = useState<{ shop: string; amt: number; qty: number; invQty: number }[]>([])
+  const [shopLoading, setShopLoading] = useState(false)
 
   const visibleBrands = allowedBrands
     ? [...(allowedBrands.length > 1 ? [{ label: '전체', value: 'all' }] : []),
@@ -160,8 +163,10 @@ export default function PlanningDashboard() {
 
   // 베스트 스타일 클릭 → 해당 상품 채널별 매출 조회
   const handleStyleClick = async (styleCd: string) => {
-    if (selStyle === styleCd) { setSelStyle(null); setStyleChannels([]); setStyleWeekly(null); return }
+    if (selStyle === styleCd) { setSelStyle(null); setStyleChannels([]); setStyleWeekly(null); setSelChannel(null); setShopData([]); return }
     setSelStyle(styleCd)
+    setSelChannel(null)
+    setShopData([])
     setStyleChLoading(true)
     try {
       const res = await fetch(`/api/planning/style-channels?styleCd=${encodeURIComponent(styleCd)}&brand=${brand}&year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}`)
@@ -170,6 +175,19 @@ export default function PlanningDashboard() {
       setStyleWeekly(json.weekly ?? null)
     } catch { setStyleChannels([]); setStyleWeekly(null) }
     finally { setStyleChLoading(false) }
+  }
+
+  // 채널 바 클릭 → 해당 채널 매장별 매출 드릴다운
+  const handleChannelClick = async (channel: string) => {
+    if (!selStyle || selChannel === channel) { setSelChannel(null); setShopData([]); return }
+    setSelChannel(channel)
+    setShopLoading(true)
+    try {
+      const sp = new URLSearchParams({ styleCd: selStyle, channel, brand: apiBrand ?? 'all', year: selSeason.year, season: selSeason.season })
+      const res = await fetch(`/api/planning/style-shops?${sp}`)
+      const json = await res.json()
+      setShopData(json.shops ?? [])
+    } catch { setShopData([]) } finally { setShopLoading(false) }
   }
 
   // 그룹(어패럴/용품) + 카테고리 필터 적용
@@ -530,7 +548,7 @@ export default function PlanningDashboard() {
       {!loading && data && (
         <div className="grid grid-cols-12 gap-3">
           {/* 베스트 스타일 TOP10 */}
-          <div className="col-span-5 bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+          <div className="col-span-4 bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
             <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-700">베스트 스타일 TOP10</span>
               <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
@@ -543,7 +561,7 @@ export default function PlanningDashboard() {
                 ))}
               </div>
             </div>
-            <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
+            <div className="overflow-y-auto" style={{ maxHeight: 420 }}>
               <table className="w-full text-[11px] table-fixed">
                 <colgroup>
                   <col style={{ width: 22 }} />
@@ -603,7 +621,7 @@ export default function PlanningDashboard() {
           </div>
 
           {/* 채널별 매출 비중 + 주간 차트 */}
-          <div className="col-span-4 flex flex-col gap-3" style={{ minHeight: 280 }}>
+          <div className="col-span-5 flex flex-col gap-3">
             {/* 채널별 매출 비중 */}
             <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3" style={{ minHeight: 160 }}>
               <div className="flex items-center justify-between mb-1.5">
@@ -626,17 +644,62 @@ export default function PlanningDashboard() {
                   <div className="space-y-1">
                     {sorted.map(ch => {
                       const pct = totalAmt > 0 ? Math.round(ch.amt / totalAmt * 1000) / 10 : 0
+                      const isSelected = selChannel === ch.channel
                       return (
-                        <div key={ch.channel} className="flex items-center gap-2">
+                        <div
+                          key={ch.channel}
+                          className={cn('flex items-center gap-2 rounded px-1 -mx-1 transition-colors',
+                            selStyle ? 'cursor-pointer hover:bg-gray-50' : '',
+                            isSelected ? 'ring-1 ring-pink-300 bg-pink-50/50' : '')}
+                          onClick={() => handleChannelClick(ch.channel)}
+                        >
                           <span className="text-[10px] text-gray-600 w-[72px] truncate">{ch.channel}</span>
                           <div className="flex-1 h-3.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-pink-500 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                            <div className={cn('h-full rounded-full transition-all', isSelected ? 'bg-pink-600' : 'bg-pink-500')} style={{ width: `${Math.min(pct, 100)}%` }} />
                           </div>
                           <span className="text-[10px] font-mono text-gray-700 w-[36px] text-right">{pct}%</span>
                           <span className="text-[10px] font-mono text-gray-400 w-[50px] text-right">{fmtW(ch.amt)}</span>
                         </div>
                       )
                     })}
+                    {/* 매장 드릴다운 */}
+                    {selStyle && selChannel && (
+                      <div className="mt-2 border-t border-gray-100 pt-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold text-pink-600">{selChannel} 매장별</span>
+                          <button onClick={() => { setSelChannel(null); setShopData([]) }}
+                            className="text-[9px] text-gray-400 hover:text-gray-600">닫기</button>
+                        </div>
+                        {shopLoading ? (
+                          <div className="text-[10px] text-gray-300 text-center py-2">로딩 중...</div>
+                        ) : shopData.length === 0 ? (
+                          <div className="text-[10px] text-gray-300 text-center py-2">데이터 없음</div>
+                        ) : (
+                          <div className="overflow-y-auto" style={{ maxHeight: 180 }}>
+                            <table className="w-full text-[10px]">
+                              <thead className="sticky top-0 bg-white">
+                                <tr className="border-b border-gray-100 text-gray-400 font-semibold">
+                                  <th className="text-left py-1 pr-2">매장명</th>
+                                  <th className="text-right py-1 pr-2">매출</th>
+                                  <th className="text-right py-1 pr-2">수량</th>
+                                  <th className="text-right py-1">재고</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {shopData.map(s => (
+                                  <tr key={s.shop} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                    <td className="py-1 pr-2 text-gray-700 truncate max-w-[100px]" title={s.shop}>{s.shop}</td>
+                                    <td className="py-1 pr-2 text-right font-mono text-gray-700">{fmtW(s.amt)}</td>
+                                    <td className="py-1 pr-2 text-right font-mono text-gray-500">{s.qty.toLocaleString()}</td>
+                                    <td className={cn('py-1 text-right font-mono', s.invQty > 0 ? 'text-emerald-600' : 'text-gray-300')}>{s.invQty}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )
               })()}

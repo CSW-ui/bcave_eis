@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,  Bar,
 } from 'recharts'
 import { cn } from '@/lib/utils'
-import { BRAND_COLORS_KR, brandNameToCode } from '@/lib/constants'
+import { BRAND_COLORS_KR, BRAND_NAMES, brandNameToCode } from '@/lib/constants'
 import { fmtW } from '@/lib/formatters'
 import { getChannelGroup } from '@/lib/sales-types'
 
@@ -35,18 +35,19 @@ export default function DashboardPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [region, setRegion] = useState<Region>('all')
+  const [brandSel, setBrandSel] = useState<string>('all') // 브랜드 코드 (CO/WA/LE/CK/LK) 또는 'all'
 
-  const fetchData = useCallback(async (r: Region) => {
+  const fetchData = useCallback(async (r: Region, b: string) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/dashboard?region=${r}`)
+      const res = await fetch(`/api/dashboard?region=${r}&brand=${b}`)
       const j = await res.json()
       setData(j)
     } catch {}
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchData(region) }, [region, fetchData])
+  useEffect(() => { fetchData(region, brandSel) }, [region, brandSel, fetchData])
 
 
   const handleRegion = (r: Region) => {
@@ -54,12 +55,26 @@ export default function DashboardPage() {
     setRegion(r)
   }
 
-  // 지역 필터된 목표 합계
+  const handleBrandClick = (brandNm: string) => {
+    const code = brandNameToCode(brandNm)
+    if (!code) return
+    setBrandSel(prev => prev === code ? 'all' : code)
+  }
+
+  // 지역+브랜드 필터된 목표 합계
   const getFilteredMonthlyTarget = useCallback((yyyymm: string): number => {
     return targets
-      .filter(t => t.yyyymm === yyyymm && matchTargetRegion(t.shoptypenm, region))
+      .filter(t => {
+        if (t.yyyymm !== yyyymm) return false
+        if (!matchTargetRegion(t.shoptypenm, region)) return false
+        if (brandSel !== 'all') {
+          const tCode = brandNameToCode(t.brandnm)
+          if (tCode !== brandSel) return false
+        }
+        return true
+      })
       .reduce((sum, t) => sum + t.target, 0)
-  }, [targets, region])
+  }, [targets, region, brandSel])
 
   // 차트 데이터: 전년 / 목표 / 달성
   const chartData = useMemo(() => {
@@ -230,8 +245,14 @@ export default function DashboardPage() {
         {/* 월별 매출 추이 */}
         <div className="col-span-2 bg-white rounded-xl border border-surface-border shadow-sm p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700">
-              월별 매출 추이 <span className="text-xs font-normal text-gray-400 ml-1">({region === 'all' ? '전체' : region === 'domestic' ? '국내' : region === 'online' ? '온라인' : region === 'offline' ? '오프라인' : '해외'})</span>
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              월별 매출 추이 <span className="text-xs font-normal text-gray-400">({region === 'all' ? '전체' : region === 'domestic' ? '국내' : region === 'online' ? '온라인' : region === 'offline' ? '오프라인' : '해외'})</span>
+              {brandSel !== 'all' && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-brand-accent bg-brand-accent/10 px-1.5 py-0.5 rounded-full">
+                  {BRAND_NAMES[brandSel] ?? brandSel}
+                  <button onClick={() => setBrandSel('all')} className="hover:text-brand-accent/80" title="브랜드 필터 해제">×</button>
+                </span>
+              )}
             </h3>
             <div className="flex items-center gap-4 text-[10px]">
               <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-gray-400 inline-block" style={{ borderTop: '2px dashed #9ca3af' }} />{data?.kpi?.curYear - 1}년 (전년)</span>
@@ -375,18 +396,28 @@ export default function DashboardPage() {
             <span className="text-xs font-normal text-gray-400 ml-1">({region === 'all' ? '전체' : region === 'domestic' ? '국내' : region === 'online' ? '온라인' : region === 'offline' ? '오프라인' : '해외'})</span>
           </h3>
           {loading ? <div className="h-64 bg-surface-subtle animate-pulse rounded-lg" /> : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {brandMonthData.map(b => {
                 const pctClamped = Math.min(b.pct, 100)
                 const pctColor = b.pct >= 90 ? 'bg-emerald-500' : b.pct >= 70 ? 'bg-amber-500' : 'bg-red-500'
                 const pctTextColor = b.pct >= 90 ? 'text-emerald-600' : b.pct >= 70 ? 'text-amber-600' : 'text-red-500'
+                const code = brandNameToCode(b.brand)
+                const isSel = code && brandSel === code
 
                 return (
-                  <div key={b.brand}>
+                  <button
+                    key={b.brand}
+                    onClick={() => handleBrandClick(b.brand)}
+                    className={cn(
+                      'w-full text-left p-2 -mx-2 rounded-lg transition-all',
+                      isSel ? 'bg-brand-accent/5 ring-1 ring-brand-accent/40' : 'hover:bg-gray-50'
+                    )}
+                    title={isSel ? '클릭하면 전체로 돌아갑니다' : `${b.brand}로 좌측 대시보드 필터`}
+                  >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ background: BRAND_COLORS[b.brand] ?? '#999' }} />
-                        <span className="text-xs font-semibold text-gray-800">{b.brand}</span>
+                        <span className={cn('text-xs font-semibold', isSel ? 'text-brand-accent' : 'text-gray-800')}>{b.brand}</span>
                       </div>
                       <span className={cn('text-sm font-bold', pctTextColor)}>
                         {b.target ? `${b.pct}%` : '—'}
@@ -404,7 +435,7 @@ export default function DashboardPage() {
                         {b.target ? `목표 ${fmtW(b.target)}` : '목표 미설정'}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
               {brandMonthData.length === 0 && (

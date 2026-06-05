@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { snowflakeQuery, BRAND_FILTER, SALES_VIEW } from '@/lib/snowflake'
 import { fmtDateSf } from '@/lib/formatters'
+import { VALID_BRANDS } from '@/lib/constants'
 
 export async function GET(req: NextRequest) {
   const region = req.nextUrl.searchParams.get('region') || 'domestic'
+  const brandParam = req.nextUrl.searchParams.get('brand') || 'all'
+  const brandSelected = brandParam !== 'all' && VALID_BRANDS.has(brandParam) ? brandParam : null
   // SHOPTYPENM은 '백화점','아울렛','무신사','해외 사입' 등 구체적 채널명
   // 해외: SHOPTYPENM에 '해외' 포함
   // 오프라인: 백화점,아울렛,가두,직영,대리,면세,팝업,편집,오프,로드샵,부티크,쇼핑몰,사입(해외제외)
@@ -40,7 +43,10 @@ export async function GET(req: NextRequest) {
   const lyPmStart = `${pmYear - 1}${String(pmMonth).padStart(2, '0')}01`
   const lyPmEnd = `${pmYear - 1}${String(pmMonth).padStart(2, '0')}${new Date(pmYear - 1, pmMonth, 0).getDate()}`
 
-  const brandFilter = BRAND_FILTER
+  // 좌측(메인) 대시보드용 — 단일 브랜드 선택 시 그 브랜드만, 아니면 5개 전체
+  const brandFilter = brandSelected ? `BRANDCD = '${brandSelected}'` : BRAND_FILTER
+  // 우측 브랜드 비교 패널용 — 항상 5개 전체
+  const allBrandFilter = BRAND_FILTER
 
   try {
     const [kpiRaw, monthlyRaw, brandRaw, brandMonthRaw, yearlySales, dcKpiRaw, dcMonthlyRaw, costMonthlyRaw, yearlyInbound, baseInvRaw, yearlyDcRate, currentInvRaw, lyCmCostRaw, normCoRaw, lyNormCoRaw] = await Promise.all([
@@ -82,14 +88,14 @@ export async function GET(req: NextRequest) {
         ORDER BY REV DESC
       `),
 
-      // 4. 브랜드별 금월 매출
-      snowflakeQuery<{ BRANDNM: string; REV: number }>(`
-        SELECT BRANDNM,
+      // 4. 브랜드별 금월 매출 — 우측 브랜드 비교 패널용, 단일 브랜드 선택과 무관하게 항상 5개 전체
+      snowflakeQuery<{ BRANDNM: string; BRANDCD: string; REV: number }>(`
+        SELECT BRANDNM, BRANDCD,
           SUM(SALEAMT_VAT_EX) AS REV
         FROM BCAVE.SEWON.VW_SALES_VAT
-        WHERE ${brandFilter} ${regionFilter}
+        WHERE ${allBrandFilter} ${regionFilter}
           AND SALEDT BETWEEN '${cmStart}' AND '${cmEnd}'
-        GROUP BY BRANDNM
+        GROUP BY BRANDNM, BRANDCD
         ORDER BY REV DESC
       `),
 
@@ -425,6 +431,7 @@ export async function GET(req: NextRequest) {
     // 브랜드별 금월 매출
     const brandMonth = brandMonthRaw.map(r => ({
       brand: r.BRANDNM,
+      brandcd: r.BRANDCD,
       cmRev: Number(r.REV) || 0,
     }))
 

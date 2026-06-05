@@ -34,7 +34,8 @@ export async function GET(req: Request) {
 
   const sBrandClause = `s.BRANDCD IN ${brandInClause}`
   const onlineChannels = `'온라인(무신사)','온라인(위탁몰)','온라인(자사몰)','온라인B2B'`
-  const excludeOverseas = `AND v.SHOPTYPENM != '해외 사입'`
+  // NULL-safe: SHOPTYPENM이 NULL인 행도 정상/이월에 포함시킴 (3치 논리로 누락되던 문제 수정)
+  const excludeOverseas = `AND (v.SHOPTYPENM IS NULL OR v.SHOPTYPENM != '해외 사입')`
 
   // 전년 동기간 매출 비교용 날짜
   const lyFromDt = fromDt ? String(Number(fromDt) - 10000) : ''
@@ -294,7 +295,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
           AND v.SALEDT >= '${lyFromDt}' ${lyToDt ? `AND v.SALEDT <= '${lyToDt}'` : ''}
-          AND v.SHOPTYPENM != '해외 사입'
+          AND (v.SHOPTYPENM IS NULL OR v.SHOPTYPENM != '해외 사입')
         GROUP BY si.ITEMNM, SALE_TYPE
       `),
 
@@ -336,7 +337,7 @@ export async function GET(req: Request) {
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
           AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
-          AND v.SHOPTYPENM != '해외 사입'
+          AND (v.SHOPTYPENM IS NULL OR v.SHOPTYPENM != '해외 사입')
         GROUP BY si.ITEMNM
       `),
     ])

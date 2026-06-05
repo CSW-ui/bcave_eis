@@ -306,34 +306,20 @@ export default function SalesDashboard() {
       }
     }
 
-    // 채널 목표 매칭 헬퍼 (shoptypenm의 부분 매칭 지원)
+    // 채널 목표 매칭 헬퍼 (정확 매칭만 — 빈 문자열·부분 매칭은 오답 위험으로 제거)
     function findChannelTarget(shoptypenm: string): number | null {
-      // selBrands가 선택되어 있으면 해당 브랜드들의 목표만 합산
+      if (!shoptypenm || !shoptypenm.trim()) return null
       if (selBrands.size > 0) {
         let sum: number | null = null
         for (const bc of Array.from(selBrands)) {
           const exact = channelTargetMap[`${bc}|${shoptypenm}`]
           if (exact != null) sum = (sum ?? 0) + exact
-          else {
-            const norm = (shoptypenm ?? '').trim().toLowerCase()
-            for (const [k, v] of Object.entries(channelTargetMap)) {
-              if (!k.startsWith(`${bc}|`)) continue
-              if (k.split('|')[1].trim().toLowerCase().includes(norm) || norm.includes(k.split('|')[1].trim().toLowerCase())) { sum = (sum ?? 0) + v; break }
-            }
-          }
         }
         return sum
       }
-      // brand 탭 필터 적용
       const prefix = brand === 'all' ? 'all' : brand
       const exact = channelTargetMap[`${prefix}|${shoptypenm}`]
-      if (exact != null) return exact
-      const norm = (shoptypenm ?? '').trim().toLowerCase()
-      for (const [k, v] of Object.entries(channelTargetMap)) {
-        if (!k.startsWith(`${prefix}|`)) continue
-        if (k.split('|')[1].trim().toLowerCase().includes(norm) || norm.includes(k.split('|')[1].trim().toLowerCase())) return v
-      }
-      return null
+      return exact ?? null
     }
 
     // 월 진행도 계산
@@ -377,11 +363,11 @@ export default function SalesDashboard() {
       brandRows.push({ label: BRAND_NAMES[bc] ?? bc, brandcd: bc, m: calcMetrics(c, l, brandTargetMap[bc] ?? null) })
     }
 
-    // 채널별 행
+    // 채널별 행 (빈 SHOPTYPENM 행은 자식 리스트에서도 제외되므로 그룹 합산에서도 제외)
     const chRows: ChRow[] = []
     for (const grp of CHANNEL_GROUP_ORDER) {
-      const gc = cy.filter(r => getChannelGroup(r.shoptypenm) === grp)
-      const gl = ly.filter(r => getChannelGroup(r.shoptypenm) === grp)
+      const gc = cy.filter(r => (r.shoptypenm ?? '').trim() !== '' && getChannelGroup(r.shoptypenm) === grp)
+      const gl = ly.filter(r => (r.shoptypenm ?? '').trim() !== '' && getChannelGroup(r.shoptypenm) === grp)
       if (!gc.length) continue
 
       // 그룹 합계 - 그룹 내 채널 목표 합산

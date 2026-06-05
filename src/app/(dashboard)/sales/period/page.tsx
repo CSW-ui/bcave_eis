@@ -232,12 +232,15 @@ export default function PeriodPage() {
   }
 
   const bg = (isTotal: boolean) => isTotal ? 'bg-gray-100' : ''
+  // sticky 좌측 셀은 가로 스크롤 시 본문 셀이 비쳐 보이지 않도록 항상 불투명 배경 필요
+  const stickyBg = (isTotal: boolean, isGroupSummary?: boolean) =>
+    isTotal ? 'bg-gray-100' : isGroupSummary ? 'bg-gray-50' : 'bg-white'
   const renderGap = (cy: number, ly: number) => {
     const gap = cy - ly
     if (ly === 0 && cy === 0) return '—'
     return <span className={cn('font-mono', gap >= 0 ? 'text-red-500' : 'text-blue-500')}>{gap >= 0 ? '+' : ''}{fmtE(gap)}</span>
   }
-  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean, totalRev?: number, channelName?: string) => {
+  const renderRow = (label: React.ReactNode, a: AggRow, isTotal: boolean, totalRev?: number, channelName?: string, isGroupSummary?: boolean) => {
     const share = totalRev && totalRev > 0 ? Math.round(a.rev / totalRev * 1000) / 10 : null
     const hideShop = channelName && EXCLUDE_SHOP_CNT.includes(channelName)
     const isSingleShop = channelName && SINGLE_SHOP_CHANNELS.includes(channelName)
@@ -245,7 +248,7 @@ export default function PeriodPage() {
     const dispLyShopCnt = hideShop ? 0 : isSingleShop ? (a.lyShopCnt > 0 ? 1 : 0) : a.lyShopCnt
     return (
     <>
-      <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', bg(isTotal))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
+      <td className={cn('py-1.5 px-1.5 sticky left-0 z-10 whitespace-nowrap text-xs w-[160px] min-w-[160px]', stickyBg(isTotal, isGroupSummary))} style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.1)' }}>{label}</td>
       {/* 점포 */}
       <td className={cn(cellBase, 'text-gray-600', bg(isTotal))}>{hideShop ? '—' : (dispShopCnt || '—')}</td>
       <td className={cn(cellBase, 'text-gray-400', bg(isTotal))}>
@@ -430,7 +433,7 @@ export default function PeriodPage() {
                             {isBrandCollapsed ? <ChevronRight size={12} className="text-gray-400" /> : <ChevronDown size={12} className="text-gray-400" />}
                             <span className={cn('font-bold', isTotal ? 'text-gray-900' : isGroupSummary ? 'text-gray-800' : 'text-gray-700')}>{sec.label}</span>
                           </div>,
-                          secAgg, isTotal || isGroupSummary, secAgg.rev,
+                          secAgg, isTotal || isGroupSummary, secAgg.rev, undefined, isGroupSummary,
                         )}
                       </tr>
 

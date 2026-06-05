@@ -162,7 +162,7 @@ export default function AdminPage() {
         await saveTargets(parsed, file.name)
         alert(`${parsed.length}건 업로드 완료`)
       }
-    } catch { alert('파일 읽기 오류') }
+    } catch (err) { alert(`업로드 실패: ${err instanceof Error ? err.message : String(err)}`) }
     finally { setUploading(false); e.target.value = '' }
   }
 

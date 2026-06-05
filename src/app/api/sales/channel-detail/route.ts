@@ -186,8 +186,9 @@ export async function GET(req: Request) {
 
     const products = topProducts.map(p => {
       const rev = Number(p.REVENUE) || 0
-      const tag = Number(p.TAG_TOTAL) || 0
-      const sale = Number(p.SALE_TOTAL) || 0
+      const dcp = dcProdMap.get(p.STYLECD)
+      const tag = Number(dcp?.TAG_TOTAL) || 0
+      const sale = Number(dcp?.SALE_TOTAL) || 0
       const cost = Number(p.COST_TOTAL) || 0
       const cw = Number(p.CW_REV) || 0
       const pw = Number(p.PW_REV) || 0
@@ -214,8 +215,9 @@ export async function GET(req: Request) {
       },
       shops, products,
       items: itemData.map(r => {
-        const mtdTag = Number(r.MTD_TAG) || 0
-        const mtdSale = Number(r.MTD_SALE) || 0
+        const dci = dcItemMap.get(r.ITEMNM)
+        const mtdTag = Number(dci?.MTD_TAG) || 0
+        const mtdSale = Number(dci?.MTD_SALE) || 0
         return {
           item: r.ITEMNM ?? '기타',
           mtdRev: Number(r.MTD_REV) || 0,

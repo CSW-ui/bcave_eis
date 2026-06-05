@@ -1,7 +1,9 @@
 // 공통 포매팅 유틸리티
 
-/** 백만 단위 (1,234,567 → "1") */
-export function fmtM(v: number) { return Math.round(v / 1e6).toLocaleString() }
+/** 백만 단위, 소수점 1자리 (1,234,567 → "1.2") */
+export function fmtM(v: number) {
+  return (v / 1e6).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+}
 
 /** 만원 단위 (12345 → "1만") */
 export function fmtW(v: number) {

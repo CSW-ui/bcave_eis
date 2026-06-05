@@ -350,6 +350,8 @@ export default function IpjPage() {
       '정상입고TAG': r.ordTagAmt, '정상입고QR': r.ordTagQR,
       '정상입고원가': r.ordCostAmt, '정상입고원가율': r.ordTagAmt > 0 ? (r.ordCostAmt / r.ordTagAmt * 100).toFixed(1) : 0,
       '총매출': r.totalSaleAmt,
+      '총매출_전년비액': r.totalSaleAmt - (r.lyTotalSaleAmt || 0),
+      '총매출_전년비율': r.lyTotalSaleAmt > 0 ? ((r.totalSaleAmt - r.lyTotalSaleAmt) / r.lyTotalSaleAmt * 100).toFixed(1) : null,
       '총할인율': ((r.tagAmt + r.coTagAmt + r.ovTagAmt) > 0 ? (1 - (r.salePriceAmt + r.coSalePriceAmt + r.ovSalePriceAmt) / (r.tagAmt + r.coTagAmt + r.ovTagAmt)) * 100 : 0).toFixed(1),
       '총원가율': r.totalSaleAmt > 0 ? ((r.costAmt + r.coCostAmt + r.ovCostAmt) / r.totalSaleAmt * 100).toFixed(1) : 0,
       '정상할인율': r.dcRate, '정상원가율': r.cogsRate, '정상판매율': r.salesRate,
@@ -371,6 +373,14 @@ export default function IpjPage() {
     if (prev <= 0) return '—'
     const yoy = Math.round((cur - prev) / prev * 1000) / 10
     return <span className={cn('text-[11px] font-semibold', yoy >= 0 ? 'text-red-600' : 'text-blue-600')}>{yoy >= 0 ? '+' : ''}{yoy}%</span>
+  }
+  // 전년비액 렌더링 헬퍼 (금액 증감: 백만원)
+  const renderYoyAmt = (cur: number, prev: number) => {
+    if (!prev && !cur) return '—'
+    const diff = cur - prev
+    const v = Math.round(diff / 1e6)
+    if (v === 0) return <span className="text-[11px] text-gray-400">0</span>
+    return <span className={cn('text-[11px] font-semibold', v > 0 ? 'text-red-600' : 'text-blue-600')}>{v > 0 ? '+' : ''}{v.toLocaleString()}</span>
   }
   // 전년비 렌더링 헬퍼 (비율: %p 차이)
   const renderPtDiff = (cur: number, prev: number | null) => {
@@ -440,6 +450,7 @@ export default function IpjPage() {
         {/* 총 매출 */}
         <td className={cn(cellBase, 'text-gray-800 font-semibold bg-gray-100')}>{fmtE(r.totalSaleAmt)}</td>
         <td className={cellBase}>{renderYoy(r.totalSaleAmt, r.lyTotalSaleAmt)}</td>
+        <td className={cellBase}>{renderYoyAmt(r.totalSaleAmt, r.lyTotalSaleAmt)}</td>
         <td className={cn(cellBase, 'text-gray-600')}>{itemTotalDcRate}%</td>
         <td className={cellBase}>{renderPtDiff(itemTotalDcRate, lyTotalDcRate)}</td>
         <td className={cn(cellBase, 'text-gray-600')}>{itemTotalCogsRate}%</td>
@@ -519,6 +530,7 @@ export default function IpjPage() {
         {/* 총 매출 */}
         <td className={cn(cellBase, 'font-semibold text-gray-900 bg-gray-200')}>{fmtE(s.totalSaleAmt)}</td>
         <td className={cellBase}>{renderYoy(s.totalSaleAmt, s.lyTotalSaleAmt)}</td>
+        <td className={cellBase}>{renderYoyAmt(s.totalSaleAmt, s.lyTotalSaleAmt)}</td>
         <td className={cn(cellBase, 'text-gray-600')}>{r.totalDcRate}%</td>
         <td className={cellBase}>{renderPtDiff(r.totalDcRate, r.lyTotalDcRate)}</td>
         <td className={cn(cellBase, 'text-gray-600')}>{r.totalCogsRate}%</td>
@@ -642,7 +654,7 @@ export default function IpjPage() {
                   <th rowSpan={3} className="text-center text-[11px] text-gray-300 font-bold py-1 sticky left-0 bg-gray-800 z-20 w-[32px] min-w-[32px] max-w-[32px]">구분</th>
                   <th rowSpan={3} className="text-center text-[11px] text-gray-300 font-bold py-1 sticky left-[32px] bg-gray-800 z-20 w-[120px] min-w-[120px] border-r-2 border-gray-500" style={{ boxShadow: '6px 0 12px -2px rgba(0,0,0,0.25)' }}>품목</th>
                   <th colSpan={14} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 재고 TAG 금액</th>
-                  <th colSpan={28} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 매출</th>
+                  <th colSpan={29} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 매출</th>
                 </tr>
                 {/* 2행: 중분류 */}
                 <tr className="bg-gray-700">
@@ -651,7 +663,8 @@ export default function IpjPage() {
                   <th colSpan={10} className="text-center text-[11px] text-gray-300 font-medium py-1.5 border-l border-gray-500">당시즌 입고</th>
                   <th colSpan={2} className="text-center text-[11px] text-gray-300 font-medium py-1.5 border-l border-gray-500">이월재고</th>
                   <SortTh k="totalSaleAmt" rowSpan={2} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-500 bg-gray-800">매출액</SortTh>
-                  <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">전년비</th>
+                  <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">전년비<br/>(%)</th>
+                  <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">전년비액<br/>(백만)</th>
                   <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">할인율</th>
                   <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">전년비</th>
                   <th rowSpan={2} className="text-center text-[11px] text-gray-300 font-bold py-1.5 bg-gray-800">매출<br/>원가율</th>

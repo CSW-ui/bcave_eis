@@ -428,7 +428,16 @@ export default function ItemDetailPage() {
                       className={cn('border-b border-surface-border/50 cursor-pointer transition-colors',
                         isSel ? 'bg-purple-50' : i%2!==0 ? 'bg-gray-50/30 hover:bg-gray-50' : 'hover:bg-gray-50')}>
                       <td className="px-3 py-1.5 font-mono text-gray-400 text-[9px]">{s.stylecd}</td>
-                      <td className={cn('px-2 py-1.5 font-medium truncate max-w-[160px]', isSel ? 'text-purple-700' : 'text-gray-800')}>{s.stylenm}</td>
+                      <td
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const sp = new URLSearchParams()
+                          if (unit === 'sku' && s.colorcd) sp.set('color', s.colorcd)
+                          router.push(`/sales/style/${encodeURIComponent(s.stylecd)}${sp.toString() ? `?${sp}` : ''}`)
+                        }}
+                        className={cn('px-2 py-1.5 font-medium truncate max-w-[160px] hover:underline hover:text-brand-accent', isSel ? 'text-purple-700' : 'text-gray-800')}
+                        title="상품 상세 보기"
+                      >{s.stylenm}</td>
                       {unit === 'sku' && (
                         <td className="px-2 py-1.5 text-[9px] text-gray-500 truncate max-w-[80px]" title={s.colornm}>{s.colornm || s.colorcd}</td>
                       )}

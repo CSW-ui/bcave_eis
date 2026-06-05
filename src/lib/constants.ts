@@ -34,6 +34,7 @@ export const NAV_CONFIG: NavSection[] = [
         icon: Package,
         children: [
           { label: '기획현황판', href: '/planning', icon: ClipboardList },
+          { label: '상품별 판매조회', href: '/planning/products', icon: Package },
           { label: '입판재현황', href: '/planning/ipj', icon: BarChart3 },
           { label: '이월재고 관리', href: '/planning/carryover', icon: Archive },
         ],
@@ -45,6 +46,7 @@ export const NAV_CONFIG: NavSection[] = [
         children: [
           { label: '매출 대시보드', href: '/sales', icon: BarChart3 },
           { label: '채널판매현황', href: '/sales/period', icon: ClipboardList },
+          { label: '매장별 실적', href: '/sales/shops', icon: Store },
           { label: '예상달성', href: '/sales/forecast', icon: Target },
           { label: '보충출고 자동화', href: '/sales/replenishment', icon: Truck },
         ],

@@ -334,8 +334,22 @@ export default function SalesDashboard() {
     const daysTotal = new Date(monthYear, monthIdx + 1, 0).getDate()
     const _monthProgress: MonthProgress = { daysElapsed, daysTotal }
 
-    // 브랜드별 행 (항상 전체 데이터 사용)
-    const allCy = perfData.cy; const allLy = perfData.ly
+    // 브랜드별 행 (전체 브랜드 표시; 채널 선택 시 해당 채널만 집계)
+    const channelFilterActive = selChannels.size > 0
+    const allCy = channelFilterActive ? perfData.cy.filter(r => selChannels.has(r.shoptypenm)) : perfData.cy
+    const allLy = channelFilterActive ? perfData.ly.filter(r => selChannels.has(r.shoptypenm)) : perfData.ly
+
+    // 브랜드 목표 lookup (채널 선택 시 해당 채널 목표만 합산)
+    const brandTargetFor = (bc: string): number | null => {
+      if (!channelFilterActive) return brandTargetMap[bc] ?? null
+      let sum: number | null = null
+      for (const ch of Array.from(selChannels)) {
+        const t = channelTargetMap[`${bc}|${ch}`]
+        if (t != null) sum = (sum ?? 0) + t
+      }
+      return sum
+    }
+
     const brandCodes = Array.from(new Set(allCy.map(r => r.brandcd)))
     const brandSorted = brandCodes
       .map(bc => ({ bc, rev: allCy.filter(r => r.brandcd === bc).reduce((s, r) => s + r.mtdRev, 0) }))
@@ -344,14 +358,21 @@ export default function SalesDashboard() {
 
     const brandRows: BrandRow[] = []
     const cyAll = sumAgg(allCy); const lyAll = sumAgg(allLy)
-    // 브랜드 필터 적용: selBrands 또는 brand 탭 기준
+    // 합계 목표: selBrands 또는 brand 탭 기준 (채널 선택 시 해당 채널 목표만)
     let totalTgt: number | null = null
     if (selBrands.size > 0) {
       let sum = 0; let found = false
-      for (const bc of Array.from(selBrands)) { if (brandTargetMap[bc] != null) { sum += brandTargetMap[bc]; found = true } }
+      for (const bc of Array.from(selBrands)) { const t = brandTargetFor(bc); if (t != null) { sum += t; found = true } }
       totalTgt = found ? sum : null
     } else if (brand !== 'all') {
-      totalTgt = brandTargetMap[brand] ?? null
+      totalTgt = brandTargetFor(brand)
+    } else if (channelFilterActive) {
+      let sum: number | null = null
+      for (const ch of Array.from(selChannels)) {
+        const t = channelTargetMap[`all|${ch}`]
+        if (t != null) sum = (sum ?? 0) + t
+      }
+      totalTgt = sum
     } else {
       const sum = Object.values(brandTargetMap).reduce((s, v) => s + v, 0)
       totalTgt = sum > 0 ? sum : null
@@ -360,7 +381,7 @@ export default function SalesDashboard() {
     for (const bc of brandSorted) {
       const c = sumAgg(allCy.filter(r => r.brandcd === bc))
       const l = sumAgg(allLy.filter(r => r.brandcd === bc))
-      brandRows.push({ label: BRAND_NAMES[bc] ?? bc, brandcd: bc, m: calcMetrics(c, l, brandTargetMap[bc] ?? null) })
+      brandRows.push({ label: BRAND_NAMES[bc] ?? bc, brandcd: bc, m: calcMetrics(c, l, brandTargetFor(bc)) })
     }
 
     // 채널별 행 (빈 SHOPTYPENM 행은 자식 리스트에서도 제외되므로 그룹 합산에서도 제외)
@@ -391,7 +412,7 @@ export default function SalesDashboard() {
     }
 
     return { brandRows, chRows }
-  }, [perfData, targets, brand, selBrands])
+  }, [perfData, targets, brand, selBrands, selChannels])
 
   // ── 퍼포먼스 테이블 클릭 핸들러 ────────────────────────────────
   // 브랜드 다중 선택에서 API용 브랜드 파라미터 결정

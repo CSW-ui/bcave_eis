@@ -33,7 +33,7 @@ export function useTargetData() {
   const fetchTargets = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/targets')
+      const res = await fetch('/api/targets', { cache: 'no-store' })
       const json = await res.json()
       if (json.data) {
         setRawTargets(json.data)

@@ -128,8 +128,11 @@ export default function AdminPage() {
       })
 
       // 컬럼 자동 감지: 신규 형식(매장별) vs 기존 형식(합산)
-      const sample = trimmedRows[0] ?? {}
-      const isNewFormat = '매출액(원)' in sample && '매장코드' in sample
+      // 빈 셀은 sheet_to_json이 키를 만들지 않으므로(예: 매장코드 미입력 행)
+      // 첫 행 한 줄이 아니라 전체 행의 키 합집합으로 판별
+      const headerKeys = new Set<string>()
+      for (const r of trimmedRows) for (const k of Object.keys(r)) headerKeys.add(k)
+      const isNewFormat = headerKeys.has('매출액(원)')
 
       let parsed: MonthlyTarget[] = []
 

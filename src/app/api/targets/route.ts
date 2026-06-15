@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// 목표 데이터는 업로드 직후 항상 최신 반영되어야 하므로 캐시 금지
+export const dynamic = 'force-dynamic'
+
 // GET: 목표매출 전체 조회
 export async function GET() {
   // supabase 기본 1000행 한계 회피 — 페이지네이션으로 전체 수집

@@ -67,10 +67,11 @@ export default function DashboardPage() {
       .filter(t => {
         if (t.yyyymm !== yyyymm) return false
         if (!matchTargetRegion(t.shoptypenm, region)) return false
-        if (brandSel !== 'all') {
-          const tCode = brandNameToCode(t.brandnm)
-          if (tCode !== brandSel) return false
-        }
+        // 앱 등록 브랜드(커버낫·리·와키윌리·커버낫키즈·리키즈)만 합산
+        // — 팔렛·네이머클로딩 등 미등록 브랜드는 제외
+        const tCode = brandNameToCode(t.brandnm)
+        if (!tCode) return false
+        if (brandSel !== 'all' && tCode !== brandSel) return false
         return true
       })
       .reduce((sum, t) => sum + t.target, 0)

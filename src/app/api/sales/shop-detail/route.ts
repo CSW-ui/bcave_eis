@@ -60,9 +60,9 @@ export async function GET(req: Request) {
           AND SALEDT BETWEEN '${last4wStart}' AND '${to}'
         GROUP BY STYLECD, COLORCD, SIZECD
       `),
-      // 매장 재고 (SKU 단위)
+      // 매장 재고 (SKU 단위) — INV 명목 = AVAIL 가용 + TRF 이동
       snowflakeQuery<Record<string, string>>(`
-        SELECT STYLECD, COLORCD, SIZECD, SUM(INVQTY) as SHOP_INV
+        SELECT STYLECD, COLORCD, SIZECD, SUM(INVQTY) as SHOP_INV, SUM(AVAILQTY) as SHOP_AVAIL, SUM(TRFQTY) as SHOP_TRF
         FROM BCAVE.SEWON.SW_SHOPINV
         WHERE SHOPCD = '${shopCd}'
         GROUP BY STYLECD, COLORCD, SIZECD
@@ -133,6 +133,8 @@ export async function GET(req: Request) {
     const k = (a: string, b: string, c: string) => `${a}|${b ?? ''}|${c ?? ''}`
     const last4wMap = new Map(last4w.map(r => [k(r.STYLECD, r.COLORCD, r.SIZECD), Number(r.QTY_4W) || 0]))
     const shopInvMap = new Map(shopInv.map(r => [k(r.STYLECD, r.COLORCD, r.SIZECD), Number(r.SHOP_INV) || 0]))
+    const shopAvailMap = new Map(shopInv.map(r => [k(r.STYLECD, r.COLORCD, r.SIZECD), Number(r.SHOP_AVAIL) || 0]))
+    const shopTrfMap = new Map(shopInv.map(r => [k(r.STYLECD, r.COLORCD, r.SIZECD), Number(r.SHOP_TRF) || 0]))
     const whInvMap = new Map(whInv.map(r => [k(r.STYLECD, r.COLORCD, r.SIZECD), Number(r.WH_INV) || 0]))
 
     // SKU 통합: 매출 row + 매장재고 row + (매장과 관련된 창고재고 row)
@@ -155,6 +157,8 @@ export async function GET(req: Request) {
       const s = styleMap.get(styleCd)
       const sale = salesMap.get(key) ?? { qty: 0, rev: 0, dc: 0, storeRev: 0, otherRev: 0 }
       const shopInvQ = shopInvMap.get(key) ?? 0
+      const shopAvailQ = shopAvailMap.get(key) ?? 0
+      const shopTrfQ = shopTrfMap.get(key) ?? 0
       const whInvQ = whInvMap.get(key) ?? 0
       const qty4w = last4wMap.get(key) ?? 0
       const avgWeekly = qty4w / 4
@@ -177,6 +181,8 @@ export async function GET(req: Request) {
         qty: sale.qty,
         qty4w,
         shopInv: shopInvQ,
+        shopAvail: shopAvailQ,
+        shopTrf: shopTrfQ,
         whInv: whInvQ,
         sellThrough, wos, dcRate,
       }
@@ -185,6 +191,8 @@ export async function GET(req: Request) {
     const totRev = skus.reduce((s, r) => s + r.rev, 0)
     const totQty = skus.reduce((s, r) => s + r.qty, 0)
     const totShopInv = skus.reduce((s, r) => s + r.shopInv, 0)
+    const totShopAvail = skus.reduce((s, r) => s + r.shopAvail, 0)
+    const totShopTrf = skus.reduce((s, r) => s + r.shopTrf, 0)
     const totWhInv = skus.reduce((s, r) => s + r.whInv, 0)
     const tot4w = Array.from(last4wMap.values()).reduce((s, v) => s + v, 0)
     const avgWeeklyTot = tot4w / 4
@@ -212,7 +220,7 @@ export async function GET(req: Request) {
           orderCount: isRetail ? orderCount : null,
           avgOrderRev: isRetail && orderCount > 0 ? Math.round(retailRev / orderCount) : null,
           liveRev,
-          shopInv: totShopInv, whInv: totWhInv,
+          shopInv: totShopInv, shopAvail: totShopAvail, shopTrf: totShopTrf, whInv: totWhInv,
           wos: avgWeeklyTot > 0 ? Math.round(totShopInv / avgWeeklyTot * 10) / 10 : 0,
           dcRate: tagBaseTot > 0 ? Math.round((1 - totRev / tagBaseTot) * 1000) / 10 : 0,
           periodDays,

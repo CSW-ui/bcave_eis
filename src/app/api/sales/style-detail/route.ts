@@ -74,9 +74,9 @@ export async function GET(req: Request) {
           ${colorClauseSale}
         GROUP BY SHOPCD, SIZECD
       `),
-      // 매장별 사이즈별 재고
+      // 매장별 사이즈별 재고 (INV 명목 = AVAIL 가용 + TRF 이동)
       snowflakeQuery<Record<string, string>>(`
-        SELECT SHOPCD, SIZECD, SUM(INVQTY) as INV
+        SELECT SHOPCD, SIZECD, SUM(INVQTY) as INV, SUM(AVAILQTY) as AVAIL, SUM(TRFQTY) as TRF
         FROM BCAVE.SEWON.SW_SHOPINV
         WHERE STYLECD = '${styleCd}'
           ${colorClauseInv}
@@ -148,9 +148,9 @@ export async function GET(req: Request) {
     // 매장별 데이터 구성
     type ShopRow = {
       shopCd: string; shopNm: string; channel: string; area: string
-      sizes: Record<string, { qty: number; inv: number; qty4w: number }>
+      sizes: Record<string, { qty: number; inv: number; avail: number; qty4w: number }>
       totalQty: number; totalRev: number; totalStoreRev: number; totalOtherRev: number
-      totalInv: number; total4w: number
+      totalInv: number; totalAvail: number; totalTrf: number; total4w: number
       sellThrough: number; wos: number
     }
     const shopMap = new Map<string, ShopRow>()
@@ -162,7 +162,7 @@ export async function GET(req: Request) {
           shopCd, shopNm: info?.SHOPNM ?? shopCd,
           channel: info?.SHOPTYPENM ?? '', area: info?.AREANM ?? '',
           sizes: {}, totalQty: 0, totalRev: 0, totalStoreRev: 0, totalOtherRev: 0,
-          totalInv: 0, total4w: 0,
+          totalInv: 0, totalAvail: 0, totalTrf: 0, total4w: 0,
           sellThrough: 0, wos: 0,
         }
         shopMap.set(shopCd, r)
@@ -170,7 +170,7 @@ export async function GET(req: Request) {
       return r
     }
     const ensureSize = (r: ShopRow, sz: string) => {
-      if (!r.sizes[sz]) r.sizes[sz] = { qty: 0, inv: 0, qty4w: 0 }
+      if (!r.sizes[sz]) r.sizes[sz] = { qty: 0, inv: 0, avail: 0, qty4w: 0 }
       return r.sizes[sz]
     }
     for (const r of salesByShop) {
@@ -187,8 +187,14 @@ export async function GET(req: Request) {
       const row = ensureShop(r.SHOPCD)
       const sz = r.SIZECD || '—'
       const s = ensureSize(row, sz)
-      s.inv += Number(r.INV) || 0
-      row.totalInv += Number(r.INV) || 0
+      const inv = Number(r.INV) || 0
+      const avail = Number(r.AVAIL) || 0
+      const trf = Number(r.TRF) || 0
+      s.inv += inv
+      s.avail += avail
+      row.totalInv += inv
+      row.totalAvail += avail
+      row.totalTrf += trf
     }
     for (const r of last4wByShop) {
       const row = ensureShop(r.SHOPCD)
@@ -224,6 +230,8 @@ export async function GET(req: Request) {
     const totOtherRev = shops.reduce((s, r) => s + r.totalOtherRev, 0)
     const totQty = shops.reduce((s, r) => s + r.totalQty, 0)
     const totShopInv = shops.reduce((s, r) => s + r.totalInv, 0)
+    const totShopAvail = shops.reduce((s, r) => s + r.totalAvail, 0)
+    const totShopTrf = shops.reduce((s, r) => s + r.totalTrf, 0)
     const totWhInv = warehouses.reduce((s, r) => s + r.total, 0)
     const tot4w = shops.reduce((s, r) => s + r.total4w, 0)
     const avgWeekly = tot4w / 4
@@ -255,7 +263,7 @@ export async function GET(req: Request) {
         storeRev: Math.round(totStoreRev),
         otherRev: Math.round(totOtherRev),
         qty: totQty,
-        shopInv: totShopInv, whInv: totWhInv,
+        shopInv: totShopInv, shopAvail: totShopAvail, shopTrf: totShopTrf, whInv: totWhInv,
         sellThrough, wos, dcRate,
         orderQty, inboundQty, cumQty, cumSellThrough,
       },

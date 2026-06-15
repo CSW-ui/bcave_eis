@@ -24,7 +24,7 @@ interface StyleRow {
   tagPrice: number
   rev: number; storeRev: number; otherRev: number
   qty: number
-  shopInv: number; whInv: number
+  shopInv: number; shopAvail: number; shopTransfer: number; whInv: number
   sellThrough: number; wos: number; dcRate: number
 }
 
@@ -73,6 +73,7 @@ export default function ProductSearchPage() {
   const [seasonIdx, setSeasonIdx] = useState(0)
   const [itemSel, setItemSel] = useState('')
   const [q, setQ] = useState('')
+  const [soldOnly, setSoldOnly] = useState(true)
   const [items, setItems] = useState<string[]>([])
   const [styles, setStyles] = useState<StyleRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -111,6 +112,7 @@ export default function ProductSearchPage() {
       if (sel.season) params.set('seasons', sel.season)
       if (itemSel) params.set('item', itemSel)
       if (q.trim()) params.set('q', q.trim())
+      if (!soldOnly) params.set('soldOnly', '0')
       const res = await fetch(`/api/planning/style-search?${params}`)
       const json = await res.json()
       if (!res.ok) { alert(json.error || '조회 실패'); setStyles([]); return }
@@ -119,7 +121,7 @@ export default function ProductSearchPage() {
     } catch (err) {
       alert(`조회 오류: ${err instanceof Error ? err.message : String(err)}`)
     } finally { setLoading(false) }
-  }, [from, to, brandSel, seasonIdx, itemSel, q, brandOptions.length])
+  }, [from, to, brandSel, seasonIdx, itemSel, q, soldOnly, brandOptions.length])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -146,8 +148,8 @@ export default function ProductSearchPage() {
       브랜드: BRAND_NAMES[r.brandcd] ?? r.brandcd,
       시즌: `${r.year} ${r.season}`, 품목: r.itemNm,
       태그가: r.tagPrice, 매출: r.rev, 매장매출: r.storeRev, 기타매출: r.otherRev, 판매수량: r.qty,
-      매장재고: r.shopInv, 창고재고: r.whInv,
-      'ST%': r.sellThrough, WoS: r.wos, 'DC%': r.dcRate,
+      매장가용: r.shopAvail, 이동입고: r.shopTransfer, 창고재고: r.whInv,
+      '판매율': r.sellThrough, WoS: r.wos, 'DC%': r.dcRate,
     }))
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -244,6 +246,14 @@ export default function ProductSearchPage() {
               onKeyDown={e => { if (e.key === 'Enter') fetchData() }}
               className="text-xs border border-surface-border rounded px-2 py-1 w-full" />
           </div>
+          <button onClick={() => setSoldOnly(v => !v)}
+            title="OFF로 하면 기간 내 미판매 상품(재고만 있는 죽은 SKU)까지 표시"
+            className={cn('text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap',
+              soldOnly
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : 'border-surface-border text-gray-500 hover:bg-surface-subtle')}>
+            {soldOnly ? '판매분만' : '미판매 포함'}
+          </button>
         </div>
       </div>
 
@@ -276,9 +286,10 @@ export default function ProductSearchPage() {
                   <SortTh k="storeRev" label="매장매출" sort={sort} />
                   <SortTh k="otherRev" label="기타매출" sort={sort} />
                   <SortTh k="qty" label="판매수량" sort={sort} />
-                  <SortTh k="shopInv" label="매장재고" sort={sort} />
+                  <SortTh k="shopAvail" label="매장가용" sort={sort} />
+                  <SortTh k="shopTransfer" label="이동" sort={sort} />
                   <SortTh k="whInv" label="창고재고" sort={sort} />
-                  <SortTh k="sellThrough" label="ST%" sort={sort} />
+                  <SortTh k="sellThrough" label="판매율" sort={sort} />
                   <SortTh k="wos" label="WoS" sort={sort} />
                   <SortTh k="dcRate" label="DC%" sort={sort} />
                 </tr>
@@ -308,8 +319,12 @@ export default function ProductSearchPage() {
                     <td className="px-2 py-1.5 text-right font-mono text-purple-700">{r.otherRev > 0 ? fmtM(r.otherRev) : '—'}</td>
                     <td className="px-2 py-1.5 text-right font-mono font-bold text-gray-900">{r.qty.toLocaleString()}</td>
                     <td className={cn('px-2 py-1.5 text-right font-mono',
-                      r.shopInv === 0 && r.qty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
-                      {r.shopInv.toLocaleString()}
+                      r.shopAvail === 0 && r.qty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
+                      {r.shopAvail.toLocaleString()}
+                    </td>
+                    <td className={cn('px-2 py-1.5 text-right font-mono',
+                      r.shopTransfer > 0 ? 'text-sky-600' : r.shopTransfer < 0 ? 'text-rose-500' : 'text-gray-300')}>
+                      {r.shopTransfer > 0 ? `+${r.shopTransfer.toLocaleString()}` : r.shopTransfer < 0 ? r.shopTransfer.toLocaleString() : '—'}
                     </td>
                     <td className="px-2 py-1.5 text-right font-mono text-gray-600">{r.whInv.toLocaleString()}</td>
                     <td className={cn('px-2 py-1.5 text-right font-mono',

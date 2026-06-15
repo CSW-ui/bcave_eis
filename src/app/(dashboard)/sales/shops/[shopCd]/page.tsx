@@ -13,14 +13,14 @@ interface Sku {
   styleNm: string; itemNm: string; season: string; year: string
   tagPrice: number
   rev: number; storeRev: number; otherRev: number; qty: number; qty4w: number
-  shopInv: number; whInv: number
+  shopInv: number; shopAvail: number; shopTrf: number; whInv: number
 }
 
 interface Kpi {
   rev: number; qty: number; atv: number
   orderCount: number | null; avgOrderRev: number | null
   liveRev: number
-  shopInv: number; whInv: number
+  shopInv: number; shopAvail: number; shopTrf: number; whInv: number
   wos: number; dcRate: number; periodDays: number
 }
 
@@ -47,9 +47,9 @@ interface GroupRow {
   styleCd: string; colorCd: string
   styleNm: string; itemNm: string; season: string; year: string
   tagPrice: number
-  sizes: Record<string, { qty: number; shopInv: number; whInv: number; rev: number; qty4w: number }>
+  sizes: Record<string, { qty: number; shopInv: number; shopAvail: number; whInv: number; rev: number; qty4w: number }>
   totalQty: number; totalRev: number; totalStoreRev: number; totalOtherRev: number
-  totalShopInv: number; totalWhInv: number; totalQty4w: number
+  totalShopInv: number; totalShopAvail: number; totalShopTrf: number; totalWhInv: number; totalQty4w: number
   sellThrough: number; wos: number; dcRate: number
 }
 
@@ -70,15 +70,16 @@ function groupSkus(skus: Sku[]): ProductList {
         styleNm: s.styleNm, itemNm: s.itemNm, season: s.season, year: s.year,
         tagPrice: s.tagPrice,
         sizes: {},
-        totalQty: 0, totalRev: 0, totalStoreRev: 0, totalOtherRev: 0, totalShopInv: 0, totalWhInv: 0, totalQty4w: 0,
+        totalQty: 0, totalRev: 0, totalStoreRev: 0, totalOtherRev: 0, totalShopInv: 0, totalShopAvail: 0, totalShopTrf: 0, totalWhInv: 0, totalQty4w: 0,
         sellThrough: 0, wos: 0, dcRate: 0,
       }
       groupMap.set(key, g)
     }
     const sz = s.sizeCd || '—'
-    g.sizes[sz] = g.sizes[sz] ?? { qty: 0, shopInv: 0, whInv: 0, rev: 0, qty4w: 0 }
+    g.sizes[sz] = g.sizes[sz] ?? { qty: 0, shopInv: 0, shopAvail: 0, whInv: 0, rev: 0, qty4w: 0 }
     g.sizes[sz].qty += s.qty
     g.sizes[sz].shopInv += s.shopInv
+    g.sizes[sz].shopAvail += s.shopAvail
     g.sizes[sz].whInv += s.whInv
     g.sizes[sz].rev += s.rev
     g.sizes[sz].qty4w += s.qty4w
@@ -87,6 +88,8 @@ function groupSkus(skus: Sku[]): ProductList {
     g.totalStoreRev += s.storeRev || 0
     g.totalOtherRev += s.otherRev || 0
     g.totalShopInv += s.shopInv
+    g.totalShopAvail += s.shopAvail
+    g.totalShopTrf += s.shopTrf
     g.totalWhInv += s.whInv
     g.totalQty4w += s.qty4w
   }
@@ -164,7 +167,8 @@ function ProductListTable({ list, sort, from, to }: { list: ProductList; sort: S
               <SortTh k="totalRev" label="매출" sort={sort} />
               <SortTh k="totalStoreRev" label="매장매출" sort={sort} />
               <SortTh k="totalOtherRev" label="기타매출" sort={sort} />
-              <SortTh k="totalShopInv" label="매장재고" sort={sort} />
+              <SortTh k="totalShopAvail" label="매장가용" sort={sort} />
+              <SortTh k="totalShopTrf" label="이동입고" sort={sort} />
               <SortTh k="totalWhInv" label="창고재고" sort={sort} />
               <SortTh k="sellThrough" label="ST%" sort={sort} />
               <SortTh k="wos" label="WoS" sort={sort} />
@@ -196,8 +200,12 @@ function ProductListTable({ list, sort, from, to }: { list: ProductList; sort: S
                 <td className="px-2 py-1.5 text-right font-mono text-emerald-700">{g.totalStoreRev > 0 ? fmtM(g.totalStoreRev) : '—'}</td>
                 <td className="px-2 py-1.5 text-right font-mono text-purple-700">{g.totalOtherRev > 0 ? fmtM(g.totalOtherRev) : '—'}</td>
                 <td className={cn('px-2 py-1.5 text-right font-mono',
-                  g.totalShopInv === 0 && g.totalQty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
-                  {g.totalShopInv.toLocaleString()}
+                  g.totalShopAvail === 0 && g.totalQty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
+                  {g.totalShopAvail.toLocaleString()}
+                </td>
+                <td className={cn('px-2 py-1.5 text-right font-mono',
+                  g.totalShopTrf > 0 ? 'text-sky-600' : g.totalShopTrf < 0 ? 'text-rose-500' : 'text-gray-300')}>
+                  {g.totalShopTrf > 0 ? `+${g.totalShopTrf.toLocaleString()}` : g.totalShopTrf < 0 ? g.totalShopTrf.toLocaleString() : '—'}
                 </td>
                 <td className="px-2 py-1.5 text-right font-mono text-gray-600">{g.totalWhInv.toLocaleString()}</td>
                 <td className={cn('px-2 py-1.5 text-right font-mono',
@@ -283,13 +291,14 @@ export default function ShopDetailPage() {
       }
       for (const sz of productList.sizeCols) {
         row[`${sz}_판매`] = g.sizes[sz]?.qty ?? 0
-        row[`${sz}_매장재고`] = g.sizes[sz]?.shopInv ?? 0
+        row[`${sz}_매장가용`] = g.sizes[sz]?.shopAvail ?? 0
       }
       row['합계판매'] = g.totalQty
       row['매출'] = g.totalRev
       row['매장매출'] = g.totalStoreRev
       row['기타매출'] = g.totalOtherRev
-      row['매장재고합계'] = g.totalShopInv
+      row['매장가용합계'] = g.totalShopAvail
+      row['이동입고합계'] = g.totalShopTrf
       row['창고재고합계'] = g.totalWhInv
       row['ST%'] = g.sellThrough
       row['WoS'] = g.wos
@@ -362,7 +371,7 @@ export default function ShopDetailPage() {
 
       {/* KPI */}
       {!loading && kpi && (
-        <div className="grid grid-cols-9 gap-3">
+        <div className="grid grid-cols-10 gap-3">
           {([
             { title: '매출', value: `${fmtM(kpi.rev)}백만` },
             { title: '라이브매출', value: kpi.liveRev > 0 ? `${fmtM(kpi.liveRev)}백만` : '—',
@@ -375,7 +384,9 @@ export default function ShopDetailPage() {
             { title: '주문별 평균매출', value: kpi.avgOrderRev != null ? `${kpi.avgOrderRev.toLocaleString()}원` : '—',
               tooltip: kpi.avgOrderRev == null ? '현장결제 채널(직영점·백화점·아울렛 등)에서만 산출 · 라이브 매출 제외' : '라이브 매출 제외' },
             { title: 'DC%', value: `${kpi.dcRate}%` },
-            { title: '매장재고', value: kpi.shopInv.toLocaleString() },
+            { title: '매장가용', value: (kpi.shopAvail ?? kpi.shopInv).toLocaleString() },
+            { title: '이동입고', value: (kpi.shopTrf ?? 0) > 0 ? `+${kpi.shopTrf.toLocaleString()}` : (kpi.shopTrf ?? 0) < 0 ? kpi.shopTrf.toLocaleString() : '—',
+              color: (kpi.shopTrf ?? 0) > 0 ? 'text-sky-600' : (kpi.shopTrf ?? 0) < 0 ? 'text-rose-500' : undefined },
             { title: 'WoS', value: kpi.wos > 0 ? `${kpi.wos}주` : '—',
               color: kpi.wos === 0 ? undefined : kpi.wos < 2 ? 'text-red-500' : kpi.wos > 12 ? 'text-amber-500' : 'text-emerald-600' },
           ] as { title: string; value: string; color?: string; tooltip?: string }[]).map(k => (

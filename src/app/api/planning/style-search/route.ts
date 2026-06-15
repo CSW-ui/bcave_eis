@@ -12,6 +12,8 @@ export async function GET(req: Request) {
   const seasons = (searchParams.get('seasons') || '').split(',').filter(Boolean)
   const item = (searchParams.get('item') || '').trim()
   const q = (searchParams.get('q') || '').trim()
+  // 기간 내 판매 발생분만 표시 (기본 ON). soldOnly=0 이면 미판매분까지 포함(죽은 재고 점검용)
+  const soldOnly = (searchParams.get('soldOnly') ?? '1') !== '0'
 
   const from = (searchParams.get('from') || '').replace(/[^0-9]/g, '')
   const to = (searchParams.get('to') || '').replace(/[^0-9]/g, '')
@@ -49,7 +51,6 @@ export async function GET(req: Request) {
         ${itemClause}
         ${qClause}
       GROUP BY si.STYLECD
-      LIMIT 1000
     ),
     sale_agg AS (
       -- 매장매출 (워크인) = SALETYPE in (NULL,'정상') × PRICETYPE in (NULL,'정상','할인','균일')
@@ -79,7 +80,8 @@ export async function GET(req: Request) {
       GROUP BY STYLECD
     ),
     shopinv_agg AS (
-      SELECT STYLECD, SUM(INVQTY) as SHOP_INV
+      -- INVQTY(명목) = AVAILQTY(가용) + TRFQTY(이동)
+      SELECT STYLECD, SUM(INVQTY) as SHOP_INV, SUM(AVAILQTY) as SHOP_AVAIL, SUM(TRFQTY) as SHOP_TRF
       FROM BCAVE.SEWON.SW_SHOPINV
       WHERE STYLECD IN (SELECT STYLECD FROM base_styles)
       GROUP BY STYLECD
@@ -98,13 +100,17 @@ export async function GET(req: Request) {
       COALESCE(s.OTHER_REV, 0) as OTHER_REV,
       COALESCE(l.QTY_4W, 0) as QTY_4W,
       COALESCE(si.SHOP_INV, 0) as SHOP_INV,
+      COALESCE(si.SHOP_AVAIL, 0) as SHOP_AVAIL,
+      COALESCE(si.SHOP_TRF, 0) as SHOP_TRF,
       COALESCE(w.WH_INV, 0) as WH_INV
     FROM base_styles b
     LEFT JOIN sale_agg s ON b.STYLECD = s.STYLECD
     LEFT JOIN last4w_agg l ON b.STYLECD = l.STYLECD
     LEFT JOIN shopinv_agg si ON b.STYLECD = si.STYLECD
     LEFT JOIN whinv_agg w ON b.STYLECD = w.STYLECD
+    ${soldOnly ? 'WHERE COALESCE(s.QTY, 0) <> 0 OR COALESCE(s.REV, 0) <> 0' : ''}
     ORDER BY REV DESC
+    LIMIT 1000
   `
 
   try {
@@ -116,11 +122,14 @@ export async function GET(req: Request) {
       const otherRev = Number(r.OTHER_REV) || 0
       const qty4w = Number(r.QTY_4W) || 0
       const shopInv = Number(r.SHOP_INV) || 0
+      const shopAvail = Number(r.SHOP_AVAIL) || 0
+      const shopTransfer = Number(r.SHOP_TRF) || 0
       const whInv = Number(r.WH_INV) || 0
       const tagPrice = Number(r.TAGPRICE) || 0
       const tagBase = tagPrice * qty
       const dcRate = tagBase > 0 ? Math.round((1 - rev / tagBase) * 1000) / 10 : 0
-      const sellThrough = (qty + shopInv) > 0 ? Math.round(qty / (qty + shopInv) * 1000) / 10 : 0
+      // 전체 판매율 = 판매수량 ÷ (판매수량 + 매장재고 + 창고재고)
+      const sellThrough = (qty + shopInv + whInv) > 0 ? Math.round(qty / (qty + shopInv + whInv) * 1000) / 10 : 0
       const avgWeekly = qty4w / 4
       const wos = avgWeekly > 0 ? Math.round(shopInv / avgWeekly * 10) / 10 : (shopInv > 0 ? 99 : 0)
       return {
@@ -134,7 +143,7 @@ export async function GET(req: Request) {
         rev: Math.round(rev), qty,
         storeRev: Math.round(storeRev),
         otherRev: Math.round(otherRev),
-        shopInv, whInv,
+        shopInv, shopAvail, shopTransfer, whInv,
         sellThrough, wos, dcRate,
       }
     })

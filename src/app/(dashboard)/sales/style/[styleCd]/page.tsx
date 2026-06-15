@@ -27,9 +27,9 @@ function sizeOrder(s: string): number {
 
 interface ShopRow {
   shopCd: string; shopNm: string; channel: string; area: string
-  sizes: Record<string, { qty: number; inv: number; qty4w: number }>
+  sizes: Record<string, { qty: number; inv: number; avail: number; qty4w: number }>
   totalQty: number; totalRev: number; totalStoreRev: number; totalOtherRev: number
-  totalInv: number; total4w: number
+  totalInv: number; totalAvail: number; totalTrf: number; total4w: number
   sellThrough: number; wos: number
 }
 interface WhRow { whCd: string; whNm: string; sizes: Record<string, number>; total: number }
@@ -155,7 +155,7 @@ export default function StyleDetailPage() {
         const row: Record<string, any> = { 매장명: r.shopNm, 채널: r.channel, 지역: r.area }
         for (const sz of sizeCols) {
           row[`${sz}_판매`] = r.sizes[sz]?.qty ?? 0
-          row[`${sz}_재고`] = r.sizes[sz]?.inv ?? 0
+          row[`${sz}_가용`] = r.sizes[sz]?.avail ?? 0
         }
         row['합계판매'] = r.totalQty
         row['매출'] = r.totalRev
@@ -163,7 +163,8 @@ export default function StyleDetailPage() {
         row['기타매출'] = r.totalOtherRev
         row['할인율'] = r.dcRate
         row['원가율'] = r.cogsRate
-        row['매장재고합계'] = r.totalInv
+        row['매장가용합계'] = r.totalAvail
+        row['이동입고합계'] = r.totalTrf
         row['ST%'] = r.sellThrough
         row['WoS'] = r.wos
         return row
@@ -262,7 +263,7 @@ export default function StyleDetailPage() {
 
       {/* KPI */}
       {!loading && kpi && (
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(13, minmax(0, 1fr))' }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(14, minmax(0, 1fr))' }}>
           {([
             { title: '발주', value: (kpi.orderQty ?? 0).toLocaleString() },
             { title: '입고', value: (kpi.inboundQty ?? 0).toLocaleString() },
@@ -273,7 +274,9 @@ export default function StyleDetailPage() {
             { title: '매장매출', value: `${fmtM(kpi.storeRev ?? 0)}백만`, color: 'text-emerald-600' },
             { title: '기타매출', value: `${fmtM(kpi.otherRev ?? 0)}백만`, color: 'text-purple-600' },
             { title: '기간판매수량', value: kpi.qty.toLocaleString() },
-            { title: '매장재고', value: kpi.shopInv.toLocaleString() },
+            { title: '매장가용', value: (kpi.shopAvail ?? kpi.shopInv).toLocaleString() },
+            { title: '이동입고', value: (kpi.shopTrf ?? 0) > 0 ? `+${kpi.shopTrf.toLocaleString()}` : (kpi.shopTrf ?? 0) < 0 ? kpi.shopTrf.toLocaleString() : '—',
+              color: (kpi.shopTrf ?? 0) > 0 ? 'text-sky-600' : (kpi.shopTrf ?? 0) < 0 ? 'text-rose-500' : undefined },
             { title: '창고재고', value: kpi.whInv.toLocaleString() },
             { title: 'ST%', value: `${kpi.sellThrough}%`,
               color: kpi.sellThrough >= 70 ? 'text-emerald-600' : kpi.sellThrough >= 30 ? 'text-amber-500' : 'text-gray-700' },
@@ -294,7 +297,7 @@ export default function StyleDetailPage() {
         <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
             <Package size={12} /> 매장별 분포
-            <span className="text-[10px] font-normal text-gray-400">{shops.length}개 매장 · 셀: 판매 / 재고</span>
+            <span className="text-[10px] font-normal text-gray-400">{shops.length}개 매장 · 셀: 판매 / 가용재고</span>
           </h3>
         </div>
         <div className="overflow-auto" style={{ maxHeight: 480 }}>
@@ -327,7 +330,8 @@ export default function StyleDetailPage() {
                   <SortTh k="totalOtherRev" label="기타매출" sort={shopSort} />
                   <SortTh k="dcRate" label="할인율" sort={shopSort} />
                   <SortTh k="cogsRate" label="원가율" sort={shopSort} />
-                  <SortTh k="totalInv" label="매장재고" sort={shopSort} />
+                  <SortTh k="totalAvail" label="매장가용" sort={shopSort} />
+                  <SortTh k="totalTrf" label="이동입고" sort={shopSort} />
                   <SortTh k="sellThrough" label="ST%" sort={shopSort} />
                   <SortTh k="wos" label="WoS" sort={shopSort} />
                 </tr>
@@ -348,10 +352,10 @@ export default function StyleDetailPage() {
                     <td className="px-2 py-1.5 text-gray-600">{r.channel || '—'}</td>
                     {sizeCols.map(sz => {
                       const c = r.sizes[sz]
-                      if (!c || (c.qty === 0 && c.inv === 0)) {
+                      if (!c || (c.qty === 0 && c.avail === 0)) {
                         return <td key={sz} className="px-1 py-1.5 text-center text-gray-300 border-l border-surface-border/50">—</td>
                       }
-                      const oos = c.qty > 0 && c.inv === 0
+                      const oos = c.qty > 0 && c.avail === 0
                       return (
                         <td key={sz} className="px-1 py-1.5 text-center border-l border-surface-border/50">
                           <div className={cn('font-mono font-semibold leading-tight', c.qty > 0 ? 'text-blue-600' : 'text-gray-300')}>
@@ -359,7 +363,7 @@ export default function StyleDetailPage() {
                           </div>
                           <div className={cn('font-mono text-[9px] leading-tight',
                             oos ? 'text-red-500 font-bold' : 'text-gray-400')}>
-                            {c.inv > 0 ? c.inv : (oos ? 'OOS' : '·')}
+                            {c.avail > 0 ? c.avail : (oos ? 'OOS' : '·')}
                           </div>
                         </td>
                       )
@@ -371,8 +375,12 @@ export default function StyleDetailPage() {
                     <td className="px-2 py-1.5 text-right font-mono text-gray-700">{r.dcRate}%</td>
                     <td className="px-2 py-1.5 text-right font-mono text-gray-700">{r.cogsRate}%</td>
                     <td className={cn('px-2 py-1.5 text-right font-mono',
-                      r.totalInv === 0 && r.totalQty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
-                      {r.totalInv.toLocaleString()}
+                      r.totalAvail === 0 && r.totalQty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
+                      {r.totalAvail.toLocaleString()}
+                    </td>
+                    <td className={cn('px-2 py-1.5 text-right font-mono',
+                      r.totalTrf > 0 ? 'text-sky-600' : r.totalTrf < 0 ? 'text-rose-500' : 'text-gray-300')}>
+                      {r.totalTrf > 0 ? `+${r.totalTrf.toLocaleString()}` : r.totalTrf < 0 ? r.totalTrf.toLocaleString() : '—'}
                     </td>
                     <td className={cn('px-2 py-1.5 text-right font-mono',
                       r.sellThrough >= 70 ? 'text-emerald-600' : r.sellThrough >= 30 ? 'text-amber-500' : 'text-gray-500')}>

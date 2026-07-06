@@ -31,6 +31,52 @@ function matchTargetRegion(shoptypenm: string | undefined, region: Region): bool
 
 type Region = 'all' | 'domestic' | 'overseas' | 'online' | 'offline'
 
+// ── 로딩 스켈레톤 (내용 구조를 닮은 형태) ──
+function BarChartSkeleton() {
+  const heights = [46, 62, 54, 70, 50, 66, 56, 72, 52, 68, 58, 64]
+  return (
+    <div className="h-[220px] flex items-end gap-2 px-2 pb-5 pt-2">
+      {heights.map((h, i) => (
+        <div key={i} className="flex-1 bg-gray-200 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+      ))}
+    </div>
+  )
+}
+
+function TableSkeleton({ rows = 5, cols = 6 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="space-y-2 py-2 animate-pulse">
+      {Array.from({ length: rows }).map((_, r) => (
+        <div key={r} className="flex gap-2">
+          {Array.from({ length: cols }).map((_, c) => (
+            <div key={c} className={cn('h-4 bg-gray-200 rounded', c === 0 ? 'w-16 shrink-0' : 'flex-1')} />
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function BrandRowsSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-3.5 animate-pulse">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <div className="h-3 w-20 bg-gray-200 rounded" />
+            <div className="h-3.5 w-10 bg-gray-200 rounded" />
+          </div>
+          <div className="h-2.5 w-full bg-gray-200 rounded-full" />
+          <div className="flex items-center justify-between">
+            <div className="h-2 w-16 bg-gray-200 rounded" />
+            <div className="h-2 w-16 bg-gray-200 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const { targets } = useTargetData()
   const { allowedBrands, loading: authLoading } = useAuth()
@@ -176,6 +222,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* YTD 누적 KPI — 로딩 스켈레톤 */}
+      {loading && (
+        <div className="grid grid-cols-5 gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+              <div className="h-2.5 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="h-5 w-20 bg-gray-200 rounded animate-pulse mt-2" />
+              <div className="h-2 w-24 bg-gray-200 rounded animate-pulse mt-2" />
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* YTD 누적 KPI */}
       {!loading && data?.ytd && (() => {
         const y = data.ytd
@@ -271,7 +330,7 @@ export default function DashboardPage() {
               <span className="flex items-center gap-1"><span className="w-3 h-2.5 bg-[#e91e63] inline-block rounded-sm opacity-85" />{data?.kpi?.curYear}년 달성</span>
             </div>
           </div>
-          {loading ? <div className="h-52 bg-surface-subtle animate-pulse rounded-lg" /> : (
+          {loading ? <BarChartSkeleton /> : (
             <ResponsiveContainer width="100%" height={220}>
               <ComposedChart data={chartData} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f5" />
@@ -291,6 +350,7 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           )}
           {/* 월별 상세 테이블 */}
+          {loading && <div className="mt-3"><TableSkeleton rows={7} cols={13} /></div>}
           {!loading && chartData.length > 0 && (
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-[10px]">
@@ -406,7 +466,7 @@ export default function DashboardPage() {
             브랜드별 {data?.kpi?.curMonth ?? ''}월 목표 달성현황
             <span className="text-xs font-normal text-gray-400 ml-1">({region === 'all' ? '전체' : region === 'domestic' ? '국내' : region === 'online' ? '온라인' : region === 'offline' ? '오프라인' : '해외'})</span>
           </h3>
-          {loading ? <div className="h-64 bg-surface-subtle animate-pulse rounded-lg" /> : (
+          {loading ? <BrandRowsSkeleton rows={5} /> : (
             <div className="space-y-2">
               {brandMonthData.map(b => {
                 const pctClamped = Math.min(b.pct, 100)
@@ -466,7 +526,7 @@ export default function DashboardPage() {
             · TAG(VAT제외) 기준 · 단위: 백만원
           </span>
         </h3>
-        {loading ? <div className="h-20 bg-surface-subtle animate-pulse rounded-lg" /> : (
+        {loading ? <TableSkeleton rows={4} cols={10} /> : (
           (() => {
             const rows = data?.invTable ?? []
             if (rows.length === 0) return <div className="text-center py-8 text-xs text-gray-400">데이터 없음</div>

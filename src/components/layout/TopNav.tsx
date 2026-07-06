@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronDown, Bell, LogOut, User, Settings } from 'lucide-react'
+import { ChevronDown, Bell, LogOut, Settings, KeyRound, ShieldCheck } from 'lucide-react'
 import { NAV_CONFIG } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
@@ -17,20 +17,23 @@ export function TopNav() {
   const { profile, signOut, allowedBrands: _allowedBrands, isAdmin } = useAuth()
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [userOpen, setUserOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
   const navRef = useRef<HTMLDivElement>(null)
   const userRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) setOpenMenu(null)
       if (userRef.current && !userRef.current.contains(e.target as Node)) setUserOpen(false)
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
   // 페이지 이동 시 메뉴 닫기
-  useEffect(() => { setOpenMenu(null) }, [pathname])
+  useEffect(() => { setOpenMenu(null); setUserOpen(false); setNotifOpen(false) }, [pathname])
 
   const initials = profile?.name
     ? profile.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -113,10 +116,22 @@ export function TopNav() {
 
       {/* 우측 액션 */}
       <div className="flex items-center gap-1 shrink-0">
-        <button className="p-2 text-gray-400 hover:text-gray-700 hover:bg-surface-subtle rounded-lg transition-all relative">
-          <Bell size={16} />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand-accent rounded-full" />
-        </button>
+        <div ref={notifRef} className="relative">
+          <button onClick={() => setNotifOpen(v => !v)}
+            className="p-2 text-gray-400 hover:text-gray-700 hover:bg-surface-subtle rounded-lg transition-all relative">
+            <Bell size={16} />
+          </button>
+          {notifOpen && (
+            <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border border-surface-border py-1 z-50">
+              <div className="px-3 py-2 border-b border-surface-border">
+                <p className="text-xs font-semibold text-gray-800">알림</p>
+              </div>
+              <div className="px-3 py-6 text-center">
+                <p className="text-xs text-gray-400">새 알림이 없습니다.</p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 유저 */}
         <div ref={userRef} className="relative">
@@ -142,10 +157,15 @@ export function TopNav() {
                   </span>
                 </div>
               )}
-              <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:bg-surface-subtle" onClick={() => setUserOpen(false)}>
-                <User size={12} /> 프로필 설정
-              </button>
-              <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50" onClick={signOut}>
+              <Link href="/settings/password" onClick={() => setUserOpen(false)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:bg-surface-subtle">
+                <KeyRound size={12} /> 비밀번호 변경
+              </Link>
+              <Link href="/settings/security" onClick={() => setUserOpen(false)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:bg-surface-subtle">
+                <ShieldCheck size={12} /> 2단계 인증(OTP)
+              </Link>
+              <button className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 border-t border-surface-border mt-1" onClick={signOut}>
                 <LogOut size={12} /> 로그아웃
               </button>
             </div>

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTargetData, MonthlyTarget } from '@/hooks/useTargetData'
 import { cn } from '@/lib/utils'
 import { BRAND_NAMES } from '@/lib/constants'
-import { Upload, Trash2, UserPlus, Edit2, X, Check, Shield, Eye, EyeOff } from 'lucide-react'
+import { Upload, Trash2, UserPlus, Edit2, X, Check, Shield, Eye, EyeOff, ShieldOff } from 'lucide-react'
 import * as XLSX from 'xlsx'
 
 const ROLES = [
@@ -106,6 +106,30 @@ export default function AdminPage() {
       if (!res.ok) { const j = await res.json(); alert(j.error) }
       fetchUsers()
     } catch {}
+  }
+
+  // MFA 초기화 모달 상태
+  const [mfaTarget, setMfaTarget] = useState<UserProfile | null>(null)
+  const [mfaBusy, setMfaBusy] = useState(false)
+  const [mfaResult, setMfaResult] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  const openResetMfa = (u: UserProfile) => { setMfaTarget(u); setMfaResult(null); setMfaBusy(false) }
+  const closeResetMfa = () => { setMfaTarget(null); setMfaResult(null); setMfaBusy(false) }
+
+  const confirmResetMfa = async () => {
+    if (!mfaTarget) return
+    setMfaBusy(true); setMfaResult(null)
+    try {
+      const res = await fetch('/api/admin/users/reset-mfa', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: mfaTarget.id }),
+      })
+      const j = await res.json()
+      if (!res.ok) { setMfaResult({ type: 'err', text: j.error || '초기화 실패' }); return }
+      setMfaResult({ type: 'ok', text: j.removed > 0 ? `2단계 인증 초기화 완료 (${j.removed}건 제거)` : (j.message || '등록된 2단계 인증이 없습니다.') })
+    } catch (e) {
+      setMfaResult({ type: 'err', text: e instanceof Error ? e.message : String(e) })
+    } finally { setMfaBusy(false) }
   }
 
   // ── 목표매출 업로드 ──
@@ -278,7 +302,7 @@ export default function AdminPage() {
                     <th className="text-left px-3 py-2.5">이메일</th>
                     <th className="text-center px-3 py-2.5">역할</th>
                     <th className="text-left px-3 py-2.5">접근 브랜드</th>
-                    <th className="text-center px-3 py-2.5 w-[80px]">관리</th>
+                    <th className="text-center px-3 py-2.5 w-[110px]">관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,6 +336,9 @@ export default function AdminPage() {
                         <div className="flex items-center justify-center gap-1">
                           <button onClick={() => handleEdit(u)} className="p-1 text-gray-400 hover:text-gray-700 transition-colors" title="수정">
                             <Edit2 size={13} />
+                          </button>
+                          <button onClick={() => openResetMfa(u)} className="p-1 text-gray-400 hover:text-amber-600 transition-colors" title="2단계 인증(OTP) 초기화">
+                            <ShieldOff size={13} />
                           </button>
                           {u.id !== profile?.id && (
                             <button onClick={() => handleDelete(u)} className="p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제">
@@ -389,6 +416,58 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── MFA 초기화 확인 모달 ── */}
+      {mfaTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={mfaBusy ? undefined : closeResetMfa}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
+                <ShieldOff size={18} className="text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-gray-900">2단계 인증(OTP) 초기화</h3>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  <span className="font-medium text-gray-700">{mfaTarget.name}</span>
+                  <span className="text-gray-400"> ({mfaTarget.email})</span> 의 2단계 인증을 초기화합니다.
+                  초기화하면 <span className="font-medium text-gray-700">다음 로그인 시 OTP를 다시 등록</span>해야 합니다.
+                </p>
+              </div>
+              <button onClick={closeResetMfa} disabled={mfaBusy} className="text-gray-400 hover:text-gray-600 disabled:opacity-40">
+                <X size={16} />
+              </button>
+            </div>
+
+            {mfaResult && (
+              <div className={cn('mt-4 text-xs rounded-lg p-2.5',
+                mfaResult.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600')}>
+                {mfaResult.text}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 mt-5">
+              {mfaResult?.type === 'ok' ? (
+                <button onClick={closeResetMfa}
+                  className="text-xs font-medium text-white bg-gray-900 hover:bg-gray-800 px-4 py-2 rounded-lg transition-colors">
+                  확인
+                </button>
+              ) : (
+                <>
+                  <button onClick={closeResetMfa} disabled={mfaBusy}
+                    className="text-xs text-gray-500 hover:text-gray-700 px-3 py-2 disabled:opacity-40">
+                    취소
+                  </button>
+                  <button onClick={confirmResetMfa} disabled={mfaBusy}
+                    className="flex items-center gap-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 px-4 py-2 rounded-lg transition-colors">
+                    <ShieldOff size={13} /> {mfaBusy ? '초기화 중...' : '초기화'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

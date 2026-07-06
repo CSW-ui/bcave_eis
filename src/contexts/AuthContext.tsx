@@ -74,10 +74,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
       if (session?.user) {
+        // 프로필만 화면 렌더에 필요하므로 이것만 대기한다.
         await loadProfile(session.user.id)
-        await checkSingleSession(session.user.id)
+        setLoading(false)
+        // 단일 세션 검증은 화면 표시를 막지 않도록 백그라운드로 처리
+        // (불일치 시 내부에서 로그아웃/리다이렉트)
+        void checkSingleSession(session.user.id)
+      } else {
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

@@ -6,7 +6,13 @@ import { VALID_BRANDS } from '@/lib/constants'
 export async function GET(req: NextRequest) {
   const region = req.nextUrl.searchParams.get('region') || 'domestic'
   const brandParam = req.nextUrl.searchParams.get('brand') || 'all'
-  const brandSelected = brandParam !== 'all' && VALID_BRANDS.has(brandParam) ? brandParam : null
+  // 사용자 권한 브랜드 (콤마 구분). 비어있으면 전체 접근(admin) → 5개 전체
+  const allowedParam = req.nextUrl.searchParams.get('allowed') || ''
+  const allowedCodes = allowedParam.split(',').map(s => s.trim()).filter(b => VALID_BRANDS.has(b))
+  // 선택 브랜드는 권한 브랜드 범위 내에서만 유효
+  const brandSelected = brandParam !== 'all' && VALID_BRANDS.has(brandParam)
+    && (allowedCodes.length === 0 || allowedCodes.includes(brandParam))
+    ? brandParam : null
   // SHOPTYPENM은 '백화점','아울렛','무신사','해외 사입' 등 구체적 채널명
   // 해외: SHOPTYPENM에 '해외' 포함
   // 오프라인: 백화점,아울렛,가두,직영,대리,면세,팝업,편집,오프,로드샵,부티크,쇼핑몰,사입(해외제외)
@@ -43,10 +49,14 @@ export async function GET(req: NextRequest) {
   const lyPmStart = `${pmYear - 1}${String(pmMonth).padStart(2, '0')}01`
   const lyPmEnd = `${pmYear - 1}${String(pmMonth).padStart(2, '0')}${new Date(pmYear - 1, pmMonth, 0).getDate()}`
 
-  // 좌측(메인) 대시보드용 — 단일 브랜드 선택 시 그 브랜드만, 아니면 5개 전체
-  const brandFilter = brandSelected ? `BRANDCD = '${brandSelected}'` : BRAND_FILTER
-  // 우측 브랜드 비교 패널용 — 항상 5개 전체
-  const allBrandFilter = BRAND_FILTER
+  // 권한 브랜드 절 — 권한 지정 시 그 브랜드만, 미지정(admin) 시 5개 전체
+  const allowedClause = allowedCodes.length > 0
+    ? `BRANDCD IN (${allowedCodes.map(b => `'${b}'`).join(',')})`
+    : BRAND_FILTER
+  // 좌측(메인) 대시보드용 — 단일 브랜드 선택 시 그 브랜드만, 아니면 권한 브랜드 전체
+  const brandFilter = brandSelected ? `BRANDCD = '${brandSelected}'` : allowedClause
+  // 우측 브랜드 비교 패널용 — 권한 브랜드 전체 (단일 선택과 무관)
+  const allBrandFilter = allowedClause
 
   try {
     const [kpiRaw, monthlyRaw, brandRaw, brandMonthRaw, yearlySales, dcKpiRaw, dcMonthlyRaw, costMonthlyRaw, yearlyInbound, baseInvRaw, yearlyDcRate, currentInvRaw, lyCmCostRaw, normCoRaw, lyNormCoRaw] = await Promise.all([

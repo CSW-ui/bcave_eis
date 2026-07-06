@@ -168,7 +168,7 @@ export default function PeriodPage() {
   type Section = { key: string; label: string; rows: ChannelRow[]; indent?: number; isSummary?: boolean }
   const sections = useMemo<Section[]>(() => {
     const result: Section[] = []
-    const allRows = brandData.get('all') ?? brandData.get(brand) ?? []
+    const allRows = brandData.get('all') ?? brandData.get(brand ?? 'all') ?? []
     result.push({ key: 'all', label: 'TOTAL', rows: allRows, isSummary: true })
 
     if (individualBrands.length > 1) {

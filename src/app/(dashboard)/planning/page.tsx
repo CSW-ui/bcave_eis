@@ -734,7 +734,7 @@ export default function PlanningDashboard() {
                     tick={{ fontSize: 8, fill: '#9ca3af' }} axisLine={false} tickLine={false}
                   />
                   <YAxis tickFormatter={v => fmtW(v)} tick={{ fontSize: 8, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={42} />
-                  <Tooltip formatter={(v: number, name: string) => [fmtW(v), name === 'cy' ? '금년' : '전년']} labelFormatter={(w) => `W${w}`} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
+                  <Tooltip formatter={(v, name) => [fmtW(Number(v)), name === 'cy' ? '금년' : '전년']} labelFormatter={(w) => `W${w}`} contentStyle={{ fontSize: 10, borderRadius: 8 }} />
                   {!selStyle && <Line type="monotone" dataKey="ly" name="전년" stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="4 4" dot={false} connectNulls />}
                   <Line type="monotone" dataKey="cy" name="금년" stroke="#e91e63" strokeWidth={2} dot={false} connectNulls />
                 </LineChart>

@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,  Bar,
 } from 'recharts'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/AuthContext'
 import { BRAND_COLORS_KR, BRAND_NAMES, brandNameToCode } from '@/lib/constants'
 import { fmtW } from '@/lib/formatters'
 import { getChannelGroup } from '@/lib/sales-types'
@@ -32,22 +33,29 @@ type Region = 'all' | 'domestic' | 'overseas' | 'online' | 'offline'
 
 export default function DashboardPage() {
   const { targets } = useTargetData()
+  const { allowedBrands, loading: authLoading } = useAuth()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [region, setRegion] = useState<Region>('all')
   const [brandSel, setBrandSel] = useState<string>('all') // 브랜드 코드 (CO/WA/LE/CK/LK) 또는 'all'
 
-  const fetchData = useCallback(async (r: Region, b: string) => {
+  // 권한 브랜드 콤마 문자열 (admin/전체는 빈 문자열 → API에서 5개 전체)
+  const allowedParam = allowedBrands ? allowedBrands.join(',') : ''
+
+  const fetchData = useCallback(async (r: Region, b: string, allowed: string) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/dashboard?region=${r}&brand=${b}`)
+      const res = await fetch(`/api/dashboard?region=${r}&brand=${b}&allowed=${allowed}`)
       const j = await res.json()
       setData(j)
     } catch {}
     finally { setLoading(false) }
   }, [])
 
-  useEffect(() => { fetchData(region, brandSel) }, [region, brandSel, fetchData])
+  useEffect(() => {
+    if (authLoading) return // 권한 로딩 완료 후 fetch (전체 브랜드 깜빡임 방지)
+    fetchData(region, brandSel, allowedParam)
+  }, [region, brandSel, allowedParam, authLoading, fetchData])
 
 
   const handleRegion = (r: Region) => {
@@ -71,11 +79,13 @@ export default function DashboardPage() {
         // — 팔렛·네이머클로딩 등 미등록 브랜드는 제외
         const tCode = brandNameToCode(t.brandnm)
         if (!tCode) return false
+        // 권한 브랜드 범위 밖 제외 (admin/전체는 allowedBrands=null → 통과)
+        if (allowedBrands && !allowedBrands.includes(tCode)) return false
         if (brandSel !== 'all' && tCode !== brandSel) return false
         return true
       })
       .reduce((sum, t) => sum + t.target, 0)
-  }, [targets, region, brandSel])
+  }, [targets, region, brandSel, allowedBrands])
 
   // 차트 데이터: 전년 / 목표 / 달성
   const chartData = useMemo(() => {

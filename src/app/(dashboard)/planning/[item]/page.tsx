@@ -45,6 +45,13 @@ export default function ItemDetailPage() {
   const [tblSortKey, setTblSortKey] = useState<string>('saleAmt')
   const [tblSortDir, setTblSortDir] = useState<'asc' | 'desc'>('desc')
   const toggleTblSort = (k: string) => { if (tblSortKey === k) setTblSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setTblSortKey(k); setTblSortDir('desc') } }
+  // 채널 증감표 정렬 (기본: 증감 오름차순 = 낙폭 큰 순)
+  const [chSortKey, setChSortKey] = useState<'channel' | 'cur' | 'prev' | 'delta' | 'ly' | 'lyDelta'>('delta')
+  const [chSortDir, setChSortDir] = useState<'asc' | 'desc'>('asc')
+  const toggleChSort = (k: 'channel' | 'cur' | 'prev' | 'delta' | 'ly' | 'lyDelta') => {
+    if (chSortKey === k) setChSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setChSortKey(k); setChSortDir(k === 'channel' ? 'asc' : 'desc') }
+  }
   const [channels, setChannels] = useState<any[]>([])
   const [weeks, setWeeks] = useState<any[]>([])
   const [weekMeta, setWeekMeta] = useState<{ cyTotal: number; lyTotal: number } | null>(null)
@@ -81,6 +88,18 @@ export default function ItemDetailPage() {
     setWeekMeta(json.meta ?? null)
   }, [apiBrand, year, season, itemName, selStyle, selChannel])
 
+  // 채널×주차 (증감 패널용) — 상품(+선택 스타일) 기준, 채널 필터 없음
+  const [chWeekRows, setChWeekRows] = useState<any[]>([])
+  const fetchChannelWeekly = useCallback(async () => {
+    const sp = new URLSearchParams({ brand: apiBrand, year, season, item: itemName, only: 'channel' })
+    if (selStyle) sp.set('stylecd', selStyle.code)
+    try {
+      const res = await fetch(`/api/planning/channel-item-weekly?${sp}`)
+      const json = await res.json()
+      setChWeekRows(json.channelWeekly ?? [])
+    } catch { setChWeekRows([]) }
+  }, [apiBrand, year, season, itemName, selStyle])
+
   // 스타일 테이블 + 채널 fetch (weekNum, channel, stylecd, unit 필터 반영)
   const fetchStyles = useCallback(async () => {
     const sp = new URLSearchParams({ brand: apiBrand, year, season, item: itemName, compareYear: compYear })
@@ -98,12 +117,36 @@ export default function ItemDetailPage() {
   // 초기 로드
   useEffect(() => {
     setLoading(true)
-    Promise.all([fetchWeekly(), fetchStyles()]).finally(() => setLoading(false))
+    Promise.all([fetchWeekly(), fetchStyles(), fetchChannelWeekly()]).finally(() => setLoading(false))
   }, [brand])
 
   // 필터 변경 시 re-fetch
   useEffect(() => { fetchWeekly() }, [selStyle, selChannel])
   useEffect(() => { fetchStyles() }, [selWeek, selChannel, selStyle, unit])
+  useEffect(() => { fetchChannelWeekly() }, [selStyle]) // 스타일 변경 시 증감 데이터 갱신
+
+  // 채널별 전주대비 증감 — 선택 주차(없으면 최근주) 기준, 낙폭 큰 채널 먼저
+  const channelDelta = useMemo(() => {
+    if (chWeekRows.length === 0) return null
+    // 차트(item-weekly)와 동일하게 정상(당해상품=vin 'N')만 집계
+    const norm = chWeekRows.filter(r => r.vin === 'N')
+    const cyWeeks = Array.from(new Set(norm.filter(r => r.cyAmt > 0).map(r => r.week as number))).sort((a, b) => a - b)
+    if (cyWeeks.length === 0) return null
+    const targetWeek = selWeek ?? cyWeeks[cyWeeks.length - 1]
+    const prevWeek = [...cyWeeks].reverse().find(w => w < targetWeek) ?? null
+    const byCh = new Map<string, { cur: number; prev: number; curQty: number; ly: number }>()
+    for (const r of norm) {
+      if (r.week !== targetWeek && r.week !== prevWeek) continue
+      let e = byCh.get(r.key); if (!e) { e = { cur: 0, prev: 0, curQty: 0, ly: 0 }; byCh.set(r.key, e) }
+      if (r.week === targetWeek) { e.cur += r.cyAmt; e.curQty += r.cyQty; e.ly += r.lyAmt }
+      else { e.prev += r.cyAmt }
+    }
+    const list = Array.from(byCh.entries())
+      .map(([channel, e]) => ({ channel, cur: e.cur, prev: e.prev, curQty: e.curQty, delta: e.cur - e.prev, ly: e.ly, lyDelta: e.cur - e.ly }))
+      .filter(c => c.cur > 0 || c.prev > 0 || c.ly > 0)
+      .sort((a, b) => a.delta - b.delta)
+    return { week: targetWeek, prevWeek, list, isAuto: selWeek == null }
+  }, [selWeek, chWeekRows])
 
   // 전주까지만 표시 (금년 데이터가 있는 마지막 주)
   const maxCyWeek = useMemo(() => {
@@ -248,7 +291,10 @@ export default function ItemDetailPage() {
           {loading ? <div className="h-64 bg-surface-subtle animate-pulse rounded-lg" /> : (
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={trimmedWeeks} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}
-                onClick={(state: any) => { if (state?.activePayload?.length) { const w = state.activePayload[0].payload.weekNum; setSelWeek(prev => prev === w ? null : w) } }}>
+                onClick={(state: any) => {
+                  const w = state?.activeLabel ?? state?.activePayload?.[0]?.payload?.weekNum
+                  if (w != null) setSelWeek(prev => prev === Number(w) ? null : Number(w))
+                }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f5" />
                 <XAxis dataKey="weekNum" type="number" domain={[1, Math.max(maxCyWeek + 2, 52)]}
                   ticks={M_TICKS} tickFormatter={w => M_LABELS[M_TICKS.indexOf(w)]??''}
@@ -271,8 +317,69 @@ export default function ItemDetailPage() {
 
         {/* 채널별 (클릭 가능) */}
         <div className="col-span-1 bg-white rounded-xl border border-surface-border shadow-sm p-4 flex flex-col">
-          <h3 className="text-xs font-semibold text-gray-700 mb-2 shrink-0">유통채널별 판매</h3>
+          <h3 className="text-xs font-semibold text-gray-700 mb-2 shrink-0">
+            유통채널별 판매
+            {channelDelta && <span className="ml-1 font-normal text-[10px] text-brand-accent">· W{channelDelta.week} 전주대비 증감{channelDelta.isAuto ? ' (최근주)' : ''}</span>}
+          </h3>
           {loading ? <div className="h-64 bg-surface-subtle animate-pulse rounded-lg" /> :
+          (channelDelta && channelDelta.list.length > 0) ? (
+            <div className="overflow-auto mt-1" style={{ maxHeight: 260 }}>
+              <div className="text-[9px] text-gray-400 mb-1">
+                W{channelDelta.week} {channelDelta.prevWeek ? `vs W${channelDelta.prevWeek}` : '(전주 데이터 없음)'} · 전년=동주 · 증감순(낙폭 큰 순){channelDelta.isAuto ? ' · 차트 점 클릭 시 해당 주' : ''}
+              </div>
+              <table className="w-full text-[10px]">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="border-b border-gray-100 text-gray-400 font-semibold text-right select-none">
+                    {([['channel', '채널', 'text-left'], ['cur', '이번주', ''], ['prev', '전주', ''], ['delta', '전주대비', ''], ['ly', '전년', ''], ['lyDelta', '전년대비', '']] as [typeof chSortKey, string, string][]).map(([k, label, align]) => (
+                      <th key={k} onClick={() => toggleChSort(k)}
+                        className={cn('py-1 pr-1 cursor-pointer hover:text-gray-600', align || 'text-right', chSortKey === k && 'text-gray-700')}>
+                        {label}{chSortKey === k ? (chSortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const tCur = channelDelta.list.reduce((s, c) => s + c.cur, 0)
+                    const tPrev = channelDelta.list.reduce((s, c) => s + c.prev, 0)
+                    const tLy = channelDelta.list.reduce((s, c) => s + c.ly, 0)
+                    const tDelta = tCur - tPrev
+                    const tLyDelta = tCur - tLy
+                    return (
+                      <tr className="border-b-2 border-gray-200 bg-gray-50 font-bold text-right">
+                        <td className="text-left py-1 pr-1 text-gray-900">전체</td>
+                        <td className="py-1 pr-1 font-mono text-gray-800 whitespace-nowrap">{tCur > 0 ? fmtW(tCur) : '—'}</td>
+                        <td className="py-1 pr-1 font-mono text-gray-500 whitespace-nowrap">{tPrev > 0 ? fmtW(tPrev) : '—'}</td>
+                        <td className={cn('py-1 pr-1 font-mono whitespace-nowrap', tDelta >= 0 ? 'text-red-500' : 'text-blue-500')}>{tDelta >= 0 ? '+' : ''}{fmtW(tDelta)}</td>
+                        <td className="py-1 pr-1 font-mono text-gray-500 whitespace-nowrap">{tLy > 0 ? fmtW(tLy) : '—'}</td>
+                        <td className={cn('py-1 font-mono whitespace-nowrap', tLyDelta >= 0 ? 'text-red-500' : 'text-blue-500')}>{tLyDelta >= 0 ? '+' : ''}{fmtW(tLyDelta)}</td>
+                      </tr>
+                    )
+                  })()}
+                  {[...channelDelta.list].sort((a, b) => {
+                    const r = chSortKey === 'channel'
+                      ? a.channel.localeCompare(b.channel)
+                      : (a[chSortKey] as number) - (b[chSortKey] as number)
+                    return chSortDir === 'asc' ? r : -r
+                  }).map(c => {
+                    const isSel = selChannel === c.channel
+                    return (
+                      <tr key={c.channel}
+                        onClick={() => { const next = selChannel === c.channel ? null : c.channel; setSelChannel(next); if (next) fetchShopData(next); else setShopData([]) }}
+                        className={cn('border-b border-gray-50 cursor-pointer text-right', isSel ? 'bg-blue-50' : 'hover:bg-gray-50/50')}>
+                        <td className={cn('py-1 pr-1 text-left truncate max-w-[80px]', isSel ? 'text-blue-700 font-semibold' : 'text-gray-700')} title={c.channel}>{c.channel}</td>
+                        <td className="py-1 pr-1 font-mono text-gray-700 whitespace-nowrap">{c.cur > 0 ? fmtW(c.cur) : '—'}</td>
+                        <td className="py-1 pr-1 font-mono text-gray-400 whitespace-nowrap">{c.prev > 0 ? fmtW(c.prev) : '—'}</td>
+                        <td className={cn('py-1 pr-1 font-mono font-semibold whitespace-nowrap', c.delta >= 0 ? 'text-red-500' : 'text-blue-500')}>{c.delta >= 0 ? '+' : ''}{fmtW(c.delta)}</td>
+                        <td className="py-1 pr-1 font-mono text-gray-400 whitespace-nowrap">{c.ly > 0 ? fmtW(c.ly) : '—'}</td>
+                        <td className={cn('py-1 font-mono font-medium whitespace-nowrap', c.lyDelta >= 0 ? 'text-red-500' : 'text-blue-500')}>{c.lyDelta >= 0 ? '+' : ''}{fmtW(c.lyDelta)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) :
           channels.length > 0 ? (
             <div className="space-y-2 mt-1 overflow-y-auto" style={{ maxHeight: 260 }}>
               {channels.map((c:any,i:number) => {

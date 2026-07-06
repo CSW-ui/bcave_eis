@@ -47,10 +47,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data) setProfile(data as Profile)
   }
 
+  // 단일 세션 강제: 다른 기기에서 로그인하면 먼저 접속한 쪽을 로그아웃.
+  // session_token 컬럼이 없으면(마이그레이션 전) 조용히 통과한다.
+  async function checkSingleSession(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('session_token')
+        .eq('id', userId)
+        .single()
+      if (error || !data) return
+      const remote = (data as { session_token?: string }).session_token
+      const local = typeof window !== 'undefined'
+        ? localStorage.getItem('bcave_session_token')
+        : null
+      if (remote && local && remote !== local) {
+        await supabase.auth.signOut()
+        window.location.href = '/login'
+      }
+    } catch {
+      // 컬럼 미생성 등 — 무시
+    }
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) await loadProfile(session.user.id)
+      if (session?.user) {
+        await loadProfile(session.user.id)
+        await checkSingleSession(session.user.id)
+      }
       setLoading(false)
     })
 
@@ -63,7 +89,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    // 창이 다시 활성화될 때마다 단일 세션 재확인 (다른 기기 로그인 즉시 감지)
+    const onFocus = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) checkSingleSession(session.user.id)
+      })
+    }
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('focus', onFocus)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -73,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     const isVendor = profile?.role === 'vendor'
+    if (typeof window !== 'undefined') localStorage.removeItem('bcave_session_token')
     await supabase.auth.signOut()
     window.location.href = isVendor ? '/vendor/login' : '/login'
   }

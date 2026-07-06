@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { verifyCronSecret } from '@/lib/auth'
 
 export const maxDuration = 600
 
-const CRON_SECRET = process.env.CRON_SECRET || 'bcave-replenishment-2026'
 const BRANDS = ['CO', 'LE', 'WA', 'CK', 'LK']
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
-// GET /api/replenishment/cron?secret=xxx
+// GET /api/replenishment/cron?secret=xxx  (또는 헤더 x-cron-secret)
 // 새벽 자동 실행: 5개 브랜드 순차 보충 계산
-// crontab 예시: 0 5 * * * curl "http://localhost:3000/api/replenishment/cron?secret=bcave-replenishment-2026"
+// CRON_SECRET 환경변수 필수 — 미설정 시 항상 401
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const secret = searchParams.get('secret')
+  const secret = searchParams.get('secret') ?? req.headers.get('x-cron-secret')
 
-  if (secret !== CRON_SECRET) {
+  if (!verifyCronSecret(secret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -30,7 +30,7 @@ export async function GET(req: Request) {
     run_date: orderDate,
     status: 'running',
     started_at: new Date().toISOString(),
-  }).then(() => {}).catch(() => {})
+  }).then(() => {}, () => {})
 
   for (const brand of BRANDS) {
     const brandStart = Date.now()
@@ -38,7 +38,10 @@ export async function GET(req: Request) {
       console.log(`[CRON] ${brand} 계산 시작...`)
       const res = await fetch(`${BASE_URL}/api/replenishment/calculate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-cron-secret': process.env.CRON_SECRET ?? '',
+        },
         body: JSON.stringify({ brand }),
       })
 
@@ -75,7 +78,7 @@ export async function GET(req: Request) {
     total_saved: totalSaved,
     brand_results: results,
     elapsed_seconds: totalElapsed,
-  }).eq('run_date', orderDate).eq('status', 'running').then(() => {}).catch(() => {})
+  }).eq('run_date', orderDate).eq('status', 'running').then(() => {}, () => {})
 
   console.log(`[CRON] 전체 완료: ${successCount}/${BRANDS.length} 브랜드, ${totalSaved}건, ${totalElapsed}초`)
 

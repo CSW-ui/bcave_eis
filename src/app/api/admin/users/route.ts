@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { requireAdmin } from '@/lib/auth'
 
 // GET /api/admin/users — 전체 사용자 목록
 export async function GET() {
+  const gate = await requireAdmin()
+  if (gate instanceof NextResponse) return gate
   try {
     const { data, error } = await supabaseAdmin
       .from('profiles')
@@ -19,6 +22,8 @@ export async function GET() {
 
 // POST /api/admin/users — 사용자 생성
 export async function POST(req: Request) {
+  const gate = await requireAdmin()
+  if (gate instanceof NextResponse) return gate
   try {
     const body = await req.json()
     const { email, password, name, role, brands } = body
@@ -58,6 +63,8 @@ export async function POST(req: Request) {
 
 // PUT /api/admin/users — 사용자 수정
 export async function PUT(req: Request) {
+  const gate = await requireAdmin()
+  if (gate instanceof NextResponse) return gate
   try {
     const body = await req.json()
     const { id, name, role, brands, password } = body
@@ -92,6 +99,8 @@ export async function PUT(req: Request) {
 
 // DELETE /api/admin/users — 사용자 삭제
 export async function DELETE(req: Request) {
+  const gate = await requireAdmin()
+  if (gate instanceof NextResponse) return gate
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id')

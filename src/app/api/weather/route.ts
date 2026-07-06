@@ -68,7 +68,7 @@ export async function GET() {
       if (item.category === 'PTY') entry.ptys.push(String(item.fcstValue))
     }
 
-    const dailyTemps: { date: string; dateLabel: string; day: string; tmx: number | null; tmn: number | null; avg: number | null; weather: string; source: 'short' | 'mid' }[] = []
+    const dailyTemps: { date: string; dateLabel: string; day: string; tmx: number | null; tmn: number | null; avg: number | null; weather: string; rainPct?: number | null; source: 'short' | 'mid' }[] = []
 
     for (const [date, v] of Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
       const avg = v.temps.length > 0 ? Math.round(v.temps.reduce((s, t) => s + t, 0) / v.temps.length * 10) / 10 : null

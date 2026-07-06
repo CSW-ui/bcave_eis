@@ -63,7 +63,7 @@ export async function GET(req: Request) {
         `SELECT YYYYMM, BRANDCD, BRANDNM, SHOPTYPENM,
            SUM(SALEAMT_VAT_EX) AS REVENUE
          FROM ${SALES_VIEW}
-         WHERE ${brandClause}
+         WHERE BRANDCD IN ${brandInClause}
            AND ${lyDateClause}
          GROUP BY YYYYMM, BRANDCD, BRANDNM, SHOPTYPENM
          ORDER BY YYYYMM, BRANDCD, SHOPTYPENM`

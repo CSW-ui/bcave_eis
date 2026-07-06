@@ -6,6 +6,9 @@ import {
   Archive,
   Truck,
   Store,
+  Gauge,
+  ShieldCheck,
+  KeyRound,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -34,6 +37,7 @@ export const NAV_CONFIG: NavSection[] = [
         icon: Package,
         children: [
           { label: '기획현황판', href: '/planning', icon: ClipboardList },
+          { label: '채널×품목 주간실적', href: '/planning/channel-weekly', icon: BarChart3 },
           { label: '상품별 판매조회', href: '/planning/products', icon: Package },
           { label: '입판재현황', href: '/planning/ipj', icon: BarChart3 },
           { label: '이월재고 관리', href: '/planning/carryover', icon: Archive },
@@ -45,12 +49,22 @@ export const NAV_CONFIG: NavSection[] = [
         icon: Target,
         children: [
           { label: '매출 대시보드', href: '/sales', icon: BarChart3 },
+          { label: '카테고리 성장', href: '/sales/category-trend', icon: BarChart3 },
           { label: '채널판매현황', href: '/sales/period', icon: ClipboardList },
+          { label: '목표 진도율', href: '/sales/target-progress', icon: Gauge },
           { label: '매장별 실적', href: '/sales/shops', icon: Store },
-          { label: '예상달성', href: '/sales/forecast', icon: Target },
+          { label: '동업계 비교', href: '/sales/industry-peers', icon: BarChart3 },
           { label: '보충출고 자동화', href: '/sales/replenishment', icon: Truck },
         ],
       },
+    ],
+  },
+  {
+    id: 'settings',
+    label: '설정',
+    items: [
+      { label: '비밀번호 변경', href: '/settings/password', icon: KeyRound },
+      { label: '2단계 인증(OTP)', href: '/settings/security', icon: ShieldCheck },
     ],
   },
 ]

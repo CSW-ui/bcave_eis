@@ -290,6 +290,8 @@ export default function SalesDashboard() {
     for (const t of monthTargets) {
       const cd = brandNameToCode(t.brandnm)
       if (!cd) continue
+      // 권한 브랜드만 목표 합산 (admin/전체는 allowedBrands=null → 통과)
+      if (allowedBrands && !allowedBrands.includes(cd)) continue
 
       // 연도 합산 모드일 때는 월평균으로 변환
       const tgt = exactMonthTargets.length > 0 ? t.target : t.target / monthCount
@@ -412,7 +414,7 @@ export default function SalesDashboard() {
     }
 
     return { brandRows, chRows }
-  }, [perfData, targets, brand, selBrands, selChannels])
+  }, [perfData, targets, brand, selBrands, selChannels, allowedBrands])
 
   // ── 퍼포먼스 테이블 클릭 핸들러 ────────────────────────────────
   // 브랜드 다중 선택에서 API용 브랜드 파라미터 결정

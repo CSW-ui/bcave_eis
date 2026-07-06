@@ -2,13 +2,23 @@ import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
 import { supabaseAdmin } from '@/lib/supabase'
 import { VALID_BRANDS } from '@/lib/constants'
+import { verifyCronSecret, getServerProfile } from '@/lib/auth'
 
 export const maxDuration = 300
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY!
 
 // POST /api/replenishment/calculate
+// 크론(x-cron-secret 헤더) 또는 로그인한 관리자만 호출 가능
 export async function POST(req: Request) {
+  const cronOk = verifyCronSecret(req.headers.get('x-cron-secret'))
+  if (!cronOk) {
+    const profile = await getServerProfile()
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
+    }
+  }
+
   const { brand } = await req.json() as { brand: string }
 
   // 브랜드 유효성 검증 (SQL 인젝션 방지)

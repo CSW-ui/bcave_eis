@@ -42,7 +42,15 @@ export default function SecuritySettingsPage() {
 
   async function startEnroll() {
     setError(null); setMsg(null)
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' })
+    // 이전에 완료(verified)되지 않은 factor가 남아 있으면 정리한다.
+    // (friendlyName "" 중복으로 인한 'already exists' 오류 방지)
+    const { data: existing } = await supabase.auth.mfa.listFactors()
+    for (const f of existing?.totp ?? []) {
+      if (f.status !== 'verified') await supabase.auth.mfa.unenroll({ factorId: f.id })
+    }
+    // 고유 friendlyName 부여 (빈 이름 충돌 원천 차단)
+    const friendlyName = `otp-${Date.now()}`
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName })
     if (error) { setError(error.message); return }
     setFactorId(data.id)
     setQr(data.totp.qr_code)      // SVG data URI

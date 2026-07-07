@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { ReleaseNotesModal } from '@/components/ReleaseNotesModal'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -108,6 +109,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-surface-subtle flex items-center justify-center p-4">
+      <ReleaseNotesModal />
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">

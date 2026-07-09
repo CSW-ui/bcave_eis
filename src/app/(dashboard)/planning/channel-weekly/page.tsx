@@ -20,6 +20,7 @@ const SEASON_OPTIONS = [
 
 interface WRow { week: number; key: string; vin: 'N' | 'C'; cyAmt: number; cyQty: number; cyTag: number; lyAmt: number; lyQty: number; lyTag: number }
 type Metric = 'amt' | 'qty'
+type Gran = 'week' | 'month'
 
 export default function ChannelWeeklyPage() {
   const { allowedBrands, loading: authLoading } = useAuth()
@@ -27,6 +28,7 @@ export default function ChannelWeeklyPage() {
   const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   const [metric, setMetric] = useState<Metric>('amt')
+  const [gran, setGran] = useState<Gran>('week')
   const [selChannel, setSelChannel] = useState<string | null>(null)
   const [selItem, setSelItem] = useState<string | null>(null)
 
@@ -46,7 +48,7 @@ export default function ChannelWeeklyPage() {
        ...BRAND_TABS.filter(b => b.value !== 'all' && allowedBrands.includes(b.value))]
     : BRAND_TABS
 
-  const base = `/api/planning/channel-item-weekly?brand=${apiBrand}&year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}`
+  const base = `/api/planning/channel-item-weekly?brand=${apiBrand}&year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}&gran=${gran}`
 
   const fetchChannels = useCallback(async () => {
     if (!apiBrand) return
@@ -76,14 +78,19 @@ export default function ChannelWeeklyPage() {
   useEffect(() => { fetchItems() }, [fetchItems])
 
   const weeks = useMemo(() => {
-    // 이번 주 월요일 (마감 안된 당주 제외 기준)
+    // 마감 안된 당주(주간)·당월(월간) 제외 기준
     const n = new Date()
-    const mon = new Date(n); mon.setDate(n.getDate() - ((n.getDay() + 6) % 7))
-    const curMon = `${mon.getFullYear()}${String(mon.getMonth() + 1).padStart(2, '0')}${String(mon.getDate()).padStart(2, '0')}`
+    let cutoff: string
+    if (gran === 'month') {
+      cutoff = `${n.getFullYear()}${String(n.getMonth() + 1).padStart(2, '0')}01` // 이번 달 1일
+    } else {
+      const mon = new Date(n); mon.setDate(n.getDate() - ((n.getDay() + 6) % 7)) // 이번 주 월요일
+      cutoff = `${mon.getFullYear()}${String(mon.getMonth() + 1).padStart(2, '0')}${String(mon.getDate()).padStart(2, '0')}`
+    }
     return Array.from(new Set([...channelWeekly, ...itemWeekly].filter(r => r.cyAmt > 0 || r.cyQty > 0).map(r => r.week)))
-      .filter(w => { const s = weekDates[w]; return !s || s < curMon }) // 주 시작일이 이번 주 월요일 이전 = 마감된 주만
+      .filter(w => { const s = weekDates[w]; return !s || s < cutoff }) // 버킷 시작일이 기준 이전 = 마감된 것만
       .sort((a, b) => a - b)
-  }, [channelWeekly, itemWeekly, weekDates])
+  }, [channelWeekly, itemWeekly, weekDates, gran])
 
   const onBrandSeason = (fn: () => void) => { setSelChannel(null); setSelItem(null); fn() }
   const clickChannel = (k: string) => { setSelItem(null); setSelChannel(prev => prev === k ? null : k) }
@@ -104,10 +111,11 @@ export default function ChannelWeeklyPage() {
     <div className="space-y-4 p-4 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">채널 × 품목 주간 실적</h1>
-          <p className="text-sm text-gray-500 mt-0.5">정상/이월 분리 · 행 클릭 시 반대 표가 그 기준으로 변동 · 주 시작일(월) 기준</p>
+          <h1 className="text-xl font-bold text-gray-900">채널 × 품목 {gran === 'month' ? '월간' : '주간'} 실적</h1>
+          <p className="text-sm text-gray-500 mt-0.5">정상/이월 분리 · 행 클릭 시 반대 표가 그 기준으로 변동 · {gran === 'month' ? '월 기준' : '주 시작일(월) 기준'}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Toggle val={gran} set={setGran} opts={[['week', '주간'], ['month', '월간']]} />
           <Toggle val={metric} set={setMetric} opts={[['amt', '금액'], ['qty', '수량']]} />
           <select value={SEASON_OPTIONS.indexOf(selSeason)}
             onChange={e => onBrandSeason(() => setSelSeason(SEASON_OPTIONS[Number(e.target.value)]))}
@@ -131,13 +139,13 @@ export default function ChannelWeeklyPage() {
         <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4 min-w-0">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-700">
-              채널별 주간 실적
+              채널별 {gran === 'month' ? '월간' : '주간'} 실적
               <span className={cn('ml-2 font-medium', selItem ? 'text-pink-600' : 'text-gray-400')}>· {selItem ?? '전체 품목'}</span>
-              <span className="ml-2 font-normal text-gray-400">주차별 실적({metric === 'amt' ? '백만원' : '개'})·할인율·전주비·전년비 · 행 클릭 시 우측 변동</span>
+              <span className="ml-2 font-normal text-gray-400">{gran === 'month' ? '월별' : '주차별'} 실적({metric === 'amt' ? '백만원' : '개'})·할인율·{gran === 'month' ? '전월비' : '전주비'}·전년비 · 행 클릭 시 우측 변동</span>
             </h3>
             {selItem && <button onClick={() => setSelItem(null)} className="text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5">전체 품목으로</button>}
           </div>
-          <WeeklyMatrix rows={channelWeekly} weeks={weeks} weekDates={weekDates} metric={metric}
+          <WeeklyMatrix rows={channelWeekly} weeks={weeks} weekDates={weekDates} metric={metric} gran={gran}
             firstCol="채널" loading={chLoading} selectedKey={selChannel} onRowClick={clickChannel} />
         </div>
 
@@ -145,13 +153,13 @@ export default function ChannelWeeklyPage() {
         <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4 min-w-0">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-700">
-              품목별 주간 실적
+              품목별 {gran === 'month' ? '월간' : '주간'} 실적
               <span className={cn('ml-2 font-medium', selChannel ? 'text-pink-600' : 'text-gray-400')}>· {selChannel ?? '전체 채널'}</span>
-              <span className="ml-2 font-normal text-gray-400">주차별 실적({metric === 'amt' ? '백만원' : '개'})·할인율·전주비·전년비 · 행 클릭 시 좌측 변동</span>
+              <span className="ml-2 font-normal text-gray-400">{gran === 'month' ? '월별' : '주차별'} 실적({metric === 'amt' ? '백만원' : '개'})·할인율·{gran === 'month' ? '전월비' : '전주비'}·전년비 · 행 클릭 시 좌측 변동</span>
             </h3>
             {selChannel && <button onClick={() => setSelChannel(null)} className="text-[10px] text-gray-400 hover:text-gray-600 border border-gray-200 rounded px-2 py-0.5">전체 채널로</button>}
           </div>
-          <WeeklyMatrix rows={itemWeekly} weeks={weeks} weekDates={weekDates} metric={metric}
+          <WeeklyMatrix rows={itemWeekly} weeks={weeks} weekDates={weekDates} metric={metric} gran={gran}
             firstCol="품목" loading={itemLoading} selectedKey={selItem} onRowClick={clickItem} />
         </div>
       </div>
@@ -163,8 +171,8 @@ export default function ChannelWeeklyPage() {
 interface WkCell { amt: number; qty: number; tag: number }
 interface VinData { wk: Record<number, WkCell>; lyWk: Record<number, WkCell>; sumAmt: number; sumQty: number; sumTag: number; lyAmt: number; lyQty: number; lyTag: number }
 
-function WeeklyMatrix({ rows, weeks, weekDates, metric, firstCol, loading, selectedKey, onRowClick }: {
-  rows: WRow[]; weeks: number[]; weekDates: Record<number, string>; metric: Metric
+function WeeklyMatrix({ rows, weeks, weekDates, metric, gran, firstCol, loading, selectedKey, onRowClick }: {
+  rows: WRow[]; weeks: number[]; weekDates: Record<number, string>; metric: Metric; gran: Gran
   firstCol: string; loading?: boolean; selectedKey?: string | null; onRowClick?: (k: string) => void
 }) {
   // 첫 화면을 최근 주간(맨 오른쪽)으로
@@ -177,7 +185,11 @@ function WeeklyMatrix({ rows, weeks, weekDates, metric, firstCol, loading, selec
   }, [loading, weeks])
 
   const fmtCell = (v: number) => v <= 0 ? '' : metric === 'amt' ? fmtW(v) : v.toLocaleString()
-  const wkLabel = (w: number) => { const s = weekDates[w]; return s ? `${Number(s.slice(4, 6))}/${Number(s.slice(6, 8))}` : `W${w}` }
+  const wkLabel = (w: number) => {
+    const s = weekDates[w]
+    if (gran === 'month') return s ? `${Number(s.slice(4, 6))}월` : `${w}월`
+    return s ? `${Number(s.slice(4, 6))}/${Number(s.slice(6, 8))}` : `W${w}`
+  }
   const chgCls = (v: number | null) => v == null ? 'text-gray-300' : v >= 0 ? 'text-red-500' : 'text-blue-500'
   const chgTxt = (v: number | null) => v == null ? '—' : `${v >= 0 ? '+' : ''}${Math.round(v)}%`
   const mv = (c: WkCell | undefined) => c ? (metric === 'amt' ? c.amt : c.qty) : 0
@@ -292,7 +304,7 @@ function WeeklyMatrix({ rows, weeks, weekDates, metric, firstCol, loading, selec
             {weeks.flatMap(w => [
               <th key={`${w}s`} className="sticky top-6 z-20 bg-white px-1 py-1 text-right border-l border-b border-gray-200 min-w-[40px]">실적</th>,
               <th key={`${w}d`} className="sticky top-6 z-20 bg-white px-1 py-1 text-right border-b border-gray-200 min-w-[30px]">할인</th>,
-              <th key={`${w}w`} className="sticky top-6 z-20 bg-white px-1 py-1 text-right border-b border-gray-200 min-w-[34px]">전주</th>,
+              <th key={`${w}w`} className="sticky top-6 z-20 bg-white px-1 py-1 text-right border-b border-gray-200 min-w-[34px]">{gran === 'month' ? '전월' : '전주'}</th>,
               <th key={`${w}y`} className="sticky top-6 z-20 bg-white px-1 py-1 text-right border-b border-gray-200 min-w-[34px]">전년</th>,
             ])}
           </tr>

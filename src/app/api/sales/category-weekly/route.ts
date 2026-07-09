@@ -55,8 +55,18 @@ export async function GET(req: Request) {
   const dimCol = byChannel ? 'v.SHOPTYPENM' : 'si.ITEMNM'
   const itemFilter = byChannel ? `AND si.ITEMNM = '${item.replace(/'/g, "''")}'` : ''
 
+  // 집계 단위: 주(ISO 주차·주 시작 월요일) 또는 월(1~12·월 시작일)
+  const gran = searchParams.get('gran') === 'month' ? 'month' : 'week'
+  const bucketNum = gran === 'month'
+    ? `CAST(SUBSTRING(v.SALEDT, 5, 2) AS INT)`
+    : `WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD'))`
+  const bucketStart = gran === 'month'
+    ? `SUBSTRING(v.SALEDT, 1, 6) || '01'`
+    : `TO_CHAR(DATEADD('day', 1 - DAYOFWEEKISO(TO_DATE(v.SALEDT, 'YYYYMMDD')), TO_DATE(v.SALEDT, 'YYYYMMDD')), 'YYYYMMDD')`
+
   const sql = (f: string, t: string) => `
-    SELECT WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
+    SELECT ${bucketNum} AS WEEK_NUM,
+           ${bucketStart} AS WK_START,
            ${dimCol} AS ITEM,
            SUM(v.SALEAMT_VAT_EX) AS REV,
            SUM(v.SALEQTY) AS QTY
@@ -67,12 +77,12 @@ export async function GET(req: Request) {
       ${chFilter}
       ${itemFilter}
       ${genderFilter}
-    GROUP BY WEEK_NUM, ${dimCol}`
+    GROUP BY WEEK_NUM, WK_START, ${dimCol}`
 
   try {
     const [cyRows, lyRows] = await Promise.all([
-      snowflakeQuery<{ WEEK_NUM: number; ITEM: string; REV: number; QTY: number }>(sql(fromDt, toDt)),
-      snowflakeQuery<{ WEEK_NUM: number; ITEM: string; REV: number; QTY: number }>(sql(lyFromDt, lyToDt)),
+      snowflakeQuery<{ WEEK_NUM: number; WK_START: string; ITEM: string; REV: number; QTY: number }>(sql(fromDt, toDt)),
+      snowflakeQuery<{ WEEK_NUM: number; WK_START: string; ITEM: string; REV: number; QTY: number }>(sql(lyFromDt, lyToDt)),
     ])
 
     type ItemAgg = { item: string; cy: Record<number, number>; ly: Record<number, number>; qty: Record<number, number> }
@@ -84,11 +94,13 @@ export async function GET(req: Request) {
     }
 
     let maxWeek = 0
+    const weekDates: Record<number, string> = {} // 버킷번호 → 시작일(YYYYMMDD), 라벨용 (금년 기준)
     for (const r of cyRows) {
       const w = Number(r.WEEK_NUM)
       const o = get(r.ITEM || '미분류')
       o.cy[w] = (o.cy[w] || 0) + Number(r.REV)
       o.qty[w] = (o.qty[w] || 0) + Number(r.QTY)
+      if (r.WK_START) weekDates[w] = String(r.WK_START)
       if (w > maxWeek) maxWeek = w
     }
     for (const r of lyRows) {
@@ -97,7 +109,7 @@ export async function GET(req: Request) {
       o.ly[w] = (o.ly[w] || 0) + Number(r.REV)
     }
 
-    return NextResponse.json({ maxWeek, items: Array.from(items.values()), meta: { year } })
+    return NextResponse.json({ maxWeek, items: Array.from(items.values()), weekDates, meta: { year, gran } })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

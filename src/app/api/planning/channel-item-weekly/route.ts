@@ -28,18 +28,25 @@ export async function GET(req: Request) {
   const stylecd = (searchParams.get('stylecd') || '').trim()
   const styleWhere = stylecd ? `AND v.STYLECD = '${stylecd.replace(/'/g, "''")}'` : ''
   const only = searchParams.get('only') || '' // 'channel' | 'item' | '' (둘 다)
+  const gran = searchParams.get('gran') === 'month' ? 'month' : 'week' // 집계 단위
 
   const cyDate = `v.SALEDT BETWEEN '20${year}0101' AND '20${year}1231'`
   const lyDate = `v.SALEDT BETWEEN '20${lyYear}0101' AND '20${lyYear}1231'`
   const dateWindow = `(${cyDate} OR ${lyDate})`
-  const wkStart = `TO_CHAR(DATE_TRUNC('WEEK', TO_DATE(v.SALEDT, 'YYYYMMDD')), 'YYYYMMDD')`
+  // 버킷 = 주차(주 시작 월요일) 또는 월(1~12, 월 시작일). CY/LY는 같은 버킷번호로 매칭(주:동주차, 월:동월)
+  const bucketNum = gran === 'month'
+    ? `CAST(SUBSTRING(v.SALEDT, 5, 2) AS INT)`
+    : `WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD'))`
+  const bucketStart = gran === 'month'
+    ? `SUBSTRING(v.SALEDT, 1, 6) || '01'`
+    : `TO_CHAR(DATE_TRUNC('WEEK', TO_DATE(v.SALEDT, 'YYYYMMDD')), 'YYYYMMDD')`
   // 정상(N)=판매연도와 상품연차 일치 / 이월(C)=그 외(전년 이전 상품)
   const vin = `CASE WHEN si.YEARCD = SUBSTRING(v.SALEDT, 3, 2) THEN 'N' ELSE 'C' END`
 
   const buildSql = (keyCol: string, extraWhere: string) => `
     SELECT SUBSTRING(v.SALEDT, 1, 4) as YR,
-      WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) as WK,
-      ${wkStart} as WK_START,
+      ${bucketNum} as WK,
+      ${bucketStart} as WK_START,
       ${keyCol} as KEY,
       ${vin} as VIN,
       SUM(v.SALEAMT_VAT_EX) as REV,
@@ -48,7 +55,7 @@ export async function GET(req: Request) {
     FROM ${SALES_VIEW} v
     JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
     WHERE ${vBrandClause} AND si.SEASONNM IN (${seasonList}) ${genderWhere} ${styleWhere} ${extraWhere} AND ${dateWindow}
-    GROUP BY YR, WK, ${wkStart}, ${keyCol}, ${vin}
+    GROUP BY YR, WK, ${bucketStart}, ${keyCol}, ${vin}
     ORDER BY WK`
 
   try {

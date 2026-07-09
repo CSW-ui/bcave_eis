@@ -25,9 +25,10 @@ const CHANNELS = [
 ]
 
 type Metric = 'yoy' | 'wow' | 'rev'
-const METRICS: { key: Metric; label: string }[] = [
+type Gran = 'week' | 'month'
+const metricList = (gran: Gran): { key: Metric; label: string }[] => [
   { key: 'yoy', label: '전년비 YoY' },
-  { key: 'wow', label: '전주비 WoW' },
+  { key: 'wow', label: gran === 'month' ? '전월비 MoM' : '전주비 WoW' },
   { key: 'rev', label: '매출액' },
 ]
 
@@ -36,6 +37,13 @@ interface ItemRow {
   cy: Record<number, number>
   ly: Record<number, number>
   qty: Record<number, number>
+}
+
+// 이번 달 1일 (당월 시작) — 월간 모드에서 마감된 달만 표시하기 위한 기준
+function prevMonthEnd(): string {
+  const d = new Date()
+  const last = new Date(d.getFullYear(), d.getMonth(), 0) // 전월 말일
+  return `${last.getFullYear()}${String(last.getMonth() + 1).padStart(2, '0')}${String(last.getDate()).padStart(2, '0')}`
 }
 
 function getLastSunday(): string {
@@ -78,7 +86,9 @@ export default function CategoryTrendPage() {
     : BRAND_TABS
 
   const [year, setYear] = useState('2026')
+  const [gran, setGran] = useState<Gran>('week')
   const [metric, setMetric] = useState<Metric>('yoy')
+  const METRICS = useMemo(() => metricList(gran), [gran])
   const [grpTab, setGrpTab] = useState<ChannelGroupTab>('전체')
   const [selChannels, setSelChannels] = useState<Set<string>>(new Set())
   const [showChannels, setShowChannels] = useState(false)
@@ -92,6 +102,7 @@ export default function CategoryTrendPage() {
 
   const [items, setItems] = useState<ItemRow[]>([])
   const [maxWeek, setMaxWeek] = useState(0)
+  const [weekDates, setWeekDates] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -99,26 +110,39 @@ export default function CategoryTrendPage() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
 
   const lastSunday = useMemo(getLastSunday, [])
+  // 조회 종료일: 당해년도는 마감된 것까지만 (주간=지난 일요일 / 월간=전월 말일), 과거년도는 연말
+  const toDt = useMemo(() => {
+    const isCurYear = year === String(new Date().getFullYear())
+    if (!isCurYear) return `${year}1231`
+    return gran === 'month' ? prevMonthEnd() : lastSunday
+  }, [year, gran, lastSunday])
 
   const fetchData = useCallback(async () => {
     setLoading(true); setError(null)
-    const toDt = year === String(new Date().getFullYear()) ? lastSunday : `${year}1231`
     const chParam = selChannels.size > 0
       ? channelParamsFromSet(selChannels)
       : (grpTab !== '전체' ? `&channelGroup=${encodeURIComponent(grpTab)}` : '')
     try {
-      const res = await fetch(`/api/sales/category-weekly?brand=${apiBrand}&toDt=${toDt}${chParam}`)
+      const res = await fetch(`/api/sales/category-weekly?brand=${apiBrand}&toDt=${toDt}&gran=${gran}${chParam}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       setItems(json.items ?? [])
       setMaxWeek(json.maxWeek ?? 0)
+      setWeekDates(json.weekDates ?? {})
     } catch (e) { setError(String(e)); setItems([]) }
     finally { setLoading(false) }
-  }, [apiBrand, year, grpTab, selChannels, lastSunday])
+  }, [apiBrand, toDt, gran, grpTab, selChannels])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   const weekNums = useMemo(() => Array.from({ length: maxWeek }, (_, i) => i + 1), [maxWeek])
+
+  // 버킷 라벨: 주간=시작일 M/D, 월간=N월 (시작일은 API weekDates에서)
+  const bucketLabel = useCallback((w: number): string => {
+    const s = weekDates[w]
+    if (gran === 'month') return s ? `${Number(s.slice(4, 6))}월` : `${w}월`
+    return s ? `${Number(s.slice(4, 6))}/${Number(s.slice(6, 8))}` : `W${w}`
+  }, [weekDates, gran])
 
   // 카테고리 → 품목 그룹핑 (해당 그룹 필터 적용, 품목은 금년 매출 합 내림차순)
   const catGroups = useMemo(() => {
@@ -215,10 +239,12 @@ export default function CategoryTrendPage() {
     const c = cy[w] ?? 0, l = ly[w] ?? 0, p = cy[w - 1] ?? 0
     const yoy = l > 0 ? Math.round((c - l) / l * 100) : null
     const wow = p > 0 ? Math.round((c - p) / p * 100) : null
+    const prevLbl = gran === 'month' ? '전월' : '전주'
+    const wowLbl = gran === 'month' ? 'MoM' : 'WoW'
     return [
-      `W${w} · ${label}`,
-      `금년 ${fmt(c)} / 전년 ${fmt(l)} / 전주 ${fmt(p)}`,
-      `YoY ${yoy == null ? '—' : (yoy >= 0 ? '+' : '') + yoy + '%'} · WoW ${wow == null ? '—' : (wow >= 0 ? '+' : '') + wow + '%'}`,
+      `${bucketLabel(w)} · ${label}`,
+      `금년 ${fmt(c)} / 전년 ${fmt(l)} / ${prevLbl} ${fmt(p)}`,
+      `YoY ${yoy == null ? '—' : (yoy >= 0 ? '+' : '') + yoy + '%'} · ${wowLbl} ${wow == null ? '—' : (wow >= 0 ? '+' : '') + wow + '%'}`,
     ].join('\n')
   }
 
@@ -240,14 +266,13 @@ export default function CategoryTrendPage() {
     if (!expandedItem) { setDetailRows([]); return }
     let cancelled = false
     setDetailLoading(true)
-    const toDt = year === String(new Date().getFullYear()) ? lastSunday : `${year}1231`
-    fetch(`/api/sales/category-weekly?brand=${apiBrand}&toDt=${toDt}&item=${encodeURIComponent(expandedItem)}`)
+    fetch(`/api/sales/category-weekly?brand=${apiBrand}&toDt=${toDt}&gran=${gran}&item=${encodeURIComponent(expandedItem)}`)
       .then(r => r.json())
       .then(j => { if (!cancelled) setDetailRows(j.items ?? []) })
       .catch(() => { if (!cancelled) setDetailRows([]) })
       .finally(() => { if (!cancelled) setDetailLoading(false) })
     return () => { cancelled = true }
-  }, [expandedItem, apiBrand, year, lastSunday])
+  }, [expandedItem, apiBrand, toDt, gran])
 
   // 채널 상세: 매출순 정렬 + rev 색상 정규화 max
   const detailSorted = useMemo(() => {
@@ -302,7 +327,7 @@ export default function CategoryTrendPage() {
                   <thead>
                     <tr>
                       <th className="text-left px-2 py-1 sticky left-0 bg-amber-50 w-[110px] min-w-[110px] text-gray-400 font-medium">채널</th>
-                      {displayWeeks.map(w => <th key={w} className={cn('py-1 text-center text-gray-400 font-medium', colW)}>W{w}</th>)}
+                      {displayWeeks.map(w => <th key={w} className={cn('py-1 text-center text-gray-400 font-medium', colW)}>{bucketLabel(w)}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -335,8 +360,8 @@ export default function CategoryTrendPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">카테고리 주간 성장 추이</h1>
-          <p className="text-xs text-gray-400 mt-0.5">품목 × 주차 히트맵 · 채널별 · 부가세 제외 · 매출 단위: 백만원</p>
+          <h1 className="text-lg font-bold text-gray-900">카테고리 {gran === 'month' ? '월간' : '주간'} 성장 추이</h1>
+          <p className="text-xs text-gray-400 mt-0.5">품목 × {gran === 'month' ? '월' : '주차'} 히트맵 · 채널별 · 부가세 제외 · 매출 단위: 백만원</p>
         </div>
         <button onClick={fetchData} disabled={loading}
           className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-surface-border rounded-lg px-2.5 py-1.5 hover:bg-surface-subtle transition-colors">
@@ -365,6 +390,17 @@ export default function CategoryTrendPage() {
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
                 year === y.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
               {y.label}
+            </button>
+          ))}
+        </div>
+
+        <span className="text-xs text-gray-400 ml-1">단위</span>
+        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
+          {([['week', '주간'], ['month', '월간']] as [Gran, string][]).map(([g, label]) => (
+            <button key={g} onClick={() => setGran(g)}
+              className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                gran === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              {label}
             </button>
           ))}
         </div>
@@ -425,13 +461,15 @@ export default function CategoryTrendPage() {
           ))}
         </div>
 
-        <span className="text-xs text-gray-400 ml-2">주차</span>
+        <span className="text-xs text-gray-400 ml-2">{gran === 'month' ? '기간' : '주차'}</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
-          {([['8', 8], ['12', 12], ['전체', 'all']] as [string, number | 'all'][]).map(([label, v]) => (
+          {((gran === 'month'
+            ? [['6', 6], ['12', 12], ['전체', 'all']]
+            : [['8', 8], ['12', 12], ['전체', 'all']]) as [string, number | 'all'][]).map(([label, v]) => (
             <button key={label} onClick={() => setWeekWindow(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
                 weekWindow === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
-              {label === '전체' ? '전체' : `최근 ${label}주`}
+              {label === '전체' ? '전체' : `최근 ${label}${gran === 'month' ? '개월' : '주'}`}
             </button>
           ))}
         </div>
@@ -479,7 +517,7 @@ export default function CategoryTrendPage() {
                     {topN === 'all' ? '품목 / 카테고리' : `베스트 품목 (${flatItems.length})`}
                   </th>
                   {displayWeeks.map(w => (
-                    <th key={w} className={cn('px-0 py-2 text-center text-gray-400 font-medium', colW)}>W{w}</th>
+                    <th key={w} className={cn('px-0 py-2 text-center text-gray-400 font-medium', colW)}>{bucketLabel(w)}</th>
                   ))}
                 </tr>
               </thead>

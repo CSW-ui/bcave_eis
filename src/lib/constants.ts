@@ -53,6 +53,7 @@ export const NAV_CONFIG: NavSection[] = [
           { label: '채널판매현황', href: '/sales/period', icon: ClipboardList },
           { label: '목표 진도율', href: '/sales/target-progress', icon: Gauge },
           { label: '매장별 실적', href: '/sales/shops', icon: Store },
+          { label: '매장별 월별 실적', href: '/sales/shops-monthly', icon: Store },
           { label: '동업계 비교', href: '/sales/industry-peers', icon: BarChart3 },
           { label: '보충출고 자동화', href: '/sales/replenishment', icon: Truck },
         ],

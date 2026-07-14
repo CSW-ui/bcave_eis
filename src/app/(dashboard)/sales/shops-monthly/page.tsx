@@ -18,6 +18,7 @@ const CHANNEL_OPTIONS = [
 const YEAR_OPTIONS = ['2026', '2025']
 
 type Cmp = 'mom' | 'yoy'
+type Gran = 'month' | 'week'
 interface VinData { rev: Record<number, number>; qty: Record<number, number>; tag: Record<number, number>; lyRev: Record<number, number> }
 interface ShopRow {
   shopCd: string; shopNm: string; area: string; brandcd: string; channel: string
@@ -41,14 +42,23 @@ export default function ShopsMonthlyPage() {
   const router = useRouter()
 
   const [year, setYear] = useState('2026')
+  const [gran, setGran] = useState<Gran>('month')
   const [cmp, setCmp] = useState<Cmp>('mom')
   const [brandSel, setBrandSel] = useState<Set<string>>(new Set())
   const [channelSel, setChannelSel] = useState<Set<string>>(new Set())
   const [areaQuery, setAreaQuery] = useState('')
   const [topN, setTopN] = useState<number | 'all'>(30)
+  // 정렬: 'name'(매장명) | 'total'(합계 매출) | 버킷번호(그 월/주 전체 매출)
+  const [sortKey, setSortKey] = useState<'name' | 'total' | number>('total')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const toggleSort = (k: 'name' | 'total' | number) => {
+    if (sortKey === k) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(k); setSortDir(k === 'name' ? 'asc' : 'desc') }
+  }
 
   const [shops, setShops] = useState<ShopRow[]>([])
   const [maxMonth, setMaxMonth] = useState(0)
+  const [weekDates, setWeekDates] = useState<Record<number, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,19 +69,35 @@ export default function ShopsMonthlyPage() {
     try {
       const brandsParam = brandSel.size === 0 || brandSel.size === brandOptions.length ? 'all' : Array.from(brandSel).join(',')
       const channelsParam = Array.from(channelSel).join(',')
-      const url = `/api/sales/shops-monthly?year=${year}&brands=${brandsParam}&channels=${encodeURIComponent(channelsParam)}`
+      const url = `/api/sales/shops-monthly?year=${year}&gran=${gran}&brands=${brandsParam}&channels=${encodeURIComponent(channelsParam)}`
       const res = await fetch(url)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       setShops(json.shops ?? [])
       setMaxMonth(json.maxMonth ?? 0)
+      setWeekDates(json.weekDates ?? {})
     } catch (e) { setError(String(e)); setShops([]) }
     finally { setLoading(false) }
-  }, [year, brandSel, channelSel, brandOptions.length])
+  }, [year, gran, brandSel, channelSel, brandOptions.length])
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const months = useMemo(() => Array.from({ length: maxMonth }, (_, i) => i + 1), [maxMonth])
+  // 표시 버킷: 월간=1~maxMonth / 주간=마감된 주만 (이번 주 월요일 이전 시작주)
+  const months = useMemo(() => {
+    const all = Array.from({ length: maxMonth }, (_, i) => i + 1)
+    if (gran !== 'week') return all
+    const n = new Date()
+    const mon = new Date(n); mon.setDate(n.getDate() - ((n.getDay() + 6) % 7))
+    const curMon = `${mon.getFullYear()}${String(mon.getMonth() + 1).padStart(2, '0')}${String(mon.getDate()).padStart(2, '0')}`
+    return all.filter(w => { const s = weekDates[w]; return !s || s < curMon })
+  }, [maxMonth, gran, weekDates])
+
+  // 버킷 라벨: 월간=N월 / 주간=시작일 M/D
+  const bucketLabel = useCallback((w: number): string => {
+    if (gran === 'month') return `${w}월`
+    const s = weekDates[w]
+    return s ? `${Number(s.slice(4, 6))}/${Number(s.slice(6, 8))}` : `W${w}`
+  }, [gran, weekDates])
 
   const toggleBrand = (b: string) => setBrandSel(prev => { const n = new Set(prev); n.has(b) ? n.delete(b) : n.add(b); return n })
   const toggleChannel = (c: string) => setChannelSel(prev => { const n = new Set(prev); n.has(c) ? n.delete(c) : n.add(c); return n })
@@ -80,11 +106,20 @@ export default function ShopsMonthlyPage() {
 
   const rows = useMemo(() => {
     const q = areaQuery.trim().toLowerCase()
+    const val = (s: ShopRow): number | string =>
+      sortKey === 'name' ? (s.shopNm ?? '')
+      : sortKey === 'total' ? shopTotal(s)
+      : (s.n.rev[sortKey] ?? 0) + (s.c.rev[sortKey] ?? 0)
     const list = shops
       .filter(s => !q || (s.area ?? '').toLowerCase().includes(q) || (s.shopNm ?? '').toLowerCase().includes(q))
-      .sort((a, b) => shopTotal(b) - shopTotal(a))
+      .sort((a, b) => {
+        const va = val(a), vb = val(b)
+        if (typeof va === 'string' || typeof vb === 'string')
+          return sortDir === 'asc' ? String(va).localeCompare(String(vb), 'ko') : String(vb).localeCompare(String(va), 'ko')
+        return sortDir === 'asc' ? va - vb : vb - va
+      })
     return typeof topN === 'number' ? list.slice(0, topN) : list
-  }, [shops, areaQuery, topN])
+  }, [shops, areaQuery, topN, sortKey, sortDir])
 
   // 매출 히트맵 정규화 max (전체 기준)
   const maxRev = useMemo(() => {
@@ -114,14 +149,16 @@ export default function ShopsMonthlyPage() {
         const base: Record<string, string | number> = {
           매장명: r.shopNm, 브랜드: BRAND_NAMES[r.brandcd] ?? r.brandcd, 채널: r.channel, 지역: r.area, 구분: label,
         }
+        const prevLbl = gran === 'week' ? '전주비' : '전월비'
         for (const m of months) {
+          const lb = bucketLabel(m)
           const rev = vd.rev[m] ?? 0
-          base[`${m}월_매출`] = Math.round(rev / 1e6)
+          base[`${lb}_매출`] = Math.round(rev / 1e6)
           const prev = vd.rev[months[months.indexOf(m) - 1]] ?? 0
-          base[`${m}월_전월비`] = prev > 0 ? Math.round((rev / prev - 1) * 100) : ''
+          base[`${lb}_${prevLbl}`] = prev > 0 ? Math.round((rev / prev - 1) * 100) : ''
           const ly = vd.lyRev[m] ?? 0
-          base[`${m}월_전년비`] = ly > 0 ? Math.round((rev / ly - 1) * 100) : ''
-          base[`${m}월_할인율`] = (vd.tag[m] ?? 0) > 0 ? Math.round((1 - rev / vd.tag[m]) * 100) : ''
+          base[`${lb}_전년비`] = ly > 0 ? Math.round((rev / ly - 1) * 100) : ''
+          base[`${lb}_할인율`] = (vd.tag[m] ?? 0) > 0 ? Math.round((1 - rev / vd.tag[m]) * 100) : ''
         }
         base['합계_매출'] = Math.round(sumRec(vd.rev) / 1e6)
         data.push(base)
@@ -129,8 +166,8 @@ export default function ShopsMonthlyPage() {
     }
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '매장별 월별 실적')
-    XLSX.writeFile(wb, `매장별월별실적_${year}.xlsx`)
+    XLSX.utils.book_append_sheet(wb, ws, gran === 'week' ? '매장별 주별 실적' : '매장별 월별 실적')
+    XLSX.writeFile(wb, `매장별${gran === 'week' ? '주별' : '월별'}실적_${year}.xlsx`)
   }
 
   const colTrim = 'text-[10px]'
@@ -141,8 +178,8 @@ export default function ShopsMonthlyPage() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Store size={18} className="text-gray-400" />
-          <h1 className="text-lg font-bold text-gray-900">매장별 월별 실적</h1>
-          <span className="text-xs text-gray-400">매장 × 월 · 전체/정상/이월 · 매출(백만)·전월비·할인율</span>
+          <h1 className="text-lg font-bold text-gray-900">매장별 {gran === 'week' ? '주별' : '월별'} 실적</h1>
+          <span className="text-xs text-gray-400">매장 × {gran === 'week' ? '주' : '월'} · 전체/정상/이월 · 매출(백만)·{gran === 'week' ? '전주비' : '전월비'}·할인율</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={fetchData} disabled={loading}
@@ -168,9 +205,20 @@ export default function ShopsMonthlyPage() {
             </button>
           ))}
         </div>
+        <span className="text-xs text-gray-400 ml-1">단위</span>
+        <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
+          {([['month', '월간'], ['week', '주간']] as [Gran, string][]).map(([v, label]) => (
+            <button key={v} onClick={() => setGran(v)}
+              className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
+                gran === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              {label}
+            </button>
+          ))}
+        </div>
+
         <span className="text-xs text-gray-400 ml-1">비교</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
-          {([['mom', '전월비'], ['yoy', '전년비']] as [Cmp, string][]).map(([v, label]) => (
+          {([['mom', gran === 'week' ? '전주비' : '전월비'], ['yoy', '전년비']] as [Cmp, string][]).map(([v, label]) => (
             <button key={v} onClick={() => setCmp(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
                 cmp === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
@@ -224,7 +272,7 @@ export default function ShopsMonthlyPage() {
 
       {/* 범례 */}
       <div className="text-[10px] text-gray-400">
-        각 월 3개 칸 = <b className="text-gray-600">매출</b>(백만) · <b className="text-gray-600">{cmp === 'yoy' ? '전년비' : '전월비'}</b>(%) · <b className="text-gray-600">할인율</b>(%) · 매출 셀 진할수록 큼 · {cmp === 'yoy' ? '전년비' : '전월비'} <span className="text-red-500">+빨강</span>/<span className="text-blue-500">-파랑</span>
+        각 {gran === 'week' ? '주' : '월'} 3개 칸 = <b className="text-gray-600">매출</b>(백만) · <b className="text-gray-600">{cmp === 'yoy' ? '전년비' : (gran === 'week' ? '전주비' : '전월비')}</b>(%) · <b className="text-gray-600">할인율</b>(%) · 매출 셀 진할수록 큼 · {cmp === 'yoy' ? '전년비' : (gran === 'week' ? '전주비' : '전월비')} <span className="text-red-500">+빨강</span>/<span className="text-blue-500">-파랑</span>
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 break-all">{error}</div>}
@@ -232,7 +280,7 @@ export default function ShopsMonthlyPage() {
       {/* 매트릭스 */}
       <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0 flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-gray-700">매장 × 월 매트릭스</h3>
+          <h3 className="text-xs font-semibold text-gray-700">매장 × {gran === 'week' ? '주' : '월'} 매트릭스</h3>
           <span className="text-[10px] text-gray-400">{loading ? '조회 중…' : `${rows.length}개 매장`}</span>
         </div>
         <div className="overflow-auto flex-1">
@@ -244,20 +292,29 @@ export default function ShopsMonthlyPage() {
             <table className={cn('border-collapse', colTrim)}>
               <thead className="sticky top-0 z-20">
                 <tr className="bg-gray-50 text-gray-500 font-semibold">
-                  <th rowSpan={2} className="sticky left-0 bg-gray-50 z-30 text-left px-2 py-1.5 border-b border-surface-border w-[150px] min-w-[150px]">매장</th>
+                  <th rowSpan={2} onClick={() => toggleSort('name')}
+                    className="sticky left-0 bg-gray-50 z-30 text-left px-2 py-1.5 border-b border-surface-border w-[150px] min-w-[150px] cursor-pointer select-none hover:text-gray-800">
+                    매장{sortKey === 'name' ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ''}
+                  </th>
                   <th rowSpan={2} className="sticky left-[150px] bg-gray-50 z-30 text-left px-2 py-1.5 border-b border-r border-surface-border w-[44px] min-w-[44px]">구분</th>
                   {months.map(m => (
-                    <th key={m} colSpan={3} className="text-center px-1 py-1 border-l border-b border-surface-border text-gray-600">{m}월</th>
+                    <th key={m} colSpan={3} className="text-center px-1 py-1 border-l border-b border-surface-border text-gray-600">{bucketLabel(m)}</th>
                   ))}
                   <th className="text-center px-1 py-1 border-l-2 border-b border-gray-300 text-gray-700">합계</th>
                 </tr>
                 <tr className="bg-gray-50 text-[9px] text-gray-400 font-medium">
                   {months.flatMap(m => [
-                    <th key={`${m}r`} className="px-1 py-1 text-right border-l border-b border-surface-border min-w-[42px]">매출</th>,
-                    <th key={`${m}p`} className="px-1 py-1 text-right border-b border-surface-border min-w-[36px]">{cmp === 'yoy' ? '전년' : '전월'}</th>,
+                    <th key={`${m}r`} onClick={() => toggleSort(m)}
+                      className={cn('px-1 py-1 text-right border-l border-b border-surface-border min-w-[42px] cursor-pointer select-none hover:text-gray-700', sortKey === m && 'text-brand-accent')}>
+                      매출{sortKey === m ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                    </th>,
+                    <th key={`${m}p`} className="px-1 py-1 text-right border-b border-surface-border min-w-[36px]">{cmp === 'yoy' ? '전년' : (gran === 'week' ? '전주' : '전월')}</th>,
                     <th key={`${m}d`} className="px-1 py-1 text-right border-b border-surface-border min-w-[34px]">할인</th>,
                   ])}
-                  <th className="px-1 py-1 text-right border-l-2 border-b border-gray-300 min-w-[46px]">매출</th>
+                  <th onClick={() => toggleSort('total')}
+                    className={cn('px-1 py-1 text-right border-l-2 border-b border-gray-300 min-w-[46px] cursor-pointer select-none hover:text-gray-700', sortKey === 'total' && 'text-brand-accent')}>
+                    매출{sortKey === 'total' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                  </th>
                 </tr>
               </thead>
               <tbody>

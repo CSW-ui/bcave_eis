@@ -9,6 +9,7 @@ import {
   Gauge,
   ShieldCheck,
   KeyRound,
+  FileText,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -49,6 +50,7 @@ export const NAV_CONFIG: NavSection[] = [
         icon: Target,
         children: [
           { label: '매출 대시보드', href: '/sales', icon: BarChart3 },
+          { label: '주간 보고', href: '/sales/weekly-report', icon: FileText },
           { label: '카테고리 성장', href: '/sales/category-trend', icon: BarChart3 },
           { label: '채널판매현황', href: '/sales/period', icon: ClipboardList },
           { label: '목표 진도율', href: '/sales/target-progress', icon: Gauge },

@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   KeyRound,
   FileText,
+  Ship,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -57,6 +58,7 @@ export const NAV_CONFIG: NavSection[] = [
           { label: '매장별 실적', href: '/sales/shops', icon: Store },
           { label: '매장별 월별 실적', href: '/sales/shops-monthly', icon: Store },
           { label: '동업계 비교', href: '/sales/industry-peers', icon: BarChart3 },
+          { label: '해외 출고분', href: '/sales/overseas-shipment', icon: Ship },
           { label: '보충출고 자동화', href: '/sales/replenishment', icon: Truck },
         ],
       },

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery } from '@/lib/snowflake'
+import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
 
 // 백화점·아울렛 동업계 비교 — 전 매장(건물) 단위, 성인/키즈 조닝
 //  우리=VW(VAT포함 ×1.1), 경쟁=SW_INDUSTRYPEERS(비우리 PEERNM)
@@ -25,19 +25,19 @@ export async function GET(req: Request) {
   const CH = `${chType} AND sh.PROCSTATUSNM <> '종료' AND sh.SHOPNM NOT LIKE '(폐)%'`
   const bucketOur = gran === 'month' ? `SUBSTR(v.SALEDT,1,6)` : `TO_CHAR(DATE_TRUNC('WEEK',TO_DATE(v.SALEDT,'YYYYMMDD')),'YYYYMMDD')`
   const bucketPeer = gran === 'month' ? `SUBSTR(SALEDT,1,6)` : `TO_CHAR(DATE_TRUNC('WEEK',TO_DATE(SALEDT,'YYYYMMDD')),'YYYYMMDD')`
-  const ourShopsSub = `(SELECT DISTINCT v.SHOPCD FROM BCAVE.SEWON.VW_SALES_VAT v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}')`
+  const ourShopsSub = `(SELECT DISTINCT v.SHOPCD FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}')`
 
   try {
     // ── 매장 클릭: 브랜드×주차 매트릭스 (우리 + 경쟁 dedupe) ──
     if (building) {
       const rows = await snowflakeQuery<Record<string, string>>(`
         WITH shops AS (
-          SELECT DISTINCT v.SHOPCD FROM BCAVE.SEWON.VW_SALES_VAT v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
+          SELECT DISTINCT v.SHOPCD FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
           WHERE ${BLD}='${building}' AND ${CH} AND v.BRANDCD IN ${zoneCodes} AND v.SALEDT BETWEEN '${from}' AND '${to}'
         )
         SELECT BR, OURS, BK, AMT FROM (
           SELECT v.BRANDCD AS BR, TRUE AS OURS, ${bucketOur} AS BK, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
-          FROM BCAVE.SEWON.VW_SALES_VAT v WHERE v.SHOPCD IN (SELECT SHOPCD FROM shops) AND v.BRANDCD IN ${zoneCodes} AND v.SALEDT BETWEEN '${from}' AND '${to}'
+          FROM ${SALES_VIEW} v WHERE v.SHOPCD IN (SELECT SHOPCD FROM shops) AND v.BRANDCD IN ${zoneCodes} AND v.SALEDT BETWEEN '${from}' AND '${to}'
           GROUP BY v.BRANDCD, ${bucketOur}
           UNION ALL
           SELECT PEERNM AS BR, FALSE AS OURS, BK, MAX(AMT) AS AMT FROM (
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         WITH our_bld AS (
           SELECT ${BLD} AS BLD, v.BRANDCD AS BR, TRUE AS OURS, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
-          FROM BCAVE.SEWON.VW_SALES_VAT v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
+          FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
           WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}'
           GROUP BY ${BLD}, v.BRANDCD
         ),
@@ -85,7 +85,7 @@ export async function GET(req: Request) {
       `),
       snowflakeQuery<Record<string, string>>(`
         SELECT ${BLD} AS BLD, v.BRANDCD AS BR, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
-        FROM BCAVE.SEWON.VW_SALES_VAT v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
+        FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
         WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}'
         GROUP BY ${BLD}, v.BRANDCD
       `),
@@ -93,7 +93,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         -- 우리
         SELECT v.BRANDCD AS BR, TRUE AS OURS, ${bucketOur} AS BK, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
-        FROM BCAVE.SEWON.VW_SALES_VAT v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
+        FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
         WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}'
         GROUP BY v.BRANDCD, ${bucketOur}
         UNION ALL

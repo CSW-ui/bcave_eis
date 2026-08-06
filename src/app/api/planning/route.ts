@@ -138,7 +138,7 @@ export async function GET(req: Request) {
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwS}' AND '${cwE}' THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) as CW_COST,
           SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MONTH_AMT,
           SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEQTY ELSE 0 END) as MONTH_QTY
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${vBrandClause}
@@ -187,7 +187,7 @@ export async function GET(req: Request) {
         SELECT v.SHOPTYPENM,
           SUM(v.SALEQTY) as SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as SALE_AMT
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD
         WHERE ${vBrandClause}
           AND si.YEARCD = '${year}'

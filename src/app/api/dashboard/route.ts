@@ -72,14 +72,14 @@ export async function GET(req: NextRequest) {
           SUM(CASE WHEN SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN SALEAMT_VAT_EX ELSE 0 END) AS LY_REV,
           SUM(CASE WHEN SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN SALEQTY ELSE 0 END) AS LY_QTY,
           SUM(CASE WHEN SALEDT BETWEEN '${lyPmStart}' AND '${lyPmEnd}' THEN SALEAMT_VAT_EX ELSE 0 END) AS LY_PM_REV
-        FROM BCAVE.SEWON.VW_SALES_VAT
+        FROM ${SALES_VIEW}
         WHERE ${brandFilter} ${regionFilter}
       `),
 
       // 2. 월별 매출 추이: 올해 + 전년 (차트용 — 월 전체)
       snowflakeQuery<{ M: string; REV: number }>(`
         SELECT SUBSTRING(SALEDT, 1, 6) AS M, SUM(SALEAMT_VAT_EX) AS REV
-        FROM BCAVE.SEWON.VW_SALES_VAT
+        FROM ${SALES_VIEW}
         WHERE ${brandFilter} ${regionFilter}
           AND SALEDT >= '${curYear - 1}0101'
         GROUP BY SUBSTRING(SALEDT, 1, 6)
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
         SELECT BRANDNM,
           SUM(SALEAMT_VAT_EX) AS REV,
           SUM(SALEQTY) AS QTY
-        FROM BCAVE.SEWON.VW_SALES_VAT
+        FROM ${SALES_VIEW}
         WHERE ${brandFilter} ${regionFilter}
           AND SALEDT >= '${curYear}0101'
         GROUP BY BRANDNM
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
       snowflakeQuery<{ BRANDNM: string; BRANDCD: string; REV: number }>(`
         SELECT BRANDNM, BRANDCD,
           SUM(SALEAMT_VAT_EX) AS REV
-        FROM BCAVE.SEWON.VW_SALES_VAT
+        FROM ${SALES_VIEW}
         WHERE ${allBrandFilter} ${regionFilter}
           AND SALEDT BETWEEN '${cmStart}' AND '${cmEnd}'
         GROUP BY BRANDNM, BRANDCD
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS SALE_TAG,
           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT,
           SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS COST_AMT
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
       snowflakeQuery<{ M: string; COST: number }>(`
         SELECT SUBSTRING(v.SALEDT, 1, 6) AS M,
           SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS COST
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}
@@ -252,7 +252,7 @@ export async function GET(req: NextRequest) {
       // 13. 전년 당월 동기간 원가 (YTD 매출원가율 동기간 보정용)
       snowflakeQuery<Record<string, string>>(`
         SELECT SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS LY_CM_COST
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
         WHERE ${brandFilter.replace(/BRANDCD/g, 'v.BRANDCD')} ${regionFilter.replace(/SHOPTYPENM/g, 'v.SHOPTYPENM')}

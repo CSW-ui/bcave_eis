@@ -29,7 +29,15 @@ export function parseBrandParam(param: string): { valid: boolean; inClause: stri
 }
 // 매출 기준일: 2025년 1월 1일 이후 (뷰: VW_SALES_VAT 사용, SW_SALEINFO 직접 조회 금지)
 export const SALE_DATE_FILTER = `SALEDT >= '20250101'`
-export const SALES_VIEW = `BCAVE.SEWON.VW_SALES_VAT`
+
+// 자사 해외법인 이전분(해외사입) — 실수요 아닌 계열사 이동이라 목표/달성률/국내실적 전반에서 제외
+//   실적(VW) 코드: B6055 대만 B.CAVE · B6057 일본 B.CAVE · B6063 중국 B.CAVE (외부 총판/플랫폼은 유지)
+export const OVERSEAS_TRANSFER_SHOPS = ['B6055', 'B6057', 'B6063'] as const
+// 목표(사업계획) 코드: 계획서는 중국·일본 법인을 별도 기획코드로 잡아둠 → 목표 제외 시 함께 처리
+//   COF001 중국 법인 · COF002 일본 법인 · WAF005 일본 법인(와키윌리) + 위 실적코드
+export const OVERSEAS_TRANSFER_TARGET_CODES = ['B6055', 'B6057', 'B6063', 'COF001', 'COF002', 'WAF005'] as const
+// SALES_VIEW는 위 이전분을 이미 제외한 파생 뷰. FROM ${SALES_VIEW} v 형태(별칭 유/무 모두 가능)로 사용
+export const SALES_VIEW = `(SELECT * FROM BCAVE.SEWON.VW_SALES_VAT WHERE SHOPCD NOT IN ('B6055','B6057','B6063'))`
 
 const ACCOUNT_ID = ACCOUNT.toUpperCase()
 const QUALIFIED_USERNAME = `${ACCOUNT_ID}.${USER.toUpperCase()}`

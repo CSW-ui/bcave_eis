@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { OVERSEAS_TRANSFER_TARGET_CODES } from '@/lib/snowflake'
 
 // 목표 데이터는 업로드 직후 항상 최신 반영되어야 하므로 캐시 금지
 export const dynamic = 'force-dynamic'
@@ -20,7 +21,11 @@ export async function GET() {
     all.push(...data)
     if (data.length < PAGE) break
   }
-  return NextResponse.json({ data: all })
+  // 자사 해외법인 이전분(대만·일본·중국)은 실수요 아님 → 목표/달성률에서 제외 (실적 측 제외와 정합)
+  //   계획서 기준 코드: B6055(대만)·COF001(중국)·COF002/WAF005(일본) 등
+  const transfer = new Set<string>(OVERSEAS_TRANSFER_TARGET_CODES)
+  const filtered = all.filter(r => !transfer.has((r.shopcd || '').trim()))
+  return NextResponse.json({ data: filtered })
 }
 
 // POST: 목표매출 업로드 (upsert)

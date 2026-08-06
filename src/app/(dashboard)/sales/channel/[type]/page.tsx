@@ -42,6 +42,7 @@ export default function ChannelDetailPage() {
   const channelName = decodeURIComponent(params.type as string)
 
   const [brand, setBrand] = useState('all')
+  const [selMonth, setSelMonth] = useState('')  // '' = 현재월, 'YYYYMM' = 특정 월
 
   // 메인 데이터 (매장 목록 — 고정)
   const [shopData, setShopData] = useState<any>(null)
@@ -67,7 +68,7 @@ export default function ChannelDetailPage() {
   const shopTargetMap = (() => {
     const today = new Date()
     const lastSun = new Date(today); lastSun.setDate(today.getDate() - (today.getDay() === 0 ? 7 : today.getDay()))
-    const curMonth = `${lastSun.getFullYear()}${String(lastSun.getMonth()+1).padStart(2,'0')}`
+    const curMonth = selMonth || `${lastSun.getFullYear()}${String(lastSun.getMonth()+1).padStart(2,'0')}`
     const withCd = targets.filter(t => t.shopcd)
     const exact = withCd.filter(t => t.yyyymm === curMonth)
     const fb = exact.length > 0 ? exact : withCd.filter(t => t.yyyymm.startsWith(curMonth.slice(0, 4)))
@@ -81,7 +82,8 @@ export default function ChannelDetailPage() {
   const fetchShops = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/sales/channel-detail?brand=${brand}&channel=${encodeURIComponent(channelName)}`)
+      const mp = selMonth ? `&month=${selMonth}` : ''
+      const res = await fetch(`/api/sales/channel-detail?brand=${brand}&channel=${encodeURIComponent(channelName)}${mp}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error)
       setShopData(json)
@@ -89,7 +91,7 @@ export default function ChannelDetailPage() {
       setProducts(json.products ?? [])
     } catch {}
     finally { setLoading(false) }
-  }, [brand, channelName])
+  }, [brand, channelName, selMonth])
 
   useEffect(() => { setSelShop(null); setSelItem(null); fetchShops() }, [fetchShops])
 
@@ -98,6 +100,7 @@ export default function ChannelDetailPage() {
     const params = new URLSearchParams({ brand, channel: channelName })
     if (shopCd) params.set('shopCd', shopCd)
     if (item) params.set('item', item)
+    if (selMonth) params.set('month', selMonth)
     try {
       const res = await fetch(`/api/sales/channel-detail?${params}`)
       const json = await res.json()
@@ -106,7 +109,7 @@ export default function ChannelDetailPage() {
       setItems(json.items ?? [])
       setProducts(json.products ?? [])
     } catch {}
-  }, [brand, channelName])
+  }, [brand, channelName, selMonth])
 
   const handleShopClick = (shopCd: string) => {
     const next = selShop === shopCd ? null : shopCd
@@ -152,10 +155,19 @@ export default function ChannelDetailPage() {
           </button>
           <div>
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Store size={18} className="text-gray-400" />{channelName}</h1>
-            <p className="text-xs text-gray-400 mt-0.5">매장별 실적 · 단위: 백만원</p>
+            <p className="text-xs text-gray-400 mt-0.5">매장별 실적 · 단위: 백만원{shopData?.meta?.monthLabel ? ` · ${shopData.meta.monthLabel}${selMonth ? '' : ' (당월)'}` : ''}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">월</span>
+          <select value={selMonth} onChange={e => setSelMonth(e.target.value)}
+            className="text-xs border border-surface-border rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-brand-accent">
+            <option value="">현재 월</option>
+            {Array.from({ length: 12 }, (_, i) => {
+              const m = `${new Date().getFullYear()}${String(i + 1).padStart(2, '0')}`
+              return <option key={m} value={m}>{i + 1}월</option>
+            })}
+          </select>
           <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
             {visibleBrands.map(b => (
               <button key={b.value} onClick={() => setBrand(b.value)}

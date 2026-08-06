@@ -19,18 +19,38 @@ export async function GET(req: Request) {
 
   const brandWhere = `v.BRANDCD IN ${brandInClause}`
 
-  const today = new Date()
   const fD = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
-  const dow = today.getDay()
-  const lastSun = new Date(today); lastSun.setDate(today.getDate() - (dow === 0 ? 7 : dow))
+  // month 파라미터(YYYYMM): 지정 시 그 달 기준(과거월=월전체, 당월=전일마감). 없으면 현재월.
+  const monthParam = (searchParams.get('month') || '').replace(/[^0-9]/g, '').slice(0, 6)
+  const now = new Date()
+  let anchor: Date, monthStartD: Date, monthEndD: Date
+  if (/^\d{6}$/.test(monthParam)) {
+    const yr = parseInt(monthParam.slice(0, 4)), mo = parseInt(monthParam.slice(4, 6))
+    monthStartD = new Date(yr, mo - 1, 1)
+    const lastDay = new Date(yr, mo, 0)
+    if (now > lastDay) { anchor = lastDay; monthEndD = lastDay }
+    else { anchor = now; monthEndD = new Date(now.getTime() - 86400000) }
+  } else {
+    anchor = now
+    monthStartD = new Date(now.getFullYear(), now.getMonth(), 1)
+    monthEndD = new Date(now.getTime() - 86400000)
+  }
+  const dow = anchor.getDay()
+  const lastSun = new Date(anchor); lastSun.setDate(anchor.getDate() - (dow === 0 ? 7 : dow))
   const cwEnd = fD(lastSun)
   const cwStart = fD(new Date(lastSun.getTime() - 6 * 86400000))
   const pwEnd = fD(new Date(lastSun.getTime() - 7 * 86400000))
   const pwStart = fD(new Date(lastSun.getTime() - 13 * 86400000))
-  const monthStart = `${lastSun.getFullYear()}${String(lastSun.getMonth()+1).padStart(2,'0')}01`
+  const monthStart = fD(monthStartD)
+  const monthEnd = fD(monthEndD)
+  const monthLabel = `${monthStartD.getFullYear()}년 ${monthStartD.getMonth() + 1}월`
   const lyMonthStart = String(parseInt(monthStart) - 10000)
-  const _lyCwStart = String(parseInt(cwStart) - 10000)
+  const lyMonthEnd = String(parseInt(monthEnd) - 10000)
   const lyCwEnd = String(parseInt(cwEnd) - 10000)
+  // 조회 범위 (월 전체 + 주간 비교 구간 포함)
+  const rangeStart = monthStart < pwStart ? monthStart : pwStart
+  const rangeEnd = monthEnd > cwEnd ? monthEnd : cwEnd
+  const lyRangeEnd = lyMonthEnd > lyCwEnd ? lyMonthEnd : lyCwEnd
   const channelSafe = channel.replace(/'/g, "''")
 
   // 상품 필터 (매장 선택 시)
@@ -44,9 +64,9 @@ export async function GET(req: Request) {
       // 금년 매장별 실적
       snowflakeQuery<Record<string, string>>(`
         SELECT v.SHOPCD, v.SHOPCD as SHOPNM_SALE, MAX(si.SHOPNM) as SHOPNM, MAX(si.AREANM) as AREANM,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_REV,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEQTY ELSE 0 END) as MTD_QTY,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY ELSE 0 END) as MTD_COST,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_REV,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEQTY ELSE 0 END) as MTD_QTY,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY ELSE 0 END) as MTD_COST,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as CW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${pwStart}' AND '${pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as PW_REV
         FROM ${SALES_VIEW} v
@@ -54,7 +74,7 @@ export async function GET(req: Request) {
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO sti ON v.STYLECD = sti.STYLECD AND v.BRANDCD = sti.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON sti.STYLECD = pc.STYLECD AND sti.BRANDCD = pc.BRANDCD
         WHERE ${brandWhere} AND v.SHOPTYPENM = '${channelSafe}'
-          AND v.SALEDT BETWEEN '${monthStart < pwStart ? monthStart : pwStart}' AND '${cwEnd}'
+          AND v.SALEDT BETWEEN '${rangeStart}' AND '${rangeEnd}'
           ${itemFilterSti}
         GROUP BY v.SHOPCD ORDER BY MTD_REV DESC
       `),
@@ -64,7 +84,7 @@ export async function GET(req: Request) {
         FROM ${SALES_VIEW} v
         ${selItem ? `LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD` : ''}
         WHERE ${brandWhere} AND v.SHOPTYPENM = '${channelSafe}'
-          AND v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}'
+          AND v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyMonthEnd}'
           ${itemFilterSi}
         GROUP BY v.SHOPCD
       `),
@@ -91,12 +111,12 @@ export async function GET(req: Request) {
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as CW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${pwStart}' AND '${pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as PW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEQTY ELSE 0 END) as CW_QTY,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_REV,
-          SUM(CASE WHEN v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as LY_MTD_REV
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_REV,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyMonthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as LY_MTD_REV
         FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${brandWhere} AND v.SHOPTYPENM = '${channelSafe}'
-          AND (v.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}' OR v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}')
+          AND (v.SALEDT BETWEEN '${rangeStart}' AND '${rangeEnd}' OR v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyRangeEnd}')
           ${shopFilter}
         GROUP BY si.ITEMNM
         ORDER BY MTD_REV DESC
@@ -105,14 +125,13 @@ export async function GET(req: Request) {
       // 할인율용: 매장별 VW_SALES_VAT (SHOPCD별 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(`
         SELECT v.SHOPCD,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${brandWhere}
           AND v.SHOPTYPENM = '${channelSafe}'
-          AND v.SALEDT >= '${monthStart < pwStart ? monthStart : pwStart}'
-          AND v.SALEDT <= '${cwEnd}'
+          AND v.SALEDT BETWEEN '${rangeStart}' AND '${rangeEnd}'
           ${selItem ? `AND si.ITEMNM = '${selItem.replace(/'/g, "''")}'` : ''}
         GROUP BY v.SHOPCD
       `),
@@ -135,13 +154,13 @@ export async function GET(req: Request) {
       // 할인율용: 품목별 VW_SALES_VAT (ITEMNM별)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
-          SUM(CASE WHEN v.SALEDT >= '${monthStart}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${brandWhere}
           AND v.SHOPTYPENM = '${channelSafe}'
-          AND (v.SALEDT BETWEEN '${pwStart}' AND '${cwEnd}' OR v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyCwEnd}')
+          AND (v.SALEDT BETWEEN '${rangeStart}' AND '${rangeEnd}' OR v.SALEDT BETWEEN '${lyMonthStart}' AND '${lyRangeEnd}')
           ${selShopCd ? `AND v.SHOPCD = '${selShopCd.replace(/'/g, "''")}'` : ''}
         GROUP BY si.ITEMNM
       `),
@@ -230,7 +249,7 @@ export async function GET(req: Request) {
           dcRate: mtdTag > 0 ? Math.round((1 - mtdSale / mtdTag) * 1000) / 10 : 0,
         }
       }),
-      meta: { monthStart, cwStart, cwEnd, selShopCd },
+      meta: { monthStart, monthEnd, monthLabel, month: monthParam, cwStart, cwEnd, selShopCd },
     })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })

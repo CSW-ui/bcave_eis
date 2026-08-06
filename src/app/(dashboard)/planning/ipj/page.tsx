@@ -11,6 +11,9 @@ const SEASON_OPTIONS = [
   { label: '26 S/S', year: '26', season: '봄,여름,상반기,스탠다드' },
   { label: '26 봄', year: '26', season: '봄' },
   { label: '26 여름', year: '26', season: '여름' },
+  { label: '26 F/W', year: '26', season: '가을,겨울,하반기,스탠다드' },
+  { label: '26 가을', year: '26', season: '가을' },
+  { label: '26 겨울', year: '26', season: '겨울' },
   { label: '25 F/W', year: '25', season: '가을,겨울,하반기,스탠다드' },
   { label: '25 S/S', year: '25', season: '봄,여름,상반기,스탠다드' },
 ]
@@ -129,6 +132,9 @@ export default function IpjPage() {
   const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
   const [selGender, setSelGender] = useState<string>('전체')
   const [selCategory, setSelCategory] = useState('전체')
+  const [selItem, setSelItem] = useState('전체')
+  // 카테고리 바뀌면 품목 선택 초기화
+  useEffect(() => { setSelItem('전체') }, [selCategory])
   const todayStr = new Date().toISOString().slice(0, 10)
   const defaultFrom = `20${selSeason.year}-01-01`
   const [fromDate, setFromDate] = useState(defaultFrom)
@@ -202,10 +208,21 @@ export default function IpjPage() {
 
   type BrandSection = { key: string; label: string; items: IpjItem[]; totals: Record<SumKeys, number>; indent?: number; isSummary?: boolean }
 
+  // 선택 카테고리 내 품목(ITEMNM) 옵션
+  const itemOptions = useMemo(() => {
+    const all = brandData.get('all') ?? brandData.get(brand!) ?? []
+    const items = all
+      .filter(i => selCategory === '전체' || i.category === selCategory)
+      .map(i => i.item)
+    return ['전체', ...Array.from(new Set(items)).sort((a, b) => a.localeCompare(b, 'ko'))]
+  }, [brandData, brand, selCategory])
+
   // 브랜드별 필터링 + 성인/키즈 그룹
   const brandSections = useMemo(() => {
     const sections: BrandSection[] = []
-    const filterItems = (arr: IpjItem[]) => selCategory === '전체' ? arr : arr.filter(i => i.category === selCategory)
+    const filterItems = (arr: IpjItem[]) => arr.filter(i =>
+      (selCategory === '전체' || i.category === selCategory) &&
+      (selItem === '전체' || i.item === selItem))
 
     // TOTAL (전체 합산)
     const allItems = brandData.get('all') ?? brandData.get(brand!) ?? []
@@ -248,7 +265,7 @@ export default function IpjPage() {
     }
 
     return sections
-  }, [brandData, selCategory, brand, individualBrands])
+  }, [brandData, selCategory, selItem, brand, individualBrands])
 
   // 첫 번째 섹션(TOTAL)의 totals를 발주비중 계산에 사용
   const grandTotals = brandSections[0]?.totals ?? { ...SUM_INIT }
@@ -616,7 +633,7 @@ export default function IpjPage() {
         <input type="date" value={toDate} onChange={e => setToDate(e.target.value)}
           className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white" />
 
-        <span className="text-xs text-gray-400 ml-2">품목</span>
+        <span className="text-xs text-gray-400 ml-2">카테고리</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {ITEM_CATEGORIES.map(cat => (
             <button key={cat} onClick={() => setSelCategory(cat)}
@@ -626,6 +643,12 @@ export default function IpjPage() {
             </button>
           ))}
         </div>
+
+        <span className="text-xs text-gray-400 ml-2">품목</span>
+        <select value={selItem} onChange={e => setSelItem(e.target.value)}
+          className="text-[11px] border border-surface-border rounded-lg px-2 py-1.5 bg-white text-gray-700 max-w-[140px]">
+          {itemOptions.map(it => <option key={it} value={it}>{it === '전체' ? '전체 품목' : it}</option>)}
+        </select>
 
         <span className="text-xs text-gray-400 ml-2">성별</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">

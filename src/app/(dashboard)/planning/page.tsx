@@ -21,14 +21,20 @@ interface SeasonOption {
 
 const SEASON_START_YEAR = 2025
 
-function buildSeasonOptions(now = new Date()): SeasonOption[] {
+function getSeoulYearMonth(now: Date) {
   const dateParts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Seoul',
     year: 'numeric',
     month: 'numeric',
   }).formatToParts(now)
-  const currentYear = Number(dateParts.find(p => p.type === 'year')?.value)
-  const currentMonth = Number(dateParts.find(p => p.type === 'month')?.value)
+  return {
+    year: Number(dateParts.find(p => p.type === 'year')?.value),
+    month: Number(dateParts.find(p => p.type === 'month')?.value),
+  }
+}
+
+function buildSeasonOptions(now = new Date()): SeasonOption[] {
+  const { year: currentYear, month: currentMonth } = getSeoulYearMonth(now)
   const latestYear = currentMonth >= 7 ? currentYear + 1 : currentYear
   const options: SeasonOption[] = []
 
@@ -54,7 +60,16 @@ function buildSeasonOptions(now = new Date()): SeasonOption[] {
   return options
 }
 
-const SEASON_OPTIONS = buildSeasonOptions()
+function getDefaultSeason(options: SeasonOption[], now: Date): SeasonOption {
+  const { year, month } = getSeoulYearMonth(now)
+  const yy = String(year).slice(-2)
+  const half = month >= 7 ? 'F/W' : 'S/S'
+  return options.find(option => option.label === `${yy} ${half}`) ?? options[0]
+}
+
+const SEASON_REFERENCE_DATE = new Date()
+const SEASON_OPTIONS = buildSeasonOptions(SEASON_REFERENCE_DATE)
+const DEFAULT_SEASON = getDefaultSeason(SEASON_OPTIONS, SEASON_REFERENCE_DATE)
 
 // ── 타입 ──────────────────────────────────────────────────────
 interface PlanItem {
@@ -125,7 +140,7 @@ export default function PlanningDashboard() {
     if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
     else setBrand('all')
   }, [allowedBrands, authLoading])
-  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
+  const [selSeason, setSelSeason] = useState(DEFAULT_SEASON)
   const [selGroup, setSelGroup] = useState<string>('전체')
   const [selGender, setSelGender] = useState<string>('전체')
   const [selCategory, setSelCategory] = useState('전체')

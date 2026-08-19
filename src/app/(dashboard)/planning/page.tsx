@@ -13,19 +13,48 @@ import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, CATEGORY_COLORS, ITEM_GROUPS
 import { fmtW, fmtDelta, fmtDeltaPt } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 
-const SEASON_OPTIONS = [
-  { label: '26 S/S', year: '26', season: '봄,여름,상반기,스탠다드' },
-  { label: '26 봄', year: '26', season: '봄' },
-  { label: '26 여름', year: '26', season: '여름' },
-  { label: '26 상반기', year: '26', season: '상반기' },
-  { label: '26 스탠다드', year: '26', season: '스탠다드' },
-  { label: '25 F/W', year: '25', season: '가을,겨울,하반기,스탠다드' },
-  { label: '25 가을', year: '25', season: '가을' },
-  { label: '25 겨울', year: '25', season: '겨울' },
-  { label: '25 S/S', year: '25', season: '봄,여름,상반기,스탠다드' },
-  { label: '25 봄', year: '25', season: '봄' },
-  { label: '25 여름', year: '25', season: '여름' },
-]
+interface SeasonOption {
+  label: string
+  year: string
+  season: string
+}
+
+const SEASON_START_YEAR = 2025
+
+function buildSeasonOptions(now = new Date()): SeasonOption[] {
+  const dateParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(now)
+  const currentYear = Number(dateParts.find(p => p.type === 'year')?.value)
+  const currentMonth = Number(dateParts.find(p => p.type === 'month')?.value)
+  const latestYear = currentMonth >= 7 ? currentYear + 1 : currentYear
+  const options: SeasonOption[] = []
+
+  for (let year = latestYear; year >= SEASON_START_YEAR; year -= 1) {
+    const yy = String(year).slice(-2)
+    const showFw = year < latestYear || currentMonth < 7
+
+    if (showFw) {
+      options.push(
+        { label: `${yy} F/W`, year: yy, season: '가을,겨울' },
+        { label: `${yy} 가을`, year: yy, season: '가을' },
+        { label: `${yy} 겨울`, year: yy, season: '겨울' },
+      )
+    }
+
+    options.push(
+      { label: `${yy} S/S`, year: yy, season: '봄,여름' },
+      { label: `${yy} 봄`, year: yy, season: '봄' },
+      { label: `${yy} 여름`, year: yy, season: '여름' },
+    )
+  }
+
+  return options
+}
+
+const SEASON_OPTIONS = buildSeasonOptions()
 
 // ── 타입 ──────────────────────────────────────────────────────
 interface PlanItem {

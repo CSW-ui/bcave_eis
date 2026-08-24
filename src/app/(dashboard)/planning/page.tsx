@@ -9,67 +9,9 @@ import {
 import { RefreshCw } from 'lucide-react'
 import { PlanningItemTable } from '@/components/planning/PlanningItemTable'
 import { cn } from '@/lib/utils'
-import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, CATEGORY_COLORS, ITEM_GROUPS, ITEM_GROUP_MAP, GENDER_FILTERS } from '@/lib/constants'
+import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, CATEGORY_COLORS, ITEM_GROUPS, ITEM_GROUP_MAP, GENDER_FILTERS, SEASON_OPTIONS, defaultSeasonIndex } from '@/lib/constants'
 import { fmtW, fmtDelta, fmtDeltaPt } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
-
-interface SeasonOption {
-  label: string
-  year: string
-  season: string
-}
-
-const SEASON_START_YEAR = 2025
-
-function getSeoulYearMonth(now: Date) {
-  const dateParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: 'numeric',
-  }).formatToParts(now)
-  return {
-    year: Number(dateParts.find(p => p.type === 'year')?.value),
-    month: Number(dateParts.find(p => p.type === 'month')?.value),
-  }
-}
-
-function buildSeasonOptions(now = new Date()): SeasonOption[] {
-  const { year: currentYear, month: currentMonth } = getSeoulYearMonth(now)
-  const latestYear = currentMonth >= 7 ? currentYear + 1 : currentYear
-  const options: SeasonOption[] = []
-
-  for (let year = latestYear; year >= SEASON_START_YEAR; year -= 1) {
-    const yy = String(year).slice(-2)
-    const showFw = year < latestYear || currentMonth < 7
-
-    if (showFw) {
-      options.push(
-        { label: `${yy} F/W`, year: yy, season: '가을,겨울' },
-        { label: `${yy} 가을`, year: yy, season: '가을' },
-        { label: `${yy} 겨울`, year: yy, season: '겨울' },
-      )
-    }
-
-    options.push(
-      { label: `${yy} S/S`, year: yy, season: '봄,여름' },
-      { label: `${yy} 봄`, year: yy, season: '봄' },
-      { label: `${yy} 여름`, year: yy, season: '여름' },
-    )
-  }
-
-  return options
-}
-
-function getDefaultSeason(options: SeasonOption[], now: Date): SeasonOption {
-  const { year, month } = getSeoulYearMonth(now)
-  const yy = String(year).slice(-2)
-  const half = month >= 7 ? 'F/W' : 'S/S'
-  return options.find(option => option.label === `${yy} ${half}`) ?? options[0]
-}
-
-const SEASON_REFERENCE_DATE = new Date()
-const SEASON_OPTIONS = buildSeasonOptions(SEASON_REFERENCE_DATE)
-const DEFAULT_SEASON = getDefaultSeason(SEASON_OPTIONS, SEASON_REFERENCE_DATE)
 
 // ── 타입 ──────────────────────────────────────────────────────
 interface PlanItem {
@@ -140,7 +82,7 @@ export default function PlanningDashboard() {
     if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
     else setBrand('all')
   }, [allowedBrands, authLoading])
-  const [selSeason, setSelSeason] = useState(DEFAULT_SEASON)
+  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[defaultSeasonIndex()])
   const [selGroup, setSelGroup] = useState<string>('전체')
   const [selGender, setSelGender] = useState<string>('전체')
   const [selCategory, setSelCategory] = useState('전체')

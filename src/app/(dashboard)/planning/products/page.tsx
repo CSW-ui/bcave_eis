@@ -4,19 +4,10 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { RefreshCw, Download, ArrowUpDown, Search, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BRAND_NAMES, BRAND_COLORS, BRAND_TABS } from '@/lib/constants'
+import { BRAND_NAMES, BRAND_COLORS, BRAND_TABS, SEASON_OPTIONS, defaultSeasonIndex } from '@/lib/constants'
 import { fmtM } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 import * as XLSX from 'xlsx'
-
-const SEASON_OPTIONS = [
-  { label: '26 S/S', year: '26', season: '봄,여름,상반기,스탠다드' },
-  { label: '26 봄', year: '26', season: '봄' },
-  { label: '26 여름', year: '26', season: '여름' },
-  { label: '25 F/W', year: '25', season: '가을,겨울,하반기,스탠다드' },
-  { label: '25 S/S', year: '25', season: '봄,여름,상반기,스탠다드' },
-  { label: '전체', year: '', season: '' },
-]
 
 interface StyleRow {
   styleCd: string; styleNm: string; brandcd: string
@@ -70,7 +61,7 @@ export default function ProductSearchPage() {
   const [from, setFrom] = useState(defaultFrom)
   const [to, setTo] = useState(defaultTo)
   const [brandSel, setBrandSel] = useState<Set<string>>(new Set())
-  const [seasonIdx, setSeasonIdx] = useState(0)
+  const [seasonIdx, setSeasonIdx] = useState(defaultSeasonIndex())
   const [itemSel, setItemSel] = useState('')
   const [q, setQ] = useState('')
   const [soldOnly, setSoldOnly] = useState(true)
@@ -220,15 +211,10 @@ export default function ProductSearchPage() {
         {/* 시즌 */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-gray-500 w-12 shrink-0">시즌</span>
-          {SEASON_OPTIONS.map((s, i) => (
-            <button key={s.label} onClick={() => setSeasonIdx(i)}
-              className={cn('text-[11px] px-2 py-0.5 rounded-full border',
-                seasonIdx === i
-                  ? 'bg-blue-50 border-blue-300 text-blue-700'
-                  : 'border-surface-border text-gray-500 hover:bg-surface-subtle')}>
-              {s.label}
-            </button>
-          ))}
+          <select value={seasonIdx} onChange={e => setSeasonIdx(Number(e.target.value))}
+            className="text-xs border border-surface-border rounded px-2 py-1 min-w-[120px]">
+            {SEASON_OPTIONS.map((s, i) => <option key={s.label} value={i}>{s.label}</option>)}
+          </select>
         </div>
 
         {/* 품목 + 검색어 */}

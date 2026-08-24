@@ -3,20 +3,12 @@
 import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { RefreshCw, ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BRAND_TABS, brandNameToCode } from '@/lib/constants'
+import { BRAND_TABS, brandNameToCode, SEASON_OPTIONS, defaultSeasonIndex } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTargetData } from '@/hooks/useTargetData'
 import { getChannelGroup, type ChannelGroup, CHANNEL_GROUP_ORDER } from '@/lib/sales-types'
 
 const fmtE = (v: number) => Math.round(v / 1e6).toLocaleString()
-
-const SEASON_OPTIONS = [
-  { label: '26 S/S', year: '26', season: '봄,여름,상반기,스탠다드' },
-  { label: '26 봄', year: '26', season: '봄' },
-  { label: '26 여름', year: '26', season: '여름' },
-  { label: '25 F/W', year: '25', season: '가을,겨울,하반기,스탠다드' },
-  { label: '25 S/S', year: '25', season: '봄,여름,상반기,스탠다드' },
-]
 
 const ADULT_BRANDS = ['CO', 'LE', 'WA']
 const KIDS_BRANDS = ['CK', 'LK']
@@ -101,7 +93,7 @@ export default function PeriodPage() {
       return next
     })
   }
-  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
+  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[defaultSeasonIndex()])
   // 기간비교 기본값: 금년 1/1~전일, 전년 동기간
   const todayStr = new Date().toISOString().slice(0, 10)
   const yesterdayDt = new Date(); yesterdayDt.setDate(yesterdayDt.getDate() - 1)

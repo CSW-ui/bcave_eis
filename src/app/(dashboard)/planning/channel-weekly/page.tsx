@@ -4,19 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { fmtW } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
-import { BRAND_TABS } from '@/lib/constants'
-
-const SEASON_OPTIONS = [
-  { label: '26 S/S', year: '26', season: '봄,여름,상반기,스탠다드' },
-  { label: '26 봄', year: '26', season: '봄' },
-  { label: '26 여름', year: '26', season: '여름' },
-  { label: '26 상반기', year: '26', season: '상반기' },
-  { label: '26 스탠다드', year: '26', season: '스탠다드' },
-  { label: '25 F/W', year: '25', season: '가을,겨울,하반기,스탠다드' },
-  { label: '25 가을', year: '25', season: '가을' },
-  { label: '25 겨울', year: '25', season: '겨울' },
-  { label: '25 S/S', year: '25', season: '봄,여름,상반기,스탠다드' },
-]
+import { BRAND_TABS, SEASON_OPTIONS, defaultSeasonIndex } from '@/lib/constants'
 
 interface WRow { week: number; key: string; vin: 'N' | 'C'; cyAmt: number; cyQty: number; cyTag: number; lyAmt: number; lyQty: number; lyTag: number }
 type Metric = 'amt' | 'qty'
@@ -26,7 +14,7 @@ export default function ChannelWeeklyPage() {
   const { allowedBrands, loading: authLoading } = useAuth()
   const [brand, setBrand] = useState<string | null>(null)
   const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
-  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
+  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[defaultSeasonIndex()])
   const [metric, setMetric] = useState<Metric>('amt')
   const [gran, setGran] = useState<Gran>('week')
   const [selChannel, setSelChannel] = useState<string | null>(null)

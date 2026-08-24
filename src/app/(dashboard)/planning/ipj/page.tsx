@@ -4,19 +4,9 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { RefreshCw, Download, ChevronDown, ChevronRight, Shirt, ArrowDown, Footprints, ShoppingBag, Watch, Sparkles, Gift, Package, MoreHorizontal } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
-import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, GENDER_FILTERS } from '@/lib/constants'
+import { BRAND_COLORS, BRAND_TABS, ITEM_CATEGORIES, GENDER_FILTERS, SEASON_OPTIONS, defaultSeasonIndex } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 
-const SEASON_OPTIONS = [
-  { label: '26 S/S', year: '26', season: '봄,여름,상반기,스탠다드' },
-  { label: '26 봄', year: '26', season: '봄' },
-  { label: '26 여름', year: '26', season: '여름' },
-  { label: '26 F/W', year: '26', season: '가을,겨울,하반기,스탠다드' },
-  { label: '26 가을', year: '26', season: '가을' },
-  { label: '26 겨울', year: '26', season: '겨울' },
-  { label: '25 F/W', year: '25', season: '가을,겨울,하반기,스탠다드' },
-  { label: '25 S/S', year: '25', season: '봄,여름,상반기,스탠다드' },
-]
 
 interface IpjItem {
   item: string; category: string
@@ -129,12 +119,13 @@ export default function IpjPage() {
     if (allowedBrands?.length === 1) setBrand(allowedBrands[0])
     else setBrand('all')
   }, [allowedBrands, authLoading])
-  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[0])
+  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[defaultSeasonIndex()])
   const [selGender, setSelGender] = useState<string>('전체')
   const [selCategory, setSelCategory] = useState('전체')
-  const [selItem, setSelItem] = useState('전체')
+  const [selItems, setSelItems] = useState<Set<string>>(new Set())  // 빈 Set = 전체 품목 (다중 선택)
   // 카테고리 바뀌면 품목 선택 초기화
-  useEffect(() => { setSelItem('전체') }, [selCategory])
+  useEffect(() => { setSelItems(new Set()) }, [selCategory])
+  const toggleItem = (it: string) => setSelItems(prev => { const n = new Set(prev); n.has(it) ? n.delete(it) : n.add(it); return n })
   const todayStr = new Date().toISOString().slice(0, 10)
   const defaultFrom = `20${selSeason.year}-01-01`
   const [fromDate, setFromDate] = useState(defaultFrom)
@@ -208,13 +199,13 @@ export default function IpjPage() {
 
   type BrandSection = { key: string; label: string; items: IpjItem[]; totals: Record<SumKeys, number>; indent?: number; isSummary?: boolean }
 
-  // 선택 카테고리 내 품목(ITEMNM) 옵션
+  // 선택 카테고리 내 품목(ITEMNM) 옵션 (전체 항목 제외 — 빈 선택 = 전체)
   const itemOptions = useMemo(() => {
     const all = brandData.get('all') ?? brandData.get(brand!) ?? []
     const items = all
       .filter(i => selCategory === '전체' || i.category === selCategory)
       .map(i => i.item)
-    return ['전체', ...Array.from(new Set(items)).sort((a, b) => a.localeCompare(b, 'ko'))]
+    return Array.from(new Set(items)).sort((a, b) => a.localeCompare(b, 'ko'))
   }, [brandData, brand, selCategory])
 
   // 브랜드별 필터링 + 성인/키즈 그룹
@@ -222,7 +213,7 @@ export default function IpjPage() {
     const sections: BrandSection[] = []
     const filterItems = (arr: IpjItem[]) => arr.filter(i =>
       (selCategory === '전체' || i.category === selCategory) &&
-      (selItem === '전체' || i.item === selItem))
+      (selItems.size === 0 || selItems.has(i.item)))
 
     // TOTAL (전체 합산)
     const allItems = brandData.get('all') ?? brandData.get(brand!) ?? []
@@ -265,7 +256,7 @@ export default function IpjPage() {
     }
 
     return sections
-  }, [brandData, selCategory, selItem, brand, individualBrands])
+  }, [brandData, selCategory, selItems, brand, individualBrands])
 
   // 첫 번째 섹션(TOTAL)의 totals를 발주비중 계산에 사용
   const grandTotals = brandSections[0]?.totals ?? { ...SUM_INIT }
@@ -645,10 +636,19 @@ export default function IpjPage() {
         </div>
 
         <span className="text-xs text-gray-400 ml-2">품목</span>
-        <select value={selItem} onChange={e => setSelItem(e.target.value)}
-          className="text-[11px] border border-surface-border rounded-lg px-2 py-1.5 bg-white text-gray-700 max-w-[140px]">
-          {itemOptions.map(it => <option key={it} value={it}>{it === '전체' ? '전체 품목' : it}</option>)}
-        </select>
+        <div className="flex gap-1 flex-wrap items-center">
+          {itemOptions.map(it => (
+            <button key={it} onClick={() => toggleItem(it)}
+              className={cn('text-[11px] px-2 py-0.5 rounded-full border transition-colors',
+                selItems.has(it) ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-surface-border text-gray-500 hover:bg-surface-subtle')}>
+              {it}
+            </button>
+          ))}
+          {selItems.size > 0 && (
+            <button onClick={() => setSelItems(new Set())} className="text-[10px] text-gray-400 hover:text-gray-600 underline ml-0.5">해제</button>
+          )}
+          <span className="text-[10px] text-gray-400 ml-0.5">{selItems.size === 0 ? '(전체)' : `${selItems.size}개`}</span>
+        </div>
 
         <span className="text-xs text-gray-400 ml-2">성별</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">

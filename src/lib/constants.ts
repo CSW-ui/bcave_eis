@@ -11,6 +11,7 @@ import {
   KeyRound,
   FileText,
   Ship,
+  GitCompare,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -41,6 +42,7 @@ export const NAV_CONFIG: NavSection[] = [
           { label: '기획현황판', href: '/planning', icon: ClipboardList },
           { label: '채널×품목 주간실적', href: '/planning/channel-weekly', icon: BarChart3 },
           { label: '상품별 판매조회', href: '/planning/products', icon: Package },
+          { label: '베스트 상품 비교', href: '/planning/best-compare', icon: GitCompare },
           { label: '입판재현황', href: '/planning/ipj', icon: BarChart3 },
           { label: '이월재고 관리', href: '/planning/carryover', icon: Archive },
         ],
@@ -155,6 +157,41 @@ export const ITEM_GROUP_MAP: Record<string, string> = {
   Bag: '용품', Shoes: '용품', ACC: '용품', Beauty: '용품', '기타': '용품',
 }
 export const ITEM_GROUPS = ['전체', '어패럴', '용품'] as const
+
+// ─── 시즌(연도 × S/S·F/W) ─────────────────────────────────
+// S/S = 봄·여름·상반기·스탠다드, F/W = 가을·겨울·하반기·스탠다드 (스탠다드=연중이라 양쪽 포함)
+export const SS_SEASONS = '봄,여름,상반기,스탠다드'
+export const FW_SEASONS = '가을,겨울,하반기,스탠다드'
+
+export type SeasonOption = { label: string; year: string; season: string }
+
+// 연도별 F/W·S/S 드롭다운 옵션(최신순) + 전체. topYear 미지정 시 (올해+1)부터 span년.
+export function buildSeasonOptions(topYear?: number, span = 9, includeAll = true): SeasonOption[] {
+  const cur = new Date().getFullYear() % 100
+  const top = topYear ?? cur + 1
+  const out: SeasonOption[] = []
+  for (let i = 0; i < span; i++) {
+    const y = top - i
+    if (y < 0) break
+    const yy = String(y).padStart(2, '0')
+    out.push({ label: `${yy} F/W`, year: yy, season: FW_SEASONS })
+    out.push({ label: `${yy} S/S`, year: yy, season: SS_SEASONS })
+  }
+  if (includeAll) out.push({ label: '전체', year: '', season: '' })
+  return out
+}
+
+export const SEASON_OPTIONS: SeasonOption[] = buildSeasonOptions()
+
+// 오늘 기준 현재 시즌(2~7월 S/S, 그 외 F/W)의 옵션 인덱스 → 페이지 기본 선택
+export function defaultSeasonIndex(options: SeasonOption[] = SEASON_OPTIONS): number {
+  const now = new Date()
+  const yy = String(now.getFullYear() % 100).padStart(2, '0')
+  const m = now.getMonth() + 1
+  const kind = m >= 2 && m <= 7 ? 'S/S' : 'F/W'
+  const i = options.findIndex(o => o.label === `${yy} ${kind}`)
+  return i >= 0 ? i : 0
+}
 
 // 성별 필터 (Snowflake GENDERNM 기반)
 export const GENDER_FILTERS = ['전체', '유니', '여성'] as const

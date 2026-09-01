@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, parseBrandParam } from '@/lib/snowflake'
+import { snowflakeQuery, parseBrandParam, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
 
 // GET /api/planning/style-search?brands=all&year=26&seasons=봄,여름&item=&q=&from=20260501&to=20260520
 export async function GET(req: Request) {
@@ -38,6 +38,11 @@ export async function GET(req: Request) {
     ? `AND (si.STYLECD ILIKE '%${qSafe}%' OR si.STYLENM ILIKE '%${qSafe}%')`
     : ''
 
+  // 자회사 해외법인 이전분(대만 B6055·일본 B6057·중국 B6063): 실판매가 아닌 계열사 이동.
+  // 본 판매수량/매출에서 제외하고 별도 컬럼으로 분리.
+  const transferShops = OVERSEAS_TRANSFER_SHOPS.map(s => `'${s}'`).join(',')
+  const excludeTransfer = `AND SHOPCD NOT IN (${transferShops})`
+
   // 후보 스타일 (LIMIT 적용)
   const sql = `
     WITH base_styles AS (
@@ -70,6 +75,16 @@ export async function GET(req: Request) {
       FROM BCAVE.SEWON.SW_SALEINFO
       WHERE STYLECD IN (SELECT STYLECD FROM base_styles)
         AND SALEDT BETWEEN '${from}' AND '${to}'
+        ${excludeTransfer}
+      GROUP BY STYLECD
+    ),
+    transfer_agg AS (
+      -- 자회사 해외법인 이전분 (대만/일본/중국 B.CAVE)
+      SELECT STYLECD, SUM(SALEQTY) as TRF_QTY, SUM(SALEAMT) / 1.1 as TRF_REV
+      FROM BCAVE.SEWON.SW_SALEINFO
+      WHERE STYLECD IN (SELECT STYLECD FROM base_styles)
+        AND SALEDT BETWEEN '${from}' AND '${to}'
+        AND SHOPCD IN (${transferShops})
       GROUP BY STYLECD
     ),
     last4w_agg AS (
@@ -77,6 +92,7 @@ export async function GET(req: Request) {
       FROM BCAVE.SEWON.SW_SALEINFO
       WHERE STYLECD IN (SELECT STYLECD FROM base_styles)
         AND SALEDT BETWEEN '${last4wStart}' AND '${to}'
+        ${excludeTransfer}
       GROUP BY STYLECD
     ),
     shopinv_agg AS (
@@ -98,6 +114,8 @@ export async function GET(req: Request) {
       COALESCE(s.REV, 0) as REV,
       COALESCE(s.STORE_REV, 0) as STORE_REV,
       COALESCE(s.OTHER_REV, 0) as OTHER_REV,
+      COALESCE(t.TRF_QTY, 0) as TRF_QTY,
+      COALESCE(t.TRF_REV, 0) as TRF_REV,
       COALESCE(l.QTY_4W, 0) as QTY_4W,
       COALESCE(si.SHOP_INV, 0) as SHOP_INV,
       COALESCE(si.SHOP_AVAIL, 0) as SHOP_AVAIL,
@@ -105,10 +123,11 @@ export async function GET(req: Request) {
       COALESCE(w.WH_INV, 0) as WH_INV
     FROM base_styles b
     LEFT JOIN sale_agg s ON b.STYLECD = s.STYLECD
+    LEFT JOIN transfer_agg t ON b.STYLECD = t.STYLECD
     LEFT JOIN last4w_agg l ON b.STYLECD = l.STYLECD
     LEFT JOIN shopinv_agg si ON b.STYLECD = si.STYLECD
     LEFT JOIN whinv_agg w ON b.STYLECD = w.STYLECD
-    ${soldOnly ? 'WHERE COALESCE(s.QTY, 0) <> 0 OR COALESCE(s.REV, 0) <> 0' : ''}
+    ${soldOnly ? 'WHERE COALESCE(s.QTY, 0) <> 0 OR COALESCE(s.REV, 0) <> 0 OR COALESCE(t.TRF_QTY, 0) <> 0' : ''}
     ORDER BY REV DESC
     LIMIT 1000
   `
@@ -120,6 +139,8 @@ export async function GET(req: Request) {
       const rev = Number(r.REV) || 0
       const storeRev = Number(r.STORE_REV) || 0
       const otherRev = Number(r.OTHER_REV) || 0
+      const transferQty = Number(r.TRF_QTY) || 0
+      const transferRev = Number(r.TRF_REV) || 0
       const qty4w = Number(r.QTY_4W) || 0
       const shopInv = Number(r.SHOP_INV) || 0
       const shopAvail = Number(r.SHOP_AVAIL) || 0
@@ -143,6 +164,7 @@ export async function GET(req: Request) {
         rev: Math.round(rev), qty,
         storeRev: Math.round(storeRev),
         otherRev: Math.round(otherRev),
+        transferQty, transferRev: Math.round(transferRev),
         shopInv, shopAvail, shopTransfer, whInv,
         sellThrough, wos, dcRate,
       }

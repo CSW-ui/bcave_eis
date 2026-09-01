@@ -8,7 +8,7 @@ import {
 } from 'recharts'
 import { ArrowLeft, RefreshCw, Package, X, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BRAND_COLORS, BRAND_TABS } from '@/lib/constants'
+import { BRAND_COLORS, BRAND_TABS, SEASON_OPTIONS } from '@/lib/constants'
 import { fmtW, fmtDelta, fmtDeltaPt } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -28,7 +28,11 @@ export default function ItemDetailPage() {
   const year = searchParams.get('year') || '26'
   const season = searchParams.get('season') || '봄,여름,상반기,스탠다드'
   const compYear = String(Number(year) - 1)
-  const seasonLabel = season.includes(',') ? `${year} S/S` : `${year} ${season}`
+  // 콤마 포함이면 무조건 S/S로 표기하던 버그 → F/W도 콤마 포함이라 오표기됨. 옵션 라벨로 정확히 매칭.
+  const seasonOpt = SEASON_OPTIONS.find(o => o.year === year && o.season === season)
+  const seasonLabel = seasonOpt ? seasonOpt.label
+    : /가을|겨울|하반기/.test(season) ? `${year} F/W`
+    : season.includes(',') ? `${year} S/S` : `${year} ${season || '전체'}`
 
   // 크로스 필터 상태
   const [selWeek, setSelWeek] = useState<number | null>(null)

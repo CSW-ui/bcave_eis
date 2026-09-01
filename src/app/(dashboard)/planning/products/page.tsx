@@ -14,7 +14,7 @@ interface StyleRow {
   itemNm: string; year: string; season: string
   tagPrice: number
   rev: number; storeRev: number; otherRev: number
-  qty: number
+  qty: number; transferQty: number; transferRev: number
   shopInv: number; shopAvail: number; shopTransfer: number; whInv: number
   sellThrough: number; wos: number; dcRate: number
 }
@@ -139,6 +139,7 @@ export default function ProductSearchPage() {
       브랜드: BRAND_NAMES[r.brandcd] ?? r.brandcd,
       시즌: `${r.year} ${r.season}`, 품목: r.itemNm,
       태그가: r.tagPrice, 매출: r.rev, 매장매출: r.storeRev, 기타매출: r.otherRev, 판매수량: r.qty,
+      '이전수량(해외법인)': r.transferQty, '이전매출(해외법인)': r.transferRev,
       매장가용: r.shopAvail, 이동입고: r.shopTransfer, 창고재고: r.whInv,
       '판매율': r.sellThrough, WoS: r.wos, 'DC%': r.dcRate,
     }))
@@ -272,6 +273,7 @@ export default function ProductSearchPage() {
                   <SortTh k="storeRev" label="매장매출" sort={sort} />
                   <SortTh k="otherRev" label="기타매출" sort={sort} />
                   <SortTh k="qty" label="판매수량" sort={sort} />
+                  <SortTh k="transferQty" label="이전(해외법인)" sort={sort} />
                   <SortTh k="shopAvail" label="매장가용" sort={sort} />
                   <SortTh k="shopTransfer" label="이동" sort={sort} />
                   <SortTh k="whInv" label="창고재고" sort={sort} />
@@ -304,6 +306,10 @@ export default function ProductSearchPage() {
                     <td className="px-2 py-1.5 text-right font-mono text-emerald-700">{r.storeRev > 0 ? fmtM(r.storeRev) : '—'}</td>
                     <td className="px-2 py-1.5 text-right font-mono text-purple-700">{r.otherRev > 0 ? fmtM(r.otherRev) : '—'}</td>
                     <td className="px-2 py-1.5 text-right font-mono font-bold text-gray-900">{r.qty.toLocaleString()}</td>
+                    <td className={cn('px-2 py-1.5 text-right font-mono', r.transferQty > 0 ? 'text-amber-600' : 'text-gray-300')}
+                      title={r.transferQty > 0 ? `이전매출 ${fmtM(r.transferRev)}백만 (대만/일본/중국 자회사)` : '이전분 없음'}>
+                      {r.transferQty > 0 ? r.transferQty.toLocaleString() : '—'}
+                    </td>
                     <td className={cn('px-2 py-1.5 text-right font-mono',
                       r.shopAvail === 0 && r.qty > 0 ? 'text-red-500 font-bold' : 'text-gray-700')}>
                       {r.shopAvail.toLocaleString()}

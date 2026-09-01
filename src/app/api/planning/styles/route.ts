@@ -285,7 +285,8 @@ export async function GET(req: Request) {
         const inAmt = inb ? Number(inb.IN_AMT) || 0 : 0
         const inboundRate = ordQty > 0 ? Math.round(inQty / ordQty * 1000) / 10 : 0
         const precost = Number(r.PRODCOST) || 0
-        const mfgProfit = saleAmt - (inQty * precost)
+        // 제조이익 = 매출 - 판매분 원가(costAmt = SUM(PRECOST×판매수량)). 입고수량이 아니라 판매수량 기준.
+        const mfgProfit = saleAmt - costAmt
         return {
           stylecd: r.STYLECD, stylenm: r.STYLENM ?? r.STYLECD, brandcd: r.BRANDCD,
           ...(unit === 'sku' ? { colorcd: r.COLORCD ?? '', colornm: r.COLORNM ?? '' } : {}),

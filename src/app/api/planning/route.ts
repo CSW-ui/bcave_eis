@@ -390,8 +390,8 @@ export async function GET(req: Request) {
       // 재고금액 (TAG·원가)
       const invTagAmt = totalInv * avgTag
       const invCostAmt = totalInv * avgCost
-      // 제조이익: 매출액 - (입고수량 × 입고원가)
-      const mfgProfit = saleAmt - (inQty * avgCost)
+      // 제조이익: 매출액 - 판매분 원가(costAmt). 입고수량이 아니라 판매수량 기준(cogsRate와 동일 기저).
+      const mfgProfit = saleAmt - costAmt
 
       // WoW 계산 (3주 데이터로 Rising 판별)
       const wow = pwAmt > 0 ? ((cwAmt - pwAmt) / pwAmt) * 100 : 0

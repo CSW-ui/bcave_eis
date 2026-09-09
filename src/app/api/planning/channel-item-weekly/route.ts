@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
 import { VALID_BRANDS } from '@/lib/constants'
 
-// GET /api/planning/channel-item-weekly?brand=CO,LE&year=26&season=봄,여름&gender=&channel=&item=&only=
+// GET /api/planning/channel-item-weekly?brand=CO,LE&gender=&channel=&item=&only=&gran=
 // 채널/품목 × 주차 × 정상·이월 실적 (금액·수량·TAG → 할인율 파생, 전년 동주 포함)
+// 연도는 항상 올해(vs 작년), 시즌 구분 없이 전 시즌 포함
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const brandParam = searchParams.get('brand') || 'all'
@@ -13,10 +14,10 @@ export async function GET(req: Request) {
   const brandInClause = brandList ? `(${brandList.map(b => `'${b}'`).join(',')})` : `('CO','WA','LE','CK','LK')`
   const vBrandClause = `v.BRANDCD IN ${brandInClause}`
 
-  const year = (searchParams.get('year') || '26').replace(/[^0-9]/g, '')
+  // 연도: 항상 올해(현재연도) 기준, 전년과 비교. 시즌 구분 없이 전 시즌 포함.
+  const nowYY = String(new Date().getFullYear()).slice(2)
+  const year = (searchParams.get('year') || '').replace(/[^0-9]/g, '') || nowYY
   const lyYear = String(Number(year) - 1)
-  const seasons = searchParams.get('season')?.split(',') || ['봄', '여름']
-  const seasonList = seasons.map(s => `'${s.replace(/'/g, "''")}'`).join(',')
   const gender = searchParams.get('gender') || ''
   const genderWhere = gender === '유니'
     ? `AND si.GENDERNM IN ('공통','남성','키즈공통')`
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
       SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG
     FROM ${SALES_VIEW} v
     JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
-    WHERE ${vBrandClause} AND si.SEASONNM IN (${seasonList}) ${genderWhere} ${styleWhere} ${extraWhere} AND ${dateWindow}
+    WHERE ${vBrandClause} ${genderWhere} ${styleWhere} ${extraWhere} AND ${dateWindow}
     GROUP BY YR, WK, ${bucketStart}, ${keyCol}, ${vin}
     ORDER BY WK`
 

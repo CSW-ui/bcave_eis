@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { fmtW } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
-import { BRAND_TABS, SEASON_OPTIONS, defaultSeasonIndex } from '@/lib/constants'
+import { BRAND_TABS } from '@/lib/constants'
 
 interface WRow { week: number; key: string; vin: 'N' | 'C'; cyAmt: number; cyQty: number; cyTag: number; lyAmt: number; lyQty: number; lyTag: number }
 type Metric = 'amt' | 'qty'
@@ -14,7 +14,6 @@ export default function ChannelWeeklyPage() {
   const { allowedBrands, loading: authLoading } = useAuth()
   const [brand, setBrand] = useState<string | null>(null)
   const apiBrand = brand === 'all' && allowedBrands ? allowedBrands.join(',') : brand
-  const [selSeason, setSelSeason] = useState(SEASON_OPTIONS[defaultSeasonIndex()])
   const [metric, setMetric] = useState<Metric>('amt')
   const [gran, setGran] = useState<Gran>('week')
   const [selChannel, setSelChannel] = useState<string | null>(null)
@@ -36,7 +35,8 @@ export default function ChannelWeeklyPage() {
        ...BRAND_TABS.filter(b => b.value !== 'all' && allowedBrands.includes(b.value))]
     : BRAND_TABS
 
-  const base = `/api/planning/channel-item-weekly?brand=${apiBrand}&year=${selSeason.year}&season=${encodeURIComponent(selSeason.season)}&gran=${gran}`
+  // 연도·시즌 없이 호출 → API가 항상 올해 vs 작년, 전 시즌 집계
+  const base = `/api/planning/channel-item-weekly?brand=${apiBrand}&gran=${gran}`
 
   const fetchChannels = useCallback(async () => {
     if (!apiBrand) return
@@ -80,7 +80,7 @@ export default function ChannelWeeklyPage() {
       .sort((a, b) => a - b)
   }, [channelWeekly, itemWeekly, weekDates, gran])
 
-  const onBrandSeason = (fn: () => void) => { setSelChannel(null); setSelItem(null); fn() }
+  const onBrandChange = (fn: () => void) => { setSelChannel(null); setSelItem(null); fn() }
   const clickChannel = (k: string) => { setSelItem(null); setSelChannel(prev => prev === k ? null : k) }
   const clickItem = (k: string) => { setSelChannel(null); setSelItem(prev => prev === k ? null : k) }
 
@@ -105,17 +105,13 @@ export default function ChannelWeeklyPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <Toggle val={gran} set={setGran} opts={[['week', '주간'], ['month', '월간']]} />
           <Toggle val={metric} set={setMetric} opts={[['amt', '금액'], ['qty', '수량']]} />
-          <select value={SEASON_OPTIONS.indexOf(selSeason)}
-            onChange={e => onBrandSeason(() => setSelSeason(SEASON_OPTIONS[Number(e.target.value)]))}
-            className="text-sm border border-surface-border rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-accent">
-            {SEASON_OPTIONS.map((s, i) => <option key={i} value={i}>{s.label}</option>)}
-          </select>
+          <span className="text-xs text-gray-400">올해 vs 작년 · 전 시즌</span>
         </div>
       </div>
 
       <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 w-fit text-xs">
         {visibleBrands.map(b => (
-          <button key={b.value} onClick={() => onBrandSeason(() => setBrand(b.value))}
+          <button key={b.value} onClick={() => onBrandChange(() => setBrand(b.value))}
             className={cn('px-3 py-1.5 rounded-md font-medium transition-all', brand === b.value ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
             {b.label}
           </button>

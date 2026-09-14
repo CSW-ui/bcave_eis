@@ -22,6 +22,7 @@ interface IpjItem {
   coDcRate: number; coCogsRate: number
   ovSaleQty: number; ovSaleAmt: number; ovTagAmt: number; ovSalePriceAmt: number; ovCostAmt: number
   ovDcRate: number; ovCogsRate: number
+  transferQty: number; transferAmt: number; lyTransferQty: number
   totalSaleAmt: number; totalTagAmt: number
   invStCnt: number; invStclCnt: number; totalInvQty: number; invTagAmt: number; invCostAmt: number
   shopInvQty: number; whAvail: number
@@ -50,7 +51,7 @@ type SumKeys =
   | 'lyTagAmt' | 'lySalePriceAmt' | 'lyCostAmt'
   | 'lyCoTagAmt' | 'lyCoSalePriceAmt' | 'lyCoCostAmt'
   | 'ovSaleQty' | 'lyInQty' | 'lySaleQty' | 'lyOvSaleQty'
-  | 'cumSaleQty'
+  | 'cumSaleQty' | 'transferQty' | 'lyTransferQty'
 
 const SUM_INIT: Record<SumKeys, number> = {
   ordTagAmt: 0, ordCostAmt: 0, ordTagQR: 0,
@@ -63,7 +64,7 @@ const SUM_INIT: Record<SumKeys, number> = {
   lyTagAmt: 0, lySalePriceAmt: 0, lyCostAmt: 0,
   lyCoTagAmt: 0, lyCoSalePriceAmt: 0, lyCoCostAmt: 0,
   ovSaleQty: 0, lyInQty: 0, lySaleQty: 0, lyOvSaleQty: 0,
-  cumSaleQty: 0,
+  cumSaleQty: 0, transferQty: 0, lyTransferQty: 0,
 }
 
 function sumItems(arr: IpjItem[]): Record<SumKeys, number> {
@@ -84,8 +85,10 @@ function calcRates(s: Record<SumKeys, number>) {
     ? Math.round((s.costAmt + s.coCostAmt + s.ovCostAmt) / s.totalSaleAmt * 1000) / 10 : 0
   const normDcRate = s.tagAmt > 0 ? Math.round((1 - s.salePriceAmt / s.tagAmt) * 1000) / 10 : 0
   const normCogsRate = s.saleAmt > 0 ? Math.round(s.costAmt / s.saleAmt * 1000) / 10 : 0
-  const normSalesRate = (s.inQty - s.ovSaleQty) > 0 ? Math.round(s.saleQty / (s.inQty - s.ovSaleQty) * 1000) / 10 : 0
-  const cumSalesRate = (s.inQty - s.ovSaleQty) > 0 ? Math.round(s.cumSaleQty / (s.inQty - s.ovSaleQty) * 1000) / 10 : 0
+  // 국내 소진율: 판매 / (입고 − 외부해외사입 − 자사이전분)
+  const domBase = s.inQty - s.ovSaleQty - s.transferQty
+  const normSalesRate = domBase > 0 ? Math.round(s.saleQty / domBase * 1000) / 10 : 0
+  const cumSalesRate = domBase > 0 ? Math.round(s.cumSaleQty / domBase * 1000) / 10 : 0
   const coDcRate = s.coTagAmt > 0 ? Math.round((1 - s.coSalePriceAmt / s.coTagAmt) * 1000) / 10 : 0
   const coCogsRate = s.coSaleAmt > 0 ? Math.round(s.coCostAmt / s.coSaleAmt * 1000) / 10 : 0
   const coSalesRate = s.coBaseTagAmt > 0 ? Math.round(s.coTagAmt / s.coBaseTagAmt * 1000) / 10 : 0
@@ -106,7 +109,7 @@ function calcRates(s: Record<SumKeys, number>) {
   const lySubCoDcRate = s.lyCoTagAmt > 0 ? Math.round((1 - s.lyCoSalePriceAmt / s.lyCoTagAmt) * 1000) / 10 : null
   const lySubCoCogsRate = s.lyCoSaleAmt > 0 ? Math.round(s.lyCoCostAmt / s.lyCoSaleAmt * 1000) / 10 : null
   // 전년 판매율
-  const lyNormSalesRate = (s.lyInQty - s.lyOvSaleQty) > 0 ? Math.round(s.lySaleQty / (s.lyInQty - s.lyOvSaleQty) * 1000) / 10 : null
+  const lyNormSalesRate = (s.lyInQty - s.lyOvSaleQty - s.lyTransferQty) > 0 ? Math.round(s.lySaleQty / (s.lyInQty - s.lyOvSaleQty - s.lyTransferQty) * 1000) / 10 : null
   return { costRate, totalDcRate, totalCogsRate, normDcRate, normCogsRate, normSalesRate, cumSalesRate, coDcRate, coCogsRate, coSalesRate, ovDcRate, ovCogsRate, lyOrdYoy, lyQrYoy, lyCostRate, lyTotalDcRate, lyTotalCogsRate, lyNormDcRate, lyNormCogsRate, lySubCoDcRate, lySubCoCogsRate, lyNormSalesRate }
 }
 
@@ -283,7 +286,7 @@ export default function IpjPage() {
     if (sortKey === 'qrRate') return s.ordTagAmt > 0 ? s.ordTagQR / s.ordTagAmt : 0
     if (sortKey === 'normRatio') return s.totalSaleAmt > 0 ? s.saleAmt / s.totalSaleAmt : 0
     if (sortKey === 'coRatio') return s.totalSaleAmt > 0 ? s.coSaleAmt / s.totalSaleAmt : 0
-    if (sortKey === 'cumSalesRate') return (s.inQty - s.ovSaleQty) > 0 ? s.cumSaleQty / (s.inQty - s.ovSaleQty) : 0
+    if (sortKey === 'cumSalesRate') return (s.inQty - s.ovSaleQty - s.transferQty) > 0 ? s.cumSaleQty / (s.inQty - s.ovSaleQty - s.transferQty) : 0
     return (s as Record<string, number>)[sortKey] ?? 0
   }, [sortKey])
 

@@ -11,6 +11,7 @@ interface PlanningItem {
   avgTag: number; avgCost: number
   ordQty: number; ordTagAmt: number; ordCostAmt: number
   inQty: number; inAmt: number; inboundRate: number
+  transferQty?: number; transferAmt?: number; netInQty?: number
   saleQty: number; saleAmt: number; tagAmt: number; salePriceAmt: number; costAmt: number
   dcRate: number; domDcRate?: number; cogsRate: number; salesRate: number; mfgProfit?: number
   cwAmt: number; pwAmt: number; cwQty: number; cwCost: number; cwCogsRate: number; wow: number
@@ -45,7 +46,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
   // 합계
   const s = (arr:PlanningItem[]) => arr.reduce((a,i) => ({
     sc:a.sc+i.styleCnt,sk:a.sk+i.skuCnt,oq:a.oq+i.ordQty,ot:a.ot+i.ordTagAmt,oc:a.oc+i.ordCostAmt,
-    iq:a.iq+i.inQty,ia:a.ia+i.inAmt,
+    iq:a.iq+i.inQty,ia:a.ia+i.inAmt,tq:a.tq+(i.transferQty??0),
     sq:a.sq+i.saleQty,sa:a.sa+i.saleAmt,
     ta:a.ta+i.tagAmt,sp:a.sp+i.salePriceAmt,ca:a.ca+i.costAmt,
     cw:a.cw+i.cwAmt,pw:a.pw+i.pwAmt,cc:a.cc+i.cwCost,
@@ -53,10 +54,12 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
     si:a.si+i.shopInv,wh:a.wh+i.whAvail,ti:a.ti+i.totalInv,
     it:a.it+i.invTagAmt,ic:a.ic+i.invCostAmt,
     mp:a.mp+(i.mfgProfit??0),
-  }),{sc:0,sk:0,oq:0,ot:0,oc:0,iq:0,ia:0,sq:0,sa:0,ta:0,sp:0,ca:0,cw:0,pw:0,cc:0,ma:0,mq:0,si:0,wh:0,ti:0,it:0,ic:0,mp:0})
+  }),{sc:0,sk:0,oq:0,ot:0,oc:0,iq:0,ia:0,tq:0,sq:0,sa:0,ta:0,sp:0,ca:0,cw:0,pw:0,cc:0,ma:0,mq:0,si:0,wh:0,ti:0,it:0,ic:0,mp:0})
   const t=s(items),ct=s(compItems??[])
-  const tSR=t.iq>0?Math.round(t.sq/t.iq*1000)/10:0
-  const ctSR=ct.iq>0?Math.round(ct.sq/ct.iq*1000)/10:0
+  // 판매율(국내 소진율) = 판매 / (입고 − 이전분)
+  const tNet=t.iq-t.tq, ctNet=ct.iq-ct.tq
+  const tSR=tNet>0?Math.round(t.sq/tNet*1000)/10:0
+  const ctSR=ctNet>0?Math.round(ct.sq/ctNet*1000)/10:0
   const tIR=t.oq>0?Math.round(t.iq/t.oq*1000)/10:0
   const tDC=t.ta>0?Math.round((1-t.sp/t.ta)*1000)/10:0
   const ctDC=ct.ta>0?Math.round((1-ct.sp/ct.ta)*1000)/10:0
@@ -78,9 +81,9 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
       const p = cm.get(r.item)
       return { '카테고리': r.category, '품목': r.item, '스타일수': r.styleCnt, 'SKU수': r.skuCnt,
         '발주금액': r.ordTagAmt, '원가': r.ordCostAmt, '원가율': `${r.ordTagAmt>0?Math.round(r.ordCostAmt/r.ordTagAmt*1000)/10:0}%`,
-        '입고수량': r.inQty, '입고율': `${r.inboundRate}%`,
+        '입고수량': r.inQty, '이전수량(해외법인)': r.transferQty??0, '이전매출(해외법인)': r.transferAmt??0, '입고율': `${r.inboundRate}%`,
         '매출': r.saleAmt, 'YoY': p?.saleAmt?yoy(r.saleAmt,p.saleAmt):'', 'GAP': p?.saleAmt?r.saleAmt-p.saleAmt:'',
-        '할인율': `${r.dcRate}%`, '매출원가율': `${r.cogsRate}%`, '제조이익': r.mfgProfit??0, '판매율': `${r.salesRate}%`,
+        '할인율': `${r.dcRate}%`, '매출원가율': `${r.cogsRate}%`, '제조이익': r.mfgProfit??0, '판매율(국내)': `${r.salesRate}%`,
         '당월매출': r.monthAmt, '당월수량': r.monthQty,
         '전주매출': r.cwAmt, 'WoW': r.pwAmt>0?`${r.wow}%`:'', '전주수량': r.cwQty??0,
         '총수량': r.totalInv, '총TAG': r.invTagAmt, '매장수량': r.shopInv, '창고수량': r.whAvail, '총원가': r.invCostAmt,
@@ -118,7 +121,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
         <thead>
           <tr className="bg-gray-800 border-b-2 border-gray-900">
             <th colSpan={4} className="text-center text-[11px] text-gray-200 font-bold py-1.5">상품</th>
-            <th colSpan={5} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
+            <th colSpan={6} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
             <th colSpan={12} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>
             <th colSpan={2} className="text-center text-[11px] text-cyan-300 font-bold py-1.5 border-l border-gray-600">당월</th>
             <th colSpan={3} className="text-center text-[11px] text-purple-300 font-bold py-1.5 border-l border-gray-600">주간 실적</th>
@@ -134,6 +137,9 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <H k="ordCostAmt" l="원가"/>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">원가율</th>
             <H k="inQty" l="입고수량"/>
+            <th className="py-1.5 px-1 text-right text-[11px] font-medium text-amber-600 cursor-pointer hover:text-amber-800 whitespace-nowrap" title="자회사 해외법인(대만/일본/중국) 이전분 수량. 판매율은 (입고−이전) 국내 기준" onClick={()=>tog('transferQty')}>
+              <span className="inline-flex items-center gap-px">이전<ArrowUpDown size={8} className={cn(sK==='transferQty'?'opacity-100 text-brand-accent':'opacity-20')}/></span>
+            </th>
             <H k="inboundRate" l="입고율"/>
             {/* 누적 매출 */}
             <H k="saleAmt" l="매출"/>
@@ -146,7 +152,9 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">매출원가율</th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             <H k="mfgProfit" l="제조이익"/>
-            <H k="salesRate" l="판매율"/>
+            <th className="py-1.5 px-1 text-right text-[11px] font-medium text-gray-500 cursor-pointer hover:text-gray-900 whitespace-nowrap" title="국내 소진율 = 국내판매 ÷ (입고−이전분). 자회사 이전분은 분모에서 제외" onClick={()=>tog('salesRate')}>
+              <span className="inline-flex items-center gap-px">판매율<span className="text-[8px] text-gray-400">국내</span><ArrowUpDown size={8} className={cn(sK==='salesRate'?'opacity-100 text-brand-accent':'opacity-20')}/></span>
+            </th>
             <th className="py-1.5 px-0.5 text-right text-[10px] text-gray-400">전년비</th>
             {/* 당월 */}
             <H k="monthAmt" l="매출"/>
@@ -185,6 +193,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
                 <td className={cn(cell, 'text-gray-600')}>{fmtM(r.ordCostAmt)}</td>
                 <td className="py-1.5 px-0.5 text-right text-gray-500 text-[10px]">{ocR}%</td>
                 <td className={cn(cell, 'text-green-700')}>{r.inQty.toLocaleString()}</td>
+                <td className={cn(cell, (r.transferQty??0)>0?'text-amber-600':'text-gray-300')} title={(r.transferQty??0)>0?`이전매출 ${fmtM(r.transferAmt??0)}`:'이전분 없음'}>{(r.transferQty??0)>0?r.transferQty!.toLocaleString():'—'}</td>
                 <td className="py-1.5 px-1 text-right text-[10px]">{r.inboundRate}%</td>
                 {/* 누적 매출 */}
                 <td className={cn(cell, 'font-semibold text-blue-600')}>{fmtM(r.saleAmt)}</td>
@@ -227,6 +236,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
             <td className="py-1.5 px-1 text-right text-gray-700">{fmtM(t.oc)}</td>
             <td className="py-1.5 px-0.5 text-right text-gray-500 text-[10px]">{tOcR}%</td>
             <td className="py-1.5 px-1 text-right text-green-700">{t.iq.toLocaleString()}</td>
+            <td className={cn('py-1.5 px-1 text-right', t.tq>0?'text-amber-600':'text-gray-300')}>{t.tq>0?t.tq.toLocaleString():'—'}</td>
             <td className="py-1.5 px-1 text-right text-[10px]">{tIR}%</td>
             {/* 누적 매출 */}
             <td className="py-1.5 px-1 text-right text-blue-700">{fmtM(t.sa)}</td>

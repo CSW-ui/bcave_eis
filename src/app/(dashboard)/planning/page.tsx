@@ -18,7 +18,7 @@ interface PlanItem {
   item: string; category: string; styleCnt: number; skuCnt: number
   avgTag: number; avgCost: number
   ordQty: number; ordTagAmt: number; ordCostAmt: number
-  inQty: number; inAmt: number; inboundRate: number
+  inQty: number; inAmt: number; inboundRate: number; transferQty?: number; transferAmt?: number; netInQty?: number
   saleQty: number; saleAmt: number; tagAmt: number; salePriceAmt: number; costAmt: number
   dcRate: number; cogsRate: number; salesRate: number
   cwAmt: number; pwAmt: number; pw2Amt: number; cwQty: number; cwCost: number; cwCogsRate: number; wow: number
@@ -221,6 +221,7 @@ export default function PlanningDashboard() {
     const totalStyles = items.reduce((s, i) => s + i.styleCnt, 0)
     const totalSkus = items.reduce((s, i) => s + i.skuCnt, 0)
     const totalInQty = items.reduce((s, i) => s + i.inQty, 0)
+    const totalTransferQty = items.reduce((s, i) => s + (i.transferQty ?? 0), 0)
     const totalSaleQty = items.reduce((s, i) => s + i.saleQty, 0)
     const totalSaleAmt = items.reduce((s, i) => s + i.saleAmt, 0)
     const totalSaleTagAmt = items.reduce((s, i) => s + i.tagAmt, 0)
@@ -230,7 +231,9 @@ export default function PlanningDashboard() {
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
     const totalOrdTagAmt = items.reduce((s, i) => s + i.ordTagAmt, 0)
 
-    const salesRate = totalInQty > 0 ? Math.round(totalSaleQty / totalInQty * 1000) / 10 : 0
+    // 판매율(국내 소진율) = 판매 / (입고 − 이전분)
+    const netInQty = totalInQty - totalTransferQty
+    const salesRate = netInQty > 0 ? Math.round(totalSaleQty / netInQty * 1000) / 10 : 0
     const dcRate = totalSaleTagAmt > 0 ? Math.round((1 - totalSalePriceAmt / totalSaleTagAmt) * 1000) / 10 : 0
     const cogsRate = totalSaleAmt > 0 ? Math.round(totalCostAmt / totalSaleAmt * 1000) / 10 : 0
 
@@ -243,6 +246,7 @@ export default function PlanningDashboard() {
     if (!compData) return null
     const items = filteredCompItems
     const totalInQty = items.reduce((s, i) => s + i.inQty, 0)
+    const totalTransferQty = items.reduce((s, i) => s + (i.transferQty ?? 0), 0)
     const totalSaleQty = items.reduce((s, i) => s + i.saleQty, 0)
     const totalSaleAmt = items.reduce((s, i) => s + i.saleAmt, 0)
     const totalSaleTagAmt = items.reduce((s, i) => s + i.tagAmt, 0)
@@ -253,7 +257,8 @@ export default function PlanningDashboard() {
     const totalInvTagAmt = items.reduce((s, i) => s + i.invTagAmt, 0)
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
 
-    const salesRate = totalInQty > 0 ? Math.round(totalSaleQty / totalInQty * 1000) / 10 : 0
+    const netInQty = totalInQty - totalTransferQty
+    const salesRate = netInQty > 0 ? Math.round(totalSaleQty / netInQty * 1000) / 10 : 0
     const dcRate = totalSaleTagAmt > 0 ? Math.round((1 - totalSalePriceAmt / totalSaleTagAmt) * 1000) / 10 : 0
     const cogsRate = totalSaleAmt > 0 ? Math.round(totalCostAmt / totalSaleAmt * 1000) / 10 : 0
 
@@ -442,7 +447,7 @@ export default function PlanningDashboard() {
 
             {/* ② 판매율 */}
             <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3 flex flex-col items-center">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide w-full">판매율</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide w-full" title="국내 소진율 = 국내판매 ÷ (입고−이전분). 자회사 해외법인 이전분 제외">판매율 <span className="text-[8px] normal-case text-gray-400">국내</span></p>
               <div className="relative" style={{ width: 64, height: 64 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>

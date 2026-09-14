@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
+import { snowflakeQuery, SALES_VIEW, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
 import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 
 // GET /api/planning?brand=CO&year=26&season=봄,여름
@@ -34,6 +34,8 @@ export async function GET(req: Request) {
   })()
 
   const seasonList = seasons.map(s => `'${s}'`).join(',')
+  // 자회사 해외법인 이전분(대만/일본/중국) 실측용 — 판매율/소진율 분모(입고)에서 차감
+  const transferShopClause = OVERSEAS_TRANSFER_SHOPS.map(s => `'${s}'`).join(',')
   const saleDateFrom = `20${year}0101`
   const saleDateTo = toDt ? `AND v.SALEDT <= '${toDt}'` : ''
 
@@ -57,7 +59,7 @@ export async function GET(req: Request) {
   const monthStart = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}01`
 
   try {
-    const [itemSummary, skuByItem, orderByItem, inboundByItem, salesByItem, shopInvByItem, whInvByItem, channelSales, dcRateByItem, bestStyles, weeklyTrend, genderSales, genderOrd, genderInbound, genderInv, genderDc] = await Promise.all([
+    const [itemSummary, skuByItem, orderByItem, inboundByItem, salesByItem, shopInvByItem, whInvByItem, channelSales, dcRateByItem, bestStyles, weeklyTrend, genderSales, genderOrd, genderInbound, genderInv, genderDc, transferByItem] = await Promise.all([
       // 1. 품목별 스타일 마스터
       snowflakeQuery<{
         ITEMNM: string; STYLE_CNT: number; AVG_TAG: number; AVG_COST: number
@@ -327,6 +329,22 @@ export async function GET(req: Request) {
           ${toDt ? `AND v.SALEDT <= '${toDt}'` : ''}
         GROUP BY si.GENDERNM
       `),
+
+      // 16. 품목별 이전분(자회사 해외법인) 실측 — 원본 VW(SALES_VIEW가 제외한 3법인만)
+      snowflakeQuery<{ ITEMNM: string; TRF_QTY: number; TRF_AMT: number }>(`
+        SELECT si.ITEMNM,
+          SUM(v.SALEQTY) as TRF_QTY,
+          SUM(v.SALEAMT_VAT_EX) as TRF_AMT
+        FROM BCAVE.SEWON.VW_SALES_VAT v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND v.SHOPCD IN (${transferShopClause})
+          AND si.YEARCD = '${year}'
+          AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+          AND v.SALEDT >= '${saleDateFrom}'
+          ${saleDateTo}
+        GROUP BY si.ITEMNM
+      `),
     ])
 
     // 품목별 데이터 조합
@@ -337,6 +355,7 @@ export async function GET(req: Request) {
     const shopInvMap = new Map(shopInvByItem.map(r => [r.ITEMNM, r]))
     const whInvMap = new Map(whInvByItem.map(r => [r.ITEMNM, r]))
     const dcRateMap = new Map(dcRateByItem.map(r => [r.ITEMNM, r]))
+    const transferMap = new Map(transferByItem.map(r => [r.ITEMNM, r]))
 
     const items = itemSummary.map(item => {
       const sku = skuMap.get(item.ITEMNM)
@@ -357,6 +376,11 @@ export async function GET(req: Request) {
       // 입고
       const inQty = Number(inbound?.IN_QTY || 0)
       const inAmt = Number(inbound?.IN_AMT || 0)
+      // 이전분(자회사 해외법인) 실측 — 국내 가용 입고 = 입고 − 이전
+      const trf = transferMap.get(item.ITEMNM)
+      const transferQty = Number(trf?.TRF_QTY || 0)
+      const transferAmt = Number(trf?.TRF_AMT || 0)
+      const netInQty = Math.max(inQty - transferQty, 0)
       // 판매
       const saleQty = Number(sales?.SALE_QTY || 0)
       const saleAmt = Number(sales?.SALE_AMT || 0)
@@ -376,8 +400,8 @@ export async function GET(req: Request) {
       const shopAvailQty = Number(shopInv?.SHOP_AVAIL || 0)
       const whAvailQty = Number(whInv?.WH_AVAIL || 0)
       const totalInv = shopInvQty + whAvailQty
-      // 판매율: 판매수량 / 입고수량 (입고 기준)
-      const salesRate = inQty > 0 ? (saleQty / inQty) * 100 : 0
+      // 판매율(국내 소진율): 국내판매 / (입고 − 이전분). 이전분은 국내 가용에서 제외해 실제 소진율 반영
+      const salesRate = netInQty > 0 ? (saleQty / netInQty) * 100 : 0
       const avgTag = Math.round(Number(item.AVG_TAG))
       const avgCost = Math.round(Number(item.AVG_COST))
       const dcRate = tagAmt > 0 ? (1 - salePriceAmt / tagAmt) * 100 : 0
@@ -409,9 +433,12 @@ export async function GET(req: Request) {
         ordQty,        // 발주수량
         ordTagAmt,     // 발주금액 (택가)
         ordCostAmt,    // 발주원가
-        inQty,         // 입고수량
+        inQty,         // 입고수량(총량)
         inAmt,         // 입고금액
-        inboundRate: Math.round(inboundRate * 10) / 10,  // 입고율
+        transferQty,   // 이전분 수량(자회사 해외법인)
+        transferAmt,   // 이전분 금액
+        netInQty,      // 국내 가용 입고 = 입고 − 이전
+        inboundRate: Math.round(inboundRate * 10) / 10,  // 입고율(총량 기준)
         saleQty,
         saleAmt,
         tagAmt,
@@ -446,6 +473,9 @@ export async function GET(req: Request) {
     const totalOrdTagAmt = items.reduce((s, i) => s + i.ordTagAmt, 0)
     const totalInQty = items.reduce((s, i) => s + i.inQty, 0)
     const totalInAmt = items.reduce((s, i) => s + i.inAmt, 0)
+    const totalTransferQty = items.reduce((s, i) => s + i.transferQty, 0)
+    const totalTransferAmt = items.reduce((s, i) => s + i.transferAmt, 0)
+    const totalNetInQty = items.reduce((s, i) => s + i.netInQty, 0)
     const totalSaleAmt = items.reduce((s, i) => s + i.saleAmt, 0)
     const totalSaleQty = items.reduce((s, i) => s + i.saleQty, 0)
     const totalInvQty = items.reduce((s, i) => s + i.totalInv, 0)
@@ -458,9 +488,9 @@ export async function GET(req: Request) {
     const totalInvCostAmt = items.reduce((s, i) => s + i.invCostAmt, 0)
     const totalMfgProfit = items.reduce((s, i) => s + i.mfgProfit, 0)
 
-    // 판매율 = 판매수량 / 입고수량
-    const overallSalesRate = totalInQty > 0
-      ? Math.round((totalSaleQty / totalInQty) * 1000) / 10 : 0
+    // 판매율(국내 소진율) = 국내판매수량 / (입고 − 이전분)
+    const overallSalesRate = totalNetInQty > 0
+      ? Math.round((totalSaleQty / totalNetInQty) * 1000) / 10 : 0
     const overallInboundRate = totalOrdQty > 0
       ? Math.round((totalInQty / totalOrdQty) * 1000) / 10 : 0
     const overallDcRate = totalSaleTagAmt > 0
@@ -500,6 +530,7 @@ export async function GET(req: Request) {
         totalSkus,
         totalOrdQty, totalOrdTagAmt,
         totalInQty, totalInAmt,
+        totalTransferQty, totalTransferAmt, totalNetInQty,
         totalSaleAmt, totalSaleQty,
         totalSaleTagAmt,
         totalInvQty, totalCostAmt,

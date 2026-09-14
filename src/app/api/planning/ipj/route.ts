@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
+import { snowflakeQuery, SALES_VIEW, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
 import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 
 // 입판재현황 API: 입고·판매·재고를 품목별·차수별로 상세 집계
@@ -25,6 +25,8 @@ export async function GET(req: Request) {
   const vBrandClause = `v.BRANDCD IN ${brandInClause}`
 
   const seasonList = seasons.map(s => `'${s}'`).join(',')
+  // 자회사 해외법인 이전분(대만/일본/중국) — SALES_VIEW가 제외한 3법인. 소진율 분모(입고)에서 함께 차감
+  const transferShopClause = OVERSEAS_TRANSFER_SHOPS.map(s => `'${s}'`).join(',')
   const saleDateClause = toDt
     ? `AND v.SALEDT BETWEEN '${fromDt}' AND '${toDt}'`
     : `AND v.SALEDT >= '${fromDt}'`
@@ -45,7 +47,7 @@ export async function GET(req: Request) {
     : `AND v.SALEDT >= '${lyFromDt}'`
 
   try {
-    const [orderData, inboundData, salesData, salesOnlineData, invData, whInvData, carryoverSalesData, carryoverOnlineData, lyOrderData, coInvData, lySalesData, lyCoSalesData, overseasData, lyOverseasData, dcRateData, lyDcRateData, coBaseInvData, lyInboundData, cumSalesData] = await Promise.all([
+    const [orderData, inboundData, salesData, salesOnlineData, invData, whInvData, carryoverSalesData, carryoverOnlineData, lyOrderData, coInvData, lySalesData, lyCoSalesData, overseasData, lyOverseasData, dcRateData, lyDcRateData, coBaseInvData, lyInboundData, cumSalesData, transferData, lyTransferData] = await Promise.all([
       // 1. 발주 데이터: 품목별·차수별
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
@@ -340,6 +342,33 @@ export async function GET(req: Request) {
           AND (v.SHOPTYPENM IS NULL OR v.SHOPTYPENM != '해외 사입')
         GROUP BY si.ITEMNM
       `),
+
+      // 20. 당시즌 자회사 이전분(자사 3법인) — 원본 VW. 소진율 분모에서 차감
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.ITEMNM,
+          SUM(v.SALEQTY) as TRF_QTY,
+          SUM(v.SALEAMT_VAT_EX) as TRF_AMT
+        FROM BCAVE.SEWON.VW_SALES_VAT v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND v.SHOPCD IN (${transferShopClause})
+          AND si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+          ${saleDateClause}
+        GROUP BY si.ITEMNM
+      `),
+
+      // 21. 전년 동시즌 자회사 이전분 (전년 소진율 분모 차감용)
+      snowflakeQuery<Record<string, string>>(`
+        SELECT si.ITEMNM,
+          SUM(v.SALEQTY) as LY_TRF_QTY
+        FROM BCAVE.SEWON.VW_SALES_VAT v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE ${vBrandClause}
+          AND v.SHOPCD IN (${transferShopClause})
+          AND si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}) ${genderWhere}
+          ${lySaleDateClause}
+        GROUP BY si.ITEMNM
+      `),
     ])
 
     const orderMap = new Map(orderData.map(r => [r.ITEMNM, r]))
@@ -353,6 +382,8 @@ export async function GET(req: Request) {
     const coBaseInvMap = new Map(coBaseInvData.map(r => [r.ITEMNM, { tagAmt: Number(r.CO_BASE_TAG_AMT) || 0 }]))
     const lyInboundMap = new Map(lyInboundData.map(r => [r.ITEMNM, Number(r.LY_IN_QTY) || 0]))
     const cumSalesMap = new Map(cumSalesData.map(r => [r.ITEMNM, Number(r.CUM_SALE_QTY) || 0]))
+    const transferMap = new Map(transferData.map(r => [r.ITEMNM, r]))
+    const lyTransferMap = new Map(lyTransferData.map(r => [r.ITEMNM, Number(r.LY_TRF_QTY) || 0]))
     const lyOrderMap = new Map(lyOrderData.map(r => [r.ITEMNM, r]))
     const coInvMap = new Map(coInvData.map(r => [r.ITEMNM, r]))
     const lySalesMap = new Map(lySalesData.map(r => [r.ITEMNM, r]))
@@ -437,6 +468,10 @@ export async function GET(req: Request) {
       // 이월 비율
       const coDcRate = coTagAmt > 0 ? Math.round((1 - coSalePriceAmt / coTagAmt) * 1000) / 10 : 0
       const coCogsRate = coSaleAmt > 0 ? Math.round(coCostAmt / coSaleAmt * 1000) / 10 : 0
+      // 자회사 이전분(자사 3법인) — 국내 가용에서 제외
+      const trf = transferMap.get(itemNm)
+      const transferQty = N(trf?.TRF_QTY); const transferAmt = N(trf?.TRF_AMT)
+      const lyTransferQty = lyTransferMap.get(itemNm) ?? 0
       // 해외사입
       const ovSaleQty = N(ov?.OV_SALE_QTY); const ovSaleAmt = N(ov?.OV_SALE_AMT)
       const ovCostAmt = N(ov?.OV_COST_AMT)
@@ -460,13 +495,11 @@ export async function GET(req: Request) {
       const coInvCostAmt = N(coIv?.CO_INV_COST_AMT)
       // 이월 기초재고 (2025.12.31 TAG 금액)
       const coBaseTagAmt = coBaseInvMap.get(itemNm)?.tagAmt ?? 0
-      // 비율
-      const salesRate = (inQty - ovSaleQty) > 0 ? Math.round(saleQty / (inQty - ovSaleQty) * 1000) / 10 : 0
+      // 비율 — 국내 소진율: 국내판매 / (입고 − 외부해외사입 − 자사이전분)
+      const domBase = inQty - ovSaleQty - transferQty
+      const salesRate = domBase > 0 ? Math.round(saleQty / domBase * 1000) / 10 : 0
       const cumSaleQty = cumSalesMap.get(itemNm) ?? 0
-      const cumSalesRate = (() => {
-        const base = inQty - ovSaleQty
-        return base > 0 ? Math.round(cumSaleQty / base * 1000) / 10 : 0
-      })()
+      const cumSalesRate = domBase > 0 ? Math.round(cumSaleQty / domBase * 1000) / 10 : 0
       const dcRate = tagAmt > 0 ? Math.round((1 - salePriceAmt / tagAmt) * 1000) / 10 : 0
       const cogsRate = saleAmt > 0 ? Math.round(costAmt / saleAmt * 1000) / 10 : 0
       const onlineRatio = saleAmt > 0 ? Math.round(saleAmtOl / saleAmt * 1000) / 10 : 0
@@ -490,6 +523,8 @@ export async function GET(req: Request) {
         coSaleAmtOl, coDcRate, coCogsRate,
         // 해외사입
         ovSaleQty, ovSaleAmt, ovTagAmt, ovSalePriceAmt, ovCostAmt, ovDcRate, ovCogsRate,
+        // 자회사 이전분(자사 3법인)
+        transferQty, transferAmt, lyTransferQty,
         // 합산
         totalSaleAmt, totalTagAmt,
         // 당시즌 재고
@@ -520,7 +555,7 @@ export async function GET(req: Request) {
           const lyInQty = lyInboundMap.get(itemNm) ?? 0
           const lySaleQty = N(lyS?.LY_SALE_QTY)
           const lyOvQty = N(lyOv?.LY_OV_SALE_QTY)
-          const base = lyInQty - lyOvQty
+          const base = lyInQty - lyOvQty - lyTransferQty
           return base > 0 ? Math.round(lySaleQty / base * 1000) / 10 : null
         })(),
         lyCoSalesRate: null as number | null,

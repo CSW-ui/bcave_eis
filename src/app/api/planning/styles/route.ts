@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
+import { snowflakeQuery, SALES_VIEW, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
 import { VALID_BRANDS } from '@/lib/constants'
 
 // GET /api/planning/styles?brand=all&year=26&season=봄,여름&item=반팔티셔츠&compareYear=25
@@ -34,6 +34,8 @@ export async function GET(req: Request) {
   const weekFilter = weekNum ? `AND WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) IN (${wn},${pwn})` : ''
   const seasonList = seasons.map(s => `'${s}'`).join(',')
   const itemSafe = item.replace(/'/g, "''")
+  // 자회사 해외법인 이전분 — 판매율(소진율) 분모(입고)에서 차감
+  const transferShopClause = OVERSEAS_TRANSFER_SHOPS.map(s => `'${s}'`).join(',')
 
   // 전주 날짜 계산
   const today = new Date()
@@ -125,7 +127,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const [cyRaw, lyRaw, orderData, lyOrderData, inboundData, lyInboundData, channelData, dcRateData] = await Promise.all([
+    const [cyRaw, lyRaw, orderData, lyOrderData, inboundData, lyInboundData, channelData, dcRateData, transferData] = await Promise.all([
       unit === 'sku'
         ? snowflakeQuery<Record<string, string>>(buildSkuQuery(year))
         : snowflakeQuery<Record<string, string>>(buildStyleQuery(year)),
@@ -249,6 +251,20 @@ export async function GET(req: Request) {
           AND v.SALEDT >= '20${compYear}0101'
         GROUP BY v.STYLECD
       `),
+
+      // 7. 스타일별 자회사 이전분(자사 3법인) — 원본 VW. 당년/전년 각각. 소진율 분모 차감
+      snowflakeQuery<{ STYLECD: string; YR: string; TRF_QTY: number }>(`
+        SELECT v.STYLECD, si.YEARCD as YR, SUM(v.SALEQTY) as TRF_QTY
+        FROM BCAVE.SEWON.VW_SALES_VAT v
+        JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
+        WHERE v.BRANDCD IN ${brandInClause}
+          AND v.SHOPCD IN (${transferShopClause})
+          AND si.YEARCD IN ('${year}','${compYear}')
+          AND si.SEASONNM IN (${seasonList})
+          AND si.ITEMNM = '${itemSafe}'
+          AND v.SALEDT >= '20${compYear}0101'
+        GROUP BY v.STYLECD, si.YEARCD
+      `),
     ])
 
     const makeKey = (stylecd: string, colorcd?: string) =>
@@ -259,8 +275,11 @@ export async function GET(req: Request) {
     const inMap = new Map(inboundData.map(r => [r.STYLECD, r]))
     const lyInMap = new Map(lyInboundData.map(r => [r.STYLECD, r]))
     const dcMap = new Map(dcRateData.map(r => [r.STYLECD, r]))
+    // 스타일별 이전분 — 당년/전년 분리
+    const cyTransferMap = new Map(transferData.filter(r => String(r.YR) === year).map(r => [r.STYLECD, Number(r.TRF_QTY) || 0]))
+    const lyTransferMap = new Map(transferData.filter(r => String(r.YR) === compYear).map(r => [r.STYLECD, Number(r.TRF_QTY) || 0]))
 
-    const mapRows = (rows: Record<string, string>[], useOrderData = false, orderMap2?: Map<string, any>, inboundMap?: Map<string, any>) => {
+    const mapRows = (rows: Record<string, string>[], useOrderData = false, orderMap2?: Map<string, any>, inboundMap?: Map<string, any>, transferMap?: Map<string, number>) => {
       return rows.map(r => {
         const rowKey = makeKey(r.STYLECD, r.COLORCD)
         const saleQty = Number(r.SALE_QTY) || 0
@@ -284,6 +303,9 @@ export async function GET(req: Request) {
         const inQty = inb ? Number(inb.IN_QTY) || 0 : 0
         const inAmt = inb ? Number(inb.IN_AMT) || 0 : 0
         const inboundRate = ordQty > 0 ? Math.round(inQty / ordQty * 1000) / 10 : 0
+        // 자회사 이전분 — 국내 소진율 분모에서 차감
+        const transferQty = transferMap?.get(r.STYLECD) ?? 0
+        const netInQty = Math.max(inQty - transferQty, 0)
         const precost = Number(r.PRODCOST) || 0
         // 제조이익 = 매출 - 판매분 원가(costAmt = SUM(PRECOST×판매수량)). 입고수량이 아니라 판매수량 기준.
         const mfgProfit = saleAmt - costAmt
@@ -294,12 +316,14 @@ export async function GET(req: Request) {
           precost,
           ordQty, ordTagAmt, ordCostAmt,
           inQty, inAmt, inboundRate,
+          transferQty, netInQty,
           saleQty, saleAmt, mfgProfit,
           dcRate: tagAmt > 0 ? Math.round((1 - salePriceAmt / tagAmt) * 1000) / 10 : 0,
           costAmt,
           cogsRate: saleAmt > 0 ? Math.round(costAmt / saleAmt * 1000) / 10 : 0,
           shopInv, whAvail, totalInv,
-          sellThrough: inQty > 0 ? Math.round(saleQty / inQty * 1000) / 10 : 0,
+          // 국내 소진율 = 판매 / (입고 − 이전분)
+          sellThrough: netInQty > 0 ? Math.round(saleQty / netInQty * 1000) / 10 : 0,
           cwAmt: Number(r.CW_AMT) || 0,
           cwQty: Number(r.CW_QTY) || 0,
           pwAmt: Number(r.PW_AMT) || 0,
@@ -313,8 +337,8 @@ export async function GET(req: Request) {
     }))
 
     return NextResponse.json({
-      styles: mapRows(cyRaw, true, ordMap, inMap),
-      lyStyles: mapRows(lyRaw, false, lyOrdMap, lyInMap),
+      styles: mapRows(cyRaw, true, ordMap, inMap, cyTransferMap),
+      lyStyles: mapRows(lyRaw, false, lyOrdMap, lyInMap, lyTransferMap),
       channels,
     })
   } catch (err) {

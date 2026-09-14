@@ -171,13 +171,16 @@ export default function ItemDetailPage() {
       ot: a.reduce((s:number,r:any)=>s+(r.ordTagAmt||0),0),
       iq: a.reduce((s:number,r:any)=>s+(r.inQty||0),0),
       ia: a.reduce((s:number,r:any)=>s+(r.inAmt||0),0),
+      tf: a.reduce((s:number,r:any)=>s+(r.transferQty||0),0),
       sa: a.reduce((s:number,r:any)=>s+r.saleAmt,0),
       sq: a.reduce((s:number,r:any)=>s+r.saleQty,0),
       ca: a.reduce((s:number,r:any)=>s+r.costAmt,0),
     })
     const cy = s(styles); const ly = s(lyStyles)
-    const st = cy.iq>0 ? Math.round(cy.sq/cy.iq*1000)/10 : 0
-    const lst = ly.iq>0 ? Math.round(ly.sq/ly.iq*1000)/10 : 0
+    // 판매율(국내 소진율) = 판매 / (입고 − 이전분)
+    const cyNet = cy.iq - cy.tf, lyNet = ly.iq - ly.tf
+    const st = cyNet>0 ? Math.round(cy.sq/cyNet*1000)/10 : 0
+    const lst = lyNet>0 ? Math.round(ly.sq/lyNet*1000)/10 : 0
     const ir = cy.oq>0 ? Math.round(cy.iq/cy.oq*1000)/10 : 0
     const lir = ly.oq>0 ? Math.round(ly.iq/ly.oq*1000)/10 : 0
     const dc = styles.length ? Math.round(styles.reduce((s:number,r:any)=>s+r.dcRate,0)/styles.length*10)/10 : 0
@@ -192,7 +195,7 @@ export default function ItemDetailPage() {
       { t:'입고금액', v:fmtW(cy.ia), d:fmtDelta(cy.ia,ly.ia) },
       { t:'입고율', v:`${ir}%`, d:fmtDeltaPt(ir,lir) },
       { t:'매출', v:fmtW(cy.sa), d:fmtDelta(cy.sa, ly.sa) },
-      { t:'판매율', v:`${st}%`, d:fmtDeltaPt(st,lst) },
+      { t:'판매율(국내)', v:`${st}%`, d:fmtDeltaPt(st,lst) },
       { t:'할인율', v:`${dc}%`, d:fmtDeltaPt(dc,ldc) },
       { t:'매출원가율', v:`${cg}%`, d:fmtDeltaPt(cg,lcg) },
     ]
@@ -485,7 +488,7 @@ export default function ItemDetailPage() {
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-800 border-b-2 border-gray-900">
                   <th colSpan={unit === 'sku' ? 7 : 6} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
-                  <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">발주/입고</th>
+                  <th colSpan={4} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">발주/입고</th>
                   <th colSpan={6} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출 (백만원)</th>
                   <th colSpan={3} className="text-center text-[10px] text-purple-300 font-bold py-1 border-r border-gray-600">전주</th>
                   <th colSpan={3} className="text-center text-[10px] text-gray-200 font-bold py-1">재고</th>
@@ -501,13 +504,14 @@ export default function ItemDetailPage() {
                     { k: '_costRate', l: '제조원가율' },
                     { k: 'ordQty', l: '발주수량', bl: true },
                     { k: 'inQty', l: '입고수량' },
+                    { k: 'transferQty', l: '이전' },
                     { k: 'inboundRate', l: '입고율' },
                     { k: 'saleQty', l: '판매수량', bl: true },
                     { k: 'saleAmt', l: '매출' },
                     { k: 'cogsRate', l: '매출원가율' },
                     { k: 'mfgProfit', l: '제조이익' },
                     { k: 'dcRate', l: '할인율' },
-                    { k: 'sellThrough', l: '판매율' },
+                    { k: 'sellThrough', l: '판매율(국내)' },
                     { k: 'cwAmt', l: '매출', bl: true },
                     { k: 'cwQty', l: '수량' },
                     { k: 'wow', l: 'WoW' },
@@ -558,6 +562,7 @@ export default function ItemDetailPage() {
                       <td className="px-1 py-1.5 text-right text-gray-500">{s.tagPrice > 0 ? `${Math.round((s.prodCost||0) / s.tagPrice * 1000) / 10}%` : '—'}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-gray-700 border-l border-gray-100">{(s.ordQty||0).toLocaleString()}</td>
                       <td className="px-1 py-1.5 text-right font-mono text-green-700">{(s.inQty||0).toLocaleString()}</td>
+                      <td className={cn('px-1 py-1.5 text-right font-mono', (s.transferQty||0)>0?'text-amber-600':'text-gray-300')} title="자회사 해외법인 이전분(판매율 분모서 제외)">{(s.transferQty||0)>0?s.transferQty.toLocaleString():'—'}</td>
                       <td className="px-1 py-1.5 text-right">
                         {s.ordQty > 0 ? (
                           <span className={cn('px-1 py-px rounded-full text-[9px] font-semibold',

@@ -24,6 +24,6 @@ export async function GET(req: Request) {
     return NextResponse.json({products:rows.map(toWeeklyProduct),weeks:reportWeeks(asOf),asOf,fetchedAt:new Date().toISOString(),inventoryBasis:'조회 시점의 매장 INVQTY + 창고 AVAILQTY'}, {headers:{'Cache-Control':'private, no-store'}})
   } catch {
     console.error('Planning weekly report query failed')
-    return NextResponse.json({error:'주간보고 조회에 실패했습니다. 잠시 후 다시 조회해 주세요.'},{status:500})
+    return NextResponse.json({error:'시즌 판매 현황 조회에 실패했습니다. 잠시 후 다시 조회해 주세요.'},{status:500})
   }
 }

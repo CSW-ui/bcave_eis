@@ -40,7 +40,8 @@ export const NAV_CONFIG: NavSection[] = [
         icon: Package,
         children: [
           { label: '기획현황판', href: '/planning', icon: ClipboardList },
-          { label: '주간보고', href: '/planning/weekly-report', icon: FileText },
+          { label: '시즌 판매 현황', href: '/planning/weekly-report', icon: FileText },
+          { label: '주간 판매', href: '/planning/weekly-sales', icon: BarChart3 },
           { label: '채널×품목 주간실적', href: '/planning/channel-weekly', icon: BarChart3 },
           { label: '상품별 판매조회', href: '/planning/products', icon: Package },
           { label: '베스트 상품 비교', href: '/planning/best-compare', icon: GitCompare },

@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useAuth } from '@/contexts/AuthContext'
 import { BRAND_NAMES, FW_SEASONS, SS_SEASONS } from '@/lib/constants'
 import { lastClosedSunday, type PlanningWeeklyData, type PlanningWeeklyProduct as Product } from '@/lib/planning-weekly-report'
-import type { ProductImage } from '@/lib/planning-product-images'
+import MallImage from '@/components/planning/MallProductImage'
 import s from './weekly-report.module.css'
 import ChannelBreakdown from './_components/ChannelBreakdown'
 
@@ -18,29 +18,6 @@ const sum=(rows:Product[],key:keyof Product)=>rows.reduce((a,p)=>a+Number(p[key]
 const rate=(rows:Product[])=>sum(rows,'netInbound')>0?sum(rows,'sales')/sum(rows,'netInbound'):null
 const groups=(rows:Product[],key:'gender'|'item')=>Array.from(new Set(rows.map(p=>p[key]))).map(name=>({name,rows:rows.filter(p=>p[key]===name)}))
 const key=(p:Product)=>p.brand+'|'+p.style
-const imageCache=new Map<string,ProductImage>()
-let runningImages=0
-const imageJobs:Array<()=>void>=[]
-function queueImage(job:()=>Promise<ProductImage>):Promise<ProductImage> {
-  return new Promise((resolve,reject)=>{const run=()=>{runningImages++;job().then(resolve,reject).finally(()=>{runningImages--;imageJobs.shift()?.()})};if(runningImages<3)run();else imageJobs.push(run)})
-}
-function MallImage({product,color,large=false}:{product:Product;color:string;large?:boolean}) {
-  const container=useRef<HTMLDivElement>(null),[image,setImage]=useState<ProductImage|null>(null),[status,setStatus]=useState('이미지 확인 중'),[failed,setFailed]=useState(false)
-  useEffect(()=>{
-    let cancelled=false,started=false;setImage(null);setFailed(false);setStatus(color?'이미지 확인 중':'등록 컬러 없음')
-    if(!color||!['CO','LE','WA'].includes(product.brand)){setStatus('연결 이미지 없음');return}
-    const cacheKey=[product.brand,product.style,color].join('|')
-    const load=()=>{if(started)return;started=true;const cached=imageCache.get(cacheKey);if(cached){setImage(cached);setStatus(cached.imageUrl?'':'연결 이미지 없음');return}
-      queueImage(async()=>{const q=new URLSearchParams({brand:product.brand,style:product.style,color});const res=await fetch('/api/planning/product-image?'+q);if(!res.ok)throw Error();return res.json() as Promise<ProductImage>}).then(value=>{imageCache.set(cacheKey,value);if(!cancelled){setImage(value);setStatus(value.imageUrl?'':'연결 이미지 없음')}}).catch(()=>{if(!cancelled)setStatus('이미지 조회 실패')})}
-    const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){load();observer.disconnect()}},{rootMargin:'100px'})
-    if(large)load();else if(container.current)observer.observe(container.current)
-    return()=>{cancelled=true;observer.disconnect()}
-  },[product.brand,product.style,color,large])
-  return <div ref={container} className={large?s.largeImage:s.thumb}>
-    {image?.imageUrl&&!failed?<img src={image.imageUrl} alt={`${product.name} ${color}`} loading="lazy" onError={()=>setFailed(true)}/>:<span>{failed?'이미지 없음':status}</span>}
-    {large&&image?.productUrl&&<a href={image.productUrl} target="_blank" rel="noopener noreferrer">자사몰에서 보기 ↗</a>}
-  </div>
-}
 function WeeklyChart({values,labels,small=false}:{values:number[];labels:string[];small?:boolean}) {
   const W=small?150:720,H=small?32:154,L=small?2:16,B=small?2:28,T=small?3:22
   const lo=Math.min(0,...values),hi=Math.max(1,...values),y=(v:number)=>T+(hi-v)/(hi-lo)*(H-T-B),zero=y(0),gap=(W-L-8)/Math.max(values.length,1)
@@ -93,7 +70,7 @@ export default function PlanningWeeklyReportPage() {
     ['부진 스타일',n(products.filter(p=>p.poor).length),'개','소진 40주 이상 또는 판매 정체']]
   return <div className={s.report}>
     <div className={s.modeBar}><div>{(['q','a'] as Mode[]).map(m=><button key={m} aria-pressed={mode===m} className={mode===m?s.active:''} onClick={()=>setMode(m)}>{m==='q'?'수량 기준':'금액 기준'}</button>)}</div></div>
-    <header className={s.header}><div><h1>주간보고</h1><span>상품기획 · {brand==='all'?'전체 브랜드':BRAND_NAMES[brand]} {year}{season==='SS'?' S/S':' F/W'} 판매 현황</span></div><span>{asOf} 마감 · 스타일 기준</span></header>
+    <header className={s.header}><div><h1>시즌 판매 현황</h1><span>상품기획 · {brand==='all'?'전체 브랜드':BRAND_NAMES[brand]} {year}{season==='SS'?' S/S':' F/W'} 판매 현황</span></div><span>{asOf} 마감 · 스타일 기준</span></header>
     <div className={s.controls}><label>브랜드<select value={brand} onChange={e=>setBrand(e.target.value)}><option value="all">전체 브랜드</option>{['CO','LE','WA','CK','LK'].filter(b=>!allowedBrands||allowedBrands.includes(b)).map(b=><option key={b} value={b}>{BRAND_NAMES[b]}</option>)}</select></label><label>연도<select value={year} onChange={e=>setYear(e.target.value)}>{Array.from({length:Math.max(1,Number(lastClosedSunday().slice(2,4))-23)},(_,i)=>String(Number(lastClosedSunday().slice(2,4))+1-i)).map(y=><option key={y}>{y}</option>)}</select></label><label>시즌<select value={season} onChange={e=>setSeason(e.target.value)}><option value="SS">S/S</option><option value="FW">F/W</option></select></label><label>마감일<input aria-label="마감일" type="date" value={asOf} min="2025-01-05" max={lastClosedSunday()} step={7} onChange={e=>e.target.value&&setAsOf(e.target.value)}/></label><button onClick={()=>setRefresh(v=>v+1)} disabled={loading} className={s.refresh}>{loading?'조회 중…':'새로고침'}</button></div>
     <p className={s.basis}>매출·입고는 선택 마감일까지, 재고는 조회 시점 기준입니다. 매출은 VAT 제외 순매출, 발주·입고·재고 금액은 VAT 제외 태그가 기준입니다. 누적 판매 조회는 2025년부터입니다.</p>
     {loading&&<div role="status" className={s.loading}>Snowflake 실적을 조회하고 있습니다…</div>}

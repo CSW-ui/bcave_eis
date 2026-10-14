@@ -489,12 +489,12 @@ export default function SalesDashboard() {
   const _yoyDelta = lyTotal > 0 ? pct(cyTotal - lyTotal, lyTotal) : null
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
 
       {/* ── 헤더 ── */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">매출 실적 대시보드</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">매출 실적 대시보드</h1>
           <p className="text-xs text-gray-400 mt-0.5">부가세 제외 · 단위: 백만원</p>
         </div>
         <button onClick={() => { fetchWeekly(selChannels); fetchProducts(selWeek, selChannels); fetchPerformance() }}
@@ -506,13 +506,13 @@ export default function SalesDashboard() {
       </div>
 
       {/* ── 필터 ── */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="eis-filter-bar flex flex-wrap gap-2 items-center">
         <span className="text-xs text-gray-400">브랜드</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {visibleBrandTabs.map(b => (
             <button key={b.value} onClick={() => setBrand(b.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {b.value !== 'all' && (
                 <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 mb-px"
                   style={{ background: BRAND_COLORS[b.value] }} />
@@ -526,7 +526,7 @@ export default function SalesDashboard() {
           {YEAR_TABS.map(y => (
             <button key={y.value} onClick={() => setYear(y.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                year === y.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                year === y.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {y.label}
             </button>
           ))}
@@ -577,7 +577,7 @@ export default function SalesDashboard() {
       )}
 
       {/* ── 주간 선 그래프 ── */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <h3 className="text-xs font-semibold text-gray-700">
             주간 매출 추이 ({year}년)
@@ -698,7 +698,7 @@ export default function SalesDashboard() {
       <div className="flex gap-3" style={{ minHeight: 420 }}>
 
         {/* 브랜드 매출 현황 테이블 */}
-        <div className="flex-1 bg-white rounded-xl border border-surface-border shadow-sm flex flex-col overflow-hidden min-w-0">
+        <div className="eis-panel flex-1 bg-white rounded-xl border border-surface-border shadow-sm flex flex-col overflow-hidden min-w-0">
           <div className="px-4 py-2.5 border-b border-surface-border bg-surface-subtle flex items-center justify-between shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">
               브랜드 매출 현황
@@ -841,7 +841,7 @@ export default function SalesDashboard() {
         </div>
 
         {/* 품목별 */}
-        <div className="w-[300px] shrink-0 bg-white rounded-xl border border-surface-border shadow-sm flex flex-col overflow-hidden">
+        <div className="eis-panel w-[300px] shrink-0 bg-white rounded-xl border border-surface-border shadow-sm flex flex-col overflow-hidden">
           <div className="px-3 py-2.5 border-b border-surface-border bg-surface-subtle shrink-0">
             <span className="text-xs font-semibold text-gray-700">품목별 실적</span>
           </div>
@@ -901,7 +901,7 @@ export default function SalesDashboard() {
         </div>
 
         {/* 베스트 상품 TOP 20 */}
-        <div className="w-[340px] shrink-0 bg-white rounded-xl border border-surface-border shadow-sm flex flex-col overflow-hidden">
+        <div className="eis-panel w-[340px] shrink-0 bg-white rounded-xl border border-surface-border shadow-sm flex flex-col overflow-hidden">
           <div className="px-4 py-2.5 border-b border-surface-border bg-surface-subtle flex items-center gap-2 shrink-0">
             <Package size={13} className="text-gray-400" />
             <span className="text-xs font-semibold text-gray-700">베스트 상품 TOP 20</span>

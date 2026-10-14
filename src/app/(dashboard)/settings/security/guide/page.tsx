@@ -34,14 +34,14 @@ const STEPS = [
 
 export default function SecurityGuidePage() {
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="eis-page p-6 max-w-2xl mx-auto">
       {/* 뒤로 */}
       <Link href="/settings/security"
         className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 mb-4 transition-colors">
         <ArrowLeft size={14} /> 2단계 인증 등록으로 돌아가기
       </Link>
 
-      <h1 className="text-xl font-bold text-gray-900 mb-1">인증 앱(OTP) 설치 안내</h1>
+      <h1 className="eis-page-title text-xl font-bold text-gray-900 mb-1">인증 앱(OTP) 설치 안내</h1>
       <p className="text-sm text-gray-500 mb-6">
         2단계 인증을 사용하려면 휴대폰에 인증 앱이 필요합니다. 아래 순서대로 설치·등록하세요.
       </p>
@@ -77,7 +77,7 @@ export default function SecurityGuidePage() {
 
       {/* 사용법 */}
       <h2 className="text-sm font-semibold text-gray-700 mb-3">간단 사용법</h2>
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm divide-y divide-surface-border mb-8">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm divide-y divide-surface-border mb-8">
         {STEPS.map((s, i) => (
           <div key={i} className="flex items-start gap-3 p-4">
             <div className="flex items-center justify-center w-7 h-7 rounded-full bg-brand-accent/10 text-brand-accent text-xs font-bold shrink-0">

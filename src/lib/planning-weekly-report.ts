@@ -7,7 +7,7 @@ export interface PlanningWeeklyProduct {
   upcoming: number; sales: number; revenue: number; stock: number; transfer: number
   netInbound: number; orderAmount: number; inboundAmount: number; stockAmount: number
   mainInAmount: number; reorderInAmount: number; upcomingAmount: number
-  sellThrough: number | null; weeks: number[]; colors: ReportColor[]
+  sellThrough: number | null; discountRate: number | null; weeks: number[]; colors: ReportColor[]
   trend: 'up' | 'down' | 'flat'; woh: number | null; poor: boolean
 }
 export interface PlanningWeeklyData {
@@ -72,6 +72,8 @@ export function weeklyQuery(brands: string[], year: string, seasons: string[], a
     FROM inbound_by_batch GROUP BY STYLECD
   ), sales AS (
     SELECT v.STYLECD,SUM(v.SALEQTY) SALE_QTY,SUM(v.SALEAMT_VAT_EX) SALE_AMT,
+      SUM(v.TAGPRICE*v.SALEQTY) SALE_TAG_AMT,
+      COUNT_IF(v.SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
       ${weeks.map((w,i)=>`SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEQTY ELSE 0 END) W${i}`).join(',\n      ')}
     FROM BCAVE.SEWON.VW_SALES_VAT v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
     WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' AND v.SHOPCD NOT IN ('B6055','B6057','B6063') GROUP BY v.STYLECD
@@ -89,6 +91,7 @@ export function weeklyQuery(brands: string[], year: string, seasons: string[], a
   SELECT e.*,COALESCE(o.ORD_QTY,0) ORD_QTY,COALESCE(o.ORD_AMT,0) ORD_AMT,
     COALESCE(o.UPCOMING,0) UPCOMING,COALESCE(i.IN_QTY,0) IN_QTY,COALESCE(i.MAIN_IN,0) MAIN_IN,
     COALESCE(i.RE_IN,0) RE_IN,COALESCE(s.SALE_QTY,0) SALE_QTY,COALESCE(s.SALE_AMT,0) SALE_AMT,
+    COALESCE(s.SALE_TAG_AMT,0) SALE_TAG_AMT,COALESCE(s.TAG_MISSING_COUNT,0) TAG_MISSING_COUNT,
     COALESCE(t.TRF_QTY,0) TRF_QTY,COALESCE(v.STOCK,0) STOCK,c.COLORS,
     ${weeks.map((_,i)=>`COALESCE(s.W${i},0) W${i}`).join(',')}
   FROM eligible e LEFT JOIN order_totals o ON e.STYLECD=o.STYLECD LEFT JOIN inbound i ON e.STYLECD=i.STYLECD
@@ -110,7 +113,11 @@ export function toWeeklyProduct(row: Record<string, unknown>): PlanningWeeklyPro
     upcoming:n('UPCOMING'),sales:n('SALE_QTY'),revenue:n('SALE_AMT'),stock,transfer,netInbound,
     orderAmount:n('ORD_AMT'),inboundAmount:inbound*tagEx,stockAmount:stock*tagEx,
     mainInAmount:n('MAIN_IN')*tagEx,reorderInAmount:n('RE_IN')*tagEx,upcomingAmount:n('UPCOMING')*tagEx,
-    sellThrough:netInbound>0?n('SALE_QTY')/netInbound:null,weeks,colors,
+    sellThrough:netInbound>0?n('SALE_QTY')/netInbound:null,
+    // 누적 실질할인율: 매출은 VAT 제외이므로 1.1을 곱해 판매 당시 정상가 금액과 비교한다.
+    discountRate:n('SALE_QTY')>0&&n('SALE_TAG_AMT')>0&&n('TAG_MISSING_COUNT')===0
+      ?1-n('SALE_AMT')*1.1/n('SALE_TAG_AMT'):null,
+    weeks,colors,
     trend:current>previous?'up':current<previous?'down':'flat',woh,
     poor:stock>0&&inbound>0&&(recent<=0||(woh!==null&&woh>=40)) }
 }

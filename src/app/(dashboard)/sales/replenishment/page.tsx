@@ -130,11 +130,11 @@ export default function ReplenishmentPage() {
   const gradeCounts = GRADES.reduce((acc, g) => ({ ...acc, [g]: shops.filter(s => s.grade === g).length }), {} as Record<string, number>)
 
   return (
-    <div className="flex flex-col gap-4 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-4 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="eis-page-title text-lg font-bold text-gray-900 flex items-center gap-2">
             <Bot size={20} className="text-purple-500" />
             보충출고 자동화
           </h1>
@@ -148,7 +148,7 @@ export default function ReplenishmentPage() {
             {visibleBrands.map(b => (
               <button key={b.value} onClick={() => { setBrand(b.value); setData(null) }}
                 className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                  brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                  brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
                 <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 mb-px" style={{ background: BRAND_COLORS[b.value] }} />
                 {b.label}
               </button>
@@ -161,12 +161,12 @@ export default function ReplenishmentPage() {
       <div className="flex gap-1 bg-surface-subtle rounded-lg p-0.5 w-fit">
         <button onClick={() => setTab('replenishment')}
           className={cn('flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md transition-colors',
-            tab === 'replenishment' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+            tab === 'replenishment' ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
           <Bot size={13} /> 출고 현황
         </button>
         <button onClick={() => setTab('grades')}
           className={cn('flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md transition-colors',
-            tab === 'grades' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+            tab === 'grades' ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
           <Settings size={13} /> 매장등급 설정
         </button>
       </div>
@@ -175,7 +175,7 @@ export default function ReplenishmentPage() {
       {tab === 'replenishment' && (
         <>
           {!data ? (
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
               <div className="flex flex-col items-center py-16">
                 <Bot size={48} className="text-gray-200 mb-4" />
                 <h2 className="text-sm font-semibold text-gray-500 mb-1">오늘의 보충출고 결과가 없습니다</h2>
@@ -192,7 +192,7 @@ export default function ReplenishmentPage() {
                   { title: '출고예정 금액', value: fmtW(data.kpi.totalAmt), color: 'text-blue-700' },
                   { title: '결품 SKU', value: `${data.kpi.stockoutCount ?? 0}개`, color: 'text-red-600' },
                 ].map(k => (
-                  <div key={k.title} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+                  <div key={k.title} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
                     <p className="text-[10px] text-gray-400 uppercase tracking-wide">{k.title}</p>
                     <p className={cn('text-xl font-bold mt-1', k.color || 'text-gray-900')}>{k.value}</p>
                   </div>
@@ -218,7 +218,7 @@ export default function ReplenishmentPage() {
                 </button>
               </div>
 
-              <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+              <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
                 <div className="px-4 py-2.5 border-b border-surface-border bg-surface-subtle">
                   <h3 className="text-xs font-semibold text-gray-700">매장별 보충출고 현황</h3>
                 </div>
@@ -333,7 +333,7 @@ export default function ReplenishmentPage() {
 
       {/* ── 매장등급 설정 탭 ── */}
       {tab === 'grades' && (
-        <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+        <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-surface-border bg-surface-subtle flex items-center justify-between">
             <div>
               <h3 className="text-xs font-semibold text-gray-700">매장등급 설정</h3>
@@ -357,11 +357,11 @@ export default function ReplenishmentPage() {
             <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
               <button onClick={() => setGradeFilter('all')}
                 className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                  gradeFilter === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500')}>전체</button>
+                  gradeFilter === 'all' ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500')}>전체</button>
               {GRADES.map(g => (
                 <button key={g} onClick={() => setGradeFilter(g)}
                   className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                    gradeFilter === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500')}>{g}</button>
+                    gradeFilter === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500')}>{g}</button>
               ))}
             </div>
             <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}

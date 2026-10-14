@@ -154,12 +154,12 @@ export default function ProductSearchPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Package size={18} className="text-gray-400" />
-          <h1 className="text-lg font-bold text-gray-900">상품별 판매조회</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">상품별 판매조회</h1>
           <span className="text-xs text-gray-400">스타일 단위 · 단위: 백만원</span>
         </div>
         <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export default function ProductSearchPage() {
       </div>
 
       {/* 필터 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2">
+      <div className="eis-panel eis-filter-bar bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2">
         {/* 기간 */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-gray-500 w-12 shrink-0">기간</span>
@@ -253,7 +253,7 @@ export default function ProductSearchPage() {
       </div>
 
       {/* 테이블 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="overflow-auto flex-1">
           {loading ? (
             <div className="p-4 space-y-2">{Array.from({length:12}).map((_,i)=><div key={i} className="h-7 bg-surface-subtle animate-pulse rounded"/>)}</div>

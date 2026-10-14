@@ -43,20 +43,20 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 
 export function RevenueLineChart({ data, title = '월별 매출 실적' }: RevenueLineChartProps) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-surface-border shadow-sm">
+    <div className="eis-panel bg-white rounded-xl p-5 border border-surface-border shadow-sm">
       <h3 className="text-sm font-semibold text-gray-800 mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f1f3f5" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E4DF" />
           <XAxis
             dataKey="month"
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: '#70706A' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             tickFormatter={formatYAxis}
-            tick={{ fontSize: 11, fill: '#9ca3af' }}
+            tick={{ fontSize: 11, fill: '#70706A' }}
             axisLine={false}
             tickLine={false}
             width={45}
@@ -70,16 +70,16 @@ export function RevenueLineChart({ data, title = '월별 매출 실적' }: Reven
             type="monotone"
             dataKey="actual"
             name="actual"
-            stroke="#e91e63"
+            stroke="#1A1A1A"
             strokeWidth={2.5}
-            dot={{ fill: '#e91e63', r: 3 }}
+            dot={{ fill: '#1A1A1A', r: 3 }}
             activeDot={{ r: 5 }}
           />
           <Line
             type="monotone"
             dataKey="target"
             name="target"
-            stroke="#cbd5e1"
+            stroke="#A3A398"
             strokeWidth={2}
             strokeDasharray="5 5"
             dot={false}

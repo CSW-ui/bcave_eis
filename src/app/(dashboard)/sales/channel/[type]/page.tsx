@@ -145,16 +145,16 @@ export default function ChannelDetailPage() {
   const kpi = shopData?.kpi
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push('/sales')}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-surface-border rounded-lg px-2.5 py-1.5 hover:bg-surface-subtle">
             <ArrowLeft size={12} /> 매출 대시보드
           </button>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2"><Store size={18} className="text-gray-400" />{channelName}</h1>
+            <h1 className="eis-page-title text-lg font-bold text-gray-900 flex items-center gap-2"><Store size={18} className="text-gray-400" />{channelName}</h1>
             <p className="text-xs text-gray-400 mt-0.5">매장별 실적 · 단위: 백만원{shopData?.meta?.monthLabel ? ` · ${shopData.meta.monthLabel}${selMonth ? '' : ' (당월)'}` : ''}</p>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function ChannelDetailPage() {
             {visibleBrands.map(b => (
               <button key={b.value} onClick={() => setBrand(b.value)}
                 className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                  brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
+                  brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
             ))}
           </div>
           <button onClick={fetchShops} disabled={loading} className="text-xs text-gray-500 border border-surface-border rounded-lg px-2.5 py-1.5">
@@ -206,7 +206,7 @@ export default function ChannelDetailPage() {
             { title: 'WoW', value: `${kpi.wow >= 0 ? '+' : ''}${kpi.wow}%`, color: kpi.wow >= 0 ? 'text-emerald-600' : 'text-red-500' },
             { title: 'YoY', value: `${kpi.yoy >= 0 ? '+' : ''}${kpi.yoy}%`, color: kpi.yoy >= 0 ? 'text-emerald-600' : 'text-red-500' },
           ] as { title: string; value: string; color?: string }[]).map(k => (
-            <div key={k.title} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div key={k.title} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase">{k.title}</p>
               <p className={cn('text-xl font-bold mt-1', k.color || 'text-gray-900')}>{k.value}</p>
             </div>
@@ -218,7 +218,7 @@ export default function ChannelDetailPage() {
       <div className="flex gap-3" style={{ height: 1000 }}>
 
         {/* 매장별 실적 */}
-        <div className="flex-[4] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="eis-panel flex-[4] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">매장별 실적</h3>
           </div>
@@ -272,7 +272,7 @@ export default function ChannelDetailPage() {
         </div>
 
         {/* 품목별 */}
-        <div className="flex-[2] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="eis-panel flex-[2] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">품목별</h3>
           </div>
@@ -314,7 +314,7 @@ export default function ChannelDetailPage() {
         </div>
 
         {/* 베스트 상품 TOP 20 */}
-        <div className="flex-[4] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="eis-panel flex-[4] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">
               전주 베스트 상품 TOP 20

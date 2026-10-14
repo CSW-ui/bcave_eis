@@ -12,6 +12,19 @@ assert.ok(query.includes('SALEAMT_VAT_EX'));assert.ok(query.includes("WHINDT <= 
 const row={BRANDCD:'CO',STYLECD:'CO2607CA16',STYLENM:'test',IN_QTY:100,TRF_QTY:20,SALE_QTY:40,STOCK:60,COLORS:'[{"code":"BK","name":"BLACK","orderQty":50}]',W8:1,W9:1,W10:2,W11:2};
 const p=report.toWeeklyProduct(row);assert.equal(p.sellThrough,.5);assert.equal(p.trend,'up');assert.equal(p.woh,40);assert.equal(p.poor,true);assert.equal(p.colors[0].code,'BK');assert.equal(report.toWeeklyProduct({...row,IN_QTY:0,TRF_QTY:0}).sellThrough,null);
 assert.equal(report.toWeeklyProduct({...row,STOCK:-1}).poor,false);
+// 판매 당시 정상가 금액으로 가중 계산하고 VAT 기준을 일치시킨다.
+const discountRow={...row,TAGPRICE:999999,SALE_QTY:10,SALE_TAG_AMT:1100,SALE_AMT:800,TAG_MISSING_COUNT:0};
+assert.ok(Math.abs(report.toWeeklyProduct(discountRow).discountRate-.2)<1e-10);
+assert.ok(Math.abs(report.toWeeklyProduct({...discountRow,SALE_AMT:1000}).discountRate)<1e-10);
+assert.ok(Math.abs(report.toWeeklyProduct({...discountRow,SALE_QTY:20,SALE_TAG_AMT:3300,SALE_AMT:2400}).discountRate-.2)<1e-10);
+assert.ok(Math.abs(report.toWeeklyProduct({...discountRow,SALE_QTY:9,SALE_TAG_AMT:990,SALE_AMT:720}).discountRate-.2)<1e-10);
+assert.equal(report.toWeeklyProduct({...discountRow,SALE_AMT:0}).discountRate,1);
+assert.equal(report.toWeeklyProduct({...discountRow,SALE_TAG_AMT:0}).discountRate,null);
+assert.equal(report.toWeeklyProduct({...discountRow,SALE_QTY:0}).discountRate,null);
+assert.equal(report.toWeeklyProduct({...discountRow,SALE_QTY:-1,SALE_TAG_AMT:-110}).discountRate,null);
+assert.equal(report.toWeeklyProduct({...discountRow,TAG_MISSING_COUNT:1}).discountRate,null);
+assert.ok(report.toWeeklyProduct({...discountRow,SALE_AMT:1100}).discountRate<0);
+assert.ok(query.includes('SUM(v.TAGPRICE*v.SALEQTY) SALE_TAG_AMT'));
 const url='https://bmbx-prd.my.commercecloud.salesforce.com/dw/image/v2/x/CO2607CA16BK_1_hash.jpg';
 assert.equal(images.extractMallImage(`<img src="${url}?sw=800&amp;q=60">`,'CO','CO2607CA16BK','https://www.covernat.co.kr/product/CO2607CA16BK'),url+'?sw=800&q=60');
 assert.equal(images.extractMallImage(`<img src="${url}">`,'CO','CO2607CA16PI','https://www.covernat.co.kr/product/CO2607CA16PI'),null);

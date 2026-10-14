@@ -184,16 +184,16 @@ export default function StyleDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-surface-border rounded-lg px-2.5 py-1.5 hover:bg-surface-subtle">
             <ArrowLeft size={12} /> 뒤로
           </button>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="eis-page-title text-lg font-bold text-gray-900 flex items-center gap-2">
               <Package size={18} className="text-gray-400" />
               {style?.styleNm ?? styleCd}
               {style?.brandcd && (
@@ -224,7 +224,7 @@ export default function StyleDetailPage() {
       </div>
 
       {/* 필터 (기간 + 컬러 탭) */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2">
+      <div className="eis-panel eis-filter-bar bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-gray-500 w-12 shrink-0">기간</span>
           <input type="date" value={from} onChange={e => setFrom(e.target.value)}
@@ -284,7 +284,7 @@ export default function StyleDetailPage() {
               color: kpi.wos === 0 ? undefined : kpi.wos < 2 ? 'text-red-500' : kpi.wos > 12 ? 'text-amber-500' : 'text-emerald-600' },
             { title: 'DC%', value: `${kpi.dcRate}%` },
           ] as { title: string; value: string; color?: string }[]).map(k => (
-            <div key={k.title} className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+            <div key={k.title} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
               <p className="text-[10px] text-gray-400 uppercase">{k.title}</p>
               <p className={cn('text-lg font-bold mt-0.5', k.color || 'text-gray-900')}>{k.value}</p>
             </div>
@@ -293,7 +293,7 @@ export default function StyleDetailPage() {
       )}
 
       {/* 매장 × 사이즈 사이즈런 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-h-0">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-h-0">
         <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
             <Package size={12} /> 매장별 분포
@@ -399,7 +399,7 @@ export default function StyleDetailPage() {
       </div>
 
       {/* 창고 × 사이즈 재고 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-h-0">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-h-0">
         <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
             <Warehouse size={12} /> 창고별 재고 (사이즈별)

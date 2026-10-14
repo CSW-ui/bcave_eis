@@ -68,11 +68,11 @@ export default function OverseasShipmentPage() {
   }, [cy, ly])
 
   return (
-    <div className="flex flex-col gap-4 p-5 min-h-0 max-w-[1100px] mx-auto">
-      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-surface-border pb-3">
+    <div className="eis-page flex flex-col gap-4 p-5 min-h-0 max-w-[1100px] mx-auto">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2 border-b border-surface-border pb-3">
         <div className="flex items-center gap-2">
           <Ship size={18} className="text-gray-400" />
-          <h1 className="text-lg font-bold text-gray-900">해외 출고분 (자사 해외법인 이전)</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">해외 출고분 (자사 해외법인 이전)</h1>
           <span className="text-xs text-gray-400">대만·일본·중국 B.CAVE · 이전가 기준 · VAT제외</span>
         </div>
         <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ export default function OverseasShipmentPage() {
             {YEARS.map(y => (
               <button key={y} onClick={() => setYear(y)}
                 className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                  year === y ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{y}년</button>
+                  year === y ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{y}년</button>
             ))}
           </div>
           <button onClick={fetchData} disabled={loading}

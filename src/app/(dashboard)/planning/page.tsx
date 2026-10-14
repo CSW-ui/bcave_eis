@@ -336,12 +336,12 @@ export default function PlanningDashboard() {
   }, [kpiData])
 
   return (
-    <div className="flex flex-col gap-4 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-4 p-4 min-h-0">
 
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">기획현황판</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">기획현황판</h1>
           <p className="text-xs text-gray-400 mt-0.5">시즌별 아이템 기획·실적·재고 종합 분석</p>
         </div>
         <button onClick={fetchData} disabled={loading}
@@ -351,13 +351,13 @@ export default function PlanningDashboard() {
       </div>
 
       {/* 필터: 브랜드 + 시즌 + 카테고리 */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="eis-filter-bar flex flex-wrap gap-2 items-center">
         <span className="text-xs text-gray-400">브랜드</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {visibleBrands.map(b => (
             <button key={b.value} onClick={() => setBrand(b.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {b.value !== 'all' && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 mb-px" style={{ background: BRAND_COLORS[b.value] }} />}
               {b.label}
             </button>
@@ -376,7 +376,7 @@ export default function PlanningDashboard() {
           {ITEM_GROUPS.map(g => (
             <button key={g} onClick={() => setSelGroup(g)}
               className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
-                selGroup === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selGroup === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {g}
             </button>
           ))}
@@ -385,7 +385,7 @@ export default function PlanningDashboard() {
           {visibleCategories.map(cat => (
             <button key={cat} onClick={() => setSelCategory(cat)}
               className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
-                selCategory === cat ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selCategory === cat ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {cat !== '전체' && CATEGORY_COLORS[cat] && (
                 <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 mb-px" style={{ background: CATEGORY_COLORS[cat].text }} />
               )}
@@ -399,7 +399,7 @@ export default function PlanningDashboard() {
           {GENDER_FILTERS.map(g => (
             <button key={g} onClick={() => setSelGender(g)}
               className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
-                selGender === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selGender === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {g}
             </button>
           ))}
@@ -417,7 +417,7 @@ export default function PlanningDashboard() {
         )) : kpiData && (
           <>
             {/* ① 매출 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">매출</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(kpiData.totalSaleAmt)}</p>
               <p className="text-[10px] text-gray-500">{kpiData.totalStyles}st · {kpiData.totalSkus}SKU</p>
@@ -446,7 +446,7 @@ export default function PlanningDashboard() {
             </div>
 
             {/* ② 판매율 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3 flex flex-col items-center">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3 flex flex-col items-center">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide w-full" title="국내 소진율 = 국내판매 ÷ (입고−이전분). 자회사 해외법인 이전분 제외">판매율 <span className="text-[8px] normal-case text-gray-400">국내</span></p>
               <div className="relative" style={{ width: 64, height: 64 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -470,7 +470,7 @@ export default function PlanningDashboard() {
             </div>
 
             {/* ③ 발주 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">발주(TAG)</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(kpiData.totalOrdTagAmt)}</p>
               {compKpi && (
@@ -490,7 +490,7 @@ export default function PlanningDashboard() {
             </div>
 
             {/* ④ 입고 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">입고금액</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(kpiData.totalInAmt)}</p>
               <p className="text-[10px] text-gray-500">입고율 {data?.kpi.inboundRate ?? 0}%</p>
@@ -505,7 +505,7 @@ export default function PlanningDashboard() {
             </div>
 
             {/* ⑤ 재고 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">재고(TAG)</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(kpiData.totalInvTagAmt)}</p>
               <p className="text-[10px] text-gray-500">원가 {fmtW(kpiData.totalInvCostAmt)}</p>
@@ -518,7 +518,7 @@ export default function PlanningDashboard() {
             </div>
 
             {/* ⑥ 할인율 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">할인율</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{kpiData.dcRate}%</p>
               <span className={cn('text-[10px] font-medium', compKpi ? (kpiData.dcRate <= compKpi.dcRate ? 'text-emerald-600' : 'text-red-500') : 'text-gray-300')}>
@@ -539,14 +539,14 @@ export default function PlanningDashboard() {
       {!loading && data && (
         <div className="grid grid-cols-12 gap-3">
           {/* 베스트 스타일 TOP10 */}
-          <div className="col-span-4 bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+          <div className="eis-panel col-span-4 bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
             <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-700">베스트 스타일 TOP10</span>
               <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
                 {([['season', '시즌누적'], ['month', '최근4주'], ['week', '전주'], ['rising', '급상승']] as ['season'|'month'|'week'|'rising', string][]).map(([k, l]) => (
                   <button key={k} onClick={() => setBestSort(k)}
                     className={cn('px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
-                      bestSort === k ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600')}>
+                      bestSort === k ? 'bg-brand-accent text-white shadow-none' : 'text-gray-400 hover:text-gray-600')}>
                     {l}
                   </button>
                 ))}
@@ -614,7 +614,7 @@ export default function PlanningDashboard() {
           {/* 채널별 매출 비중 + 주간 차트 */}
           <div className="col-span-5 flex flex-col gap-3">
             {/* 채널별 매출 비중 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3" style={{ minHeight: 160 }}>
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3" style={{ minHeight: 160 }}>
               <div className="flex items-center justify-between mb-1.5">
                 <h3 className="text-xs font-semibold text-gray-700">
                   채널별 매출 비중
@@ -697,7 +697,7 @@ export default function PlanningDashboard() {
             </div>
 
             {/* 52주 주간 매출 추이 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-xs font-semibold text-gray-700">
                   주간 매출 추이
@@ -781,7 +781,7 @@ export default function PlanningDashboard() {
       )}
 
       {/* 품목별 상세 테이블 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
         <h3 className="text-xs font-semibold text-gray-700 mb-3">
           품목별 기획·판매·재고 현황
           <span className="ml-2 font-normal text-gray-400">{selSeason.label} · {selCategory !== '전체' ? selCategory + ' · ' : ''}품목 클릭 시 상세 페이지</span>

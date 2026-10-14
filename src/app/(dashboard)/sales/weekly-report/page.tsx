@@ -362,11 +362,11 @@ export default function WeeklyReportPage() {
   }
 
   return (
-    <div ref={reportRef} className="flex flex-col gap-4 p-5 min-h-0 max-w-[1760px] mx-auto print:p-0">
+    <div ref={reportRef} className="eis-page flex flex-col gap-4 p-5 min-h-0 max-w-[1760px] mx-auto print:p-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-surface-border pb-3">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2 border-b border-surface-border pb-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FileText size={20} className="text-brand-accent" />전사 주간 현황 보고</h1>
+          <h1 className="eis-page-title text-xl font-bold text-gray-900 flex items-center gap-2"><FileText size={20} className="text-brand-accent" />전사 주간 현황 보고</h1>
           <p className="text-sm text-gray-500 mt-1">기준주 <b className="text-gray-800">{label}</b> · 전 브랜드(성인·키즈) · 전채널 VAT제외 · 전년비=동요일(52주 전) · 정상=<b className="text-gray-700">{yy} {meta?.half === 'SS' ? 'S/S' : 'F/W'}</b>(당해 시즌), 전년=<b className="text-gray-700">{lyYy} {meta?.half === 'SS' ? 'S/S' : 'F/W'}</b> · 단위 백만원</p>
         </div>
         <div data-noexport className="flex items-center gap-1.5 print:hidden">

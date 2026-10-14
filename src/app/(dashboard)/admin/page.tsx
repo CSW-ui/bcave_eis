@@ -202,9 +202,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="p-4 space-y-4 animate-fade-in">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">설정</h1>
+    <div className="eis-page p-4 space-y-4 animate-fade-in">
+      <div className="eis-page-header">
+        <h1 className="eis-page-title text-xl font-bold text-gray-900">설정</h1>
         <p className="text-sm text-gray-500 mt-0.5">임직원 관리 및 목표매출 설정</p>
       </div>
 
@@ -213,7 +213,7 @@ export default function AdminPage() {
         {([['users', '임직원 관리'], ['targets', '목표매출']] as [Tab, string][]).map(([key, label]) => (
           <button key={key} onClick={() => setTab(key)}
             className={cn('px-4 py-1.5 text-xs rounded-md font-medium transition-all',
-              tab === key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+              tab === key ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
             {label}
           </button>
         ))}
@@ -221,7 +221,7 @@ export default function AdminPage() {
 
       {/* ── 임직원 관리 탭 ── */}
       {tab === 'users' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <div className="eis-panel bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="text-sm font-semibold text-gray-700">임직원 목록</span>
             <button onClick={handleNew}
@@ -358,7 +358,7 @@ export default function AdminPage() {
 
       {/* ── 목표매출 탭 ── */}
       {tab === 'targets' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-4">
+        <div className="eis-panel bg-white rounded-xl border border-gray-200 shadow-sm p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-gray-700">목표매출 업로드</h3>

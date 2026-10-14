@@ -356,11 +356,11 @@ export default function CategoryTrendPage() {
   )
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">카테고리 {gran === 'month' ? '월간' : '주간'} 성장 추이</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">카테고리 {gran === 'month' ? '월간' : '주간'} 성장 추이</h1>
           <p className="text-xs text-gray-400 mt-0.5">품목 × {gran === 'month' ? '월' : '주차'} 히트맵 · 채널별 · 부가세 제외 · 매출 단위: 백만원</p>
         </div>
         <button onClick={fetchData} disabled={loading}
@@ -376,7 +376,7 @@ export default function CategoryTrendPage() {
           {visibleBrandTabs.map(b => (
             <button key={b.value} onClick={() => setBrand(b.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {b.value !== 'all' && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 mb-px" style={{ background: BRAND_COLORS[b.value] }} />}
               {b.label}
             </button>
@@ -388,7 +388,7 @@ export default function CategoryTrendPage() {
           {YEAR_TABS.map(y => (
             <button key={y.value} onClick={() => setYear(y.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                year === y.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                year === y.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {y.label}
             </button>
           ))}
@@ -399,7 +399,7 @@ export default function CategoryTrendPage() {
           {([['week', '주간'], ['month', '월간']] as [Gran, string][]).map(([g, label]) => (
             <button key={g} onClick={() => setGran(g)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                gran === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                gran === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {label}
             </button>
           ))}
@@ -410,7 +410,7 @@ export default function CategoryTrendPage() {
           {METRICS.map(m => (
             <button key={m.key} onClick={() => setMetric(m.key)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                metric === m.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                metric === m.key ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {m.label}
             </button>
           ))}
@@ -424,7 +424,7 @@ export default function CategoryTrendPage() {
           {CHANNEL_GROUPS.map(g => (
             <button key={g} onClick={() => { setGrpTab(g); setSelChannels(new Set()) }}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                selChannels.size === 0 && grpTab === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selChannels.size === 0 && grpTab === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {g}
             </button>
           ))}
@@ -444,7 +444,7 @@ export default function CategoryTrendPage() {
           {ITEM_GROUPS.map(g => (
             <button key={g} onClick={() => setItemGroup(g)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                itemGroup === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                itemGroup === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {g}
             </button>
           ))}
@@ -455,7 +455,7 @@ export default function CategoryTrendPage() {
           {([['10', 10], ['20', 20], ['30', 30], ['전체', 'all']] as [string, number | 'all'][]).map(([label, v]) => (
             <button key={label} onClick={() => setTopN(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                topN === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                topN === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {label === '전체' ? '전체' : `베스트 ${label}`}
             </button>
           ))}
@@ -468,7 +468,7 @@ export default function CategoryTrendPage() {
             : [['8', 8], ['12', 12], ['전체', 'all']]) as [string, number | 'all'][]).map(([label, v]) => (
             <button key={label} onClick={() => setWeekWindow(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                weekWindow === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                weekWindow === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {label === '전체' ? '전체' : `최근 ${label}${gran === 'month' ? '개월' : '주'}`}
             </button>
           ))}
@@ -503,7 +503,7 @@ export default function CategoryTrendPage() {
       {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 break-all">{error}</div>}
 
       {/* 히트맵 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-4 space-y-2">{Array.from({ length: 10 }).map((_, i) => <div key={i} className="h-7 bg-surface-subtle animate-pulse rounded" />)}</div>
         ) : (topN === 'all' ? catGroups.length === 0 : flatItems.length === 0) ? (

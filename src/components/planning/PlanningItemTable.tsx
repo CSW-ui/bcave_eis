@@ -119,7 +119,7 @@ export function PlanningItemTable({ items, compItems, loading, selectedItem, onI
       <div className="overflow-x-auto">
       <table className="w-full text-[11px] border-collapse" style={{minWidth:2200}}>
         <thead>
-          <tr className="bg-gray-800 border-b-2 border-gray-900">
+          <tr className="eis-column-group bg-gray-800 border-b-2 border-gray-900">
             <th colSpan={4} className="text-center text-[11px] text-gray-200 font-bold py-1.5">상품</th>
             <th colSpan={6} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">발주·입고</th>
             <th colSpan={12} className="text-center text-[11px] text-blue-300 font-bold py-1.5 border-l border-gray-600">누적 매출</th>

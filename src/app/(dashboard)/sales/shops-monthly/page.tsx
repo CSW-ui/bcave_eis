@@ -173,12 +173,12 @@ export default function ShopsMonthlyPage() {
   const colTrim = 'text-[10px]'
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Store size={18} className="text-gray-400" />
-          <h1 className="text-lg font-bold text-gray-900">매장별 {gran === 'week' ? '주별' : '월별'} 실적</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">매장별 {gran === 'week' ? '주별' : '월별'} 실적</h1>
           <span className="text-xs text-gray-400">매장 × {gran === 'week' ? '주' : '월'} · 전체/정상/이월 · 매출(백만)·{gran === 'week' ? '전주비' : '전월비'}·할인율</span>
         </div>
         <div className="flex items-center gap-2">
@@ -194,13 +194,13 @@ export default function ShopsMonthlyPage() {
       </div>
 
       {/* 필터 */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="eis-filter-bar flex flex-wrap gap-2 items-center">
         <span className="text-xs text-gray-400">연도</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {YEAR_OPTIONS.map(y => (
             <button key={y} onClick={() => setYear(y)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                year === y ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                year === y ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {y}년
             </button>
           ))}
@@ -210,7 +210,7 @@ export default function ShopsMonthlyPage() {
           {([['month', '월간'], ['week', '주간']] as [Gran, string][]).map(([v, label]) => (
             <button key={v} onClick={() => setGran(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                gran === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                gran === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {label}
             </button>
           ))}
@@ -221,7 +221,7 @@ export default function ShopsMonthlyPage() {
           {([['mom', gran === 'week' ? '전주비' : '전월비'], ['yoy', '전년비']] as [Cmp, string][]).map(([v, label]) => (
             <button key={v} onClick={() => setCmp(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                cmp === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                cmp === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {label}
             </button>
           ))}
@@ -232,7 +232,7 @@ export default function ShopsMonthlyPage() {
           {([['20', 20], ['30', 30], ['50', 50], ['전체', 'all']] as [string, number | 'all'][]).map(([label, v]) => (
             <button key={label} onClick={() => setTopN(v)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                topN === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                topN === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {label === '전체' ? '전체' : `상위 ${label}`}
             </button>
           ))}
@@ -243,7 +243,7 @@ export default function ShopsMonthlyPage() {
       </div>
 
       {/* 브랜드 / 채널 필터 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2.5">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2.5">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-gray-500 w-12 shrink-0">브랜드</span>
           {brandOptions.map(b => (
@@ -278,7 +278,7 @@ export default function ShopsMonthlyPage() {
       {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700 break-all">{error}</div>}
 
       {/* 매트릭스 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700">매장 × {gran === 'week' ? '주' : '월'} 매트릭스</h3>
           <span className="text-[10px] text-gray-400">{loading ? '조회 중…' : `${rows.length}개 매장`}</span>

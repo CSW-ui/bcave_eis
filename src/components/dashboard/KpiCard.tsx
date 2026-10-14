@@ -17,21 +17,21 @@ export function KpiCard({ metric, className }: KpiCardProps) {
 
   return (
     <div
-      className={cn(
-        'bg-white rounded-xl p-5 border border-surface-border shadow-sm hover:shadow-md transition-shadow',
+      className={"eis-panel " + (cn(
+        'bg-white rounded-xl p-5 border border-surface-border shadow-none transition-colors',
         className
-      )}
+      ))}
     >
       <div className="flex items-start justify-between mb-3">
-        <span className="text-sm text-gray-500 font-medium">{metric.title}</span>
-        <div className="w-9 h-9 rounded-lg bg-brand-accent-light flex items-center justify-center">
+        <span className="text-[11px] text-gray-500 font-medium">{metric.title}</span>
+        <div className="w-7 h-7 rounded bg-surface-muted flex items-center justify-center">
           <Icon size={18} className="text-brand-accent" />
         </div>
       </div>
 
       <div className="flex items-end justify-between">
         <div>
-          <p className="text-2xl font-bold text-gray-900 leading-none mb-1.5">
+          <p className="text-[22px] font-bold text-gray-900 leading-none mb-1.5">
             {metric.value}
           </p>
           <div className="flex items-center gap-1.5">

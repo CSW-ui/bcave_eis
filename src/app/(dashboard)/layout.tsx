@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { TopNav } from '@/components/layout/TopNav'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import '@/app/eis-theme.css'
 
 function LayoutSkeleton() {
   return (
@@ -11,7 +12,7 @@ function LayoutSkeleton() {
       <div className="h-7 w-40 bg-gray-200 rounded-lg animate-pulse" />
       <div className="grid grid-cols-5 gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-24 bg-white border border-surface-border rounded-xl shadow-sm p-4">
+          <div key={i} className="eis-panel h-24 bg-white border border-surface-border rounded-xl shadow-sm p-4">
             <div className="h-2.5 w-16 bg-gray-200 rounded animate-pulse" />
             <div className="h-5 w-20 bg-gray-200 rounded animate-pulse mt-2" />
             <div className="h-2 w-24 bg-gray-200 rounded animate-pulse mt-2" />
@@ -19,14 +20,14 @@ function LayoutSkeleton() {
         ))}
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 h-64 bg-white border border-surface-border rounded-xl shadow-sm p-4">
+        <div className="eis-panel col-span-2 h-64 bg-white border border-surface-border rounded-xl shadow-sm p-4">
           <div className="h-full flex items-end gap-2 pb-4">
             {[46, 62, 54, 70, 50, 66, 56, 72, 52, 68, 58, 64].map((h, i) => (
               <div key={i} className="flex-1 bg-gray-200 rounded-t animate-pulse" style={{ height: `${h}%` }} />
             ))}
           </div>
         </div>
-        <div className="h-64 bg-white border border-surface-border rounded-xl shadow-sm p-4 space-y-3.5">
+        <div className="eis-panel h-64 bg-white border border-surface-border rounded-xl shadow-sm p-4 space-y-3.5">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="space-y-1.5 animate-pulse">
               <div className="flex items-center justify-between">
@@ -59,7 +60,7 @@ function DashboardGuard({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-surface-subtle">
       <TopNav />
-      <main className="px-4 py-3">{loading ? <LayoutSkeleton /> : children}</main>
+      <main className="eis-workspace">{loading ? <LayoutSkeleton /> : children}</main>
     </div>
   )
 }

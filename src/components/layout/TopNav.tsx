@@ -40,7 +40,7 @@ export function TopNav() {
     : 'BC'
 
   return (
-    <header className="h-12 flex items-center bg-white border-b border-surface-border sticky top-0 z-40 px-4">
+    <header className="eis-topnav flex items-center bg-white border-b border-surface-border sticky top-0 z-40">
       {/* 로고 */}
       <Link href="/dashboard" className="flex items-center gap-2 mr-6 shrink-0">
         <div className="w-7 h-7 rounded-lg bg-brand-accent flex items-center justify-center">
@@ -54,7 +54,7 @@ export function TopNav() {
         {/* 대시보드 (직접 링크) */}
         <Link href="/dashboard"
           className={cn('px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-            pathname === '/dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}>
+            pathname === '/dashboard' ? 'bg-brand-accent text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}>
           대시보드
         </Link>
 
@@ -67,14 +67,14 @@ export function TopNav() {
               <button
                 onClick={() => setOpenMenu(isOpen ? null : dept.label)}
                 className={cn('flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
-                  isActive ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}>
+                  isActive ? 'bg-brand-accent text-white' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}>
                 {dept.icon && <dept.icon size={14} />}
                 {dept.label}
                 <ChevronDown size={12} className={cn('transition-transform', isOpen && 'rotate-180')} />
               </button>
 
               {isOpen && (
-                <div className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-surface-border py-1 z-50">
+                <div data-menu-panel className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-lg border border-surface-border py-1 z-50">
                   {dept.children?.map(child => {
                     const childActive = pathname === child.href || pathname.startsWith(child.href + '/')
                     return (

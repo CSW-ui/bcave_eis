@@ -88,7 +88,7 @@ export default function ChannelWeeklyPage() {
     <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 text-[11px]">
       {opts.map(([v, label]) => (
         <button key={v} onClick={() => set(v)}
-          className={cn('px-2.5 py-1 rounded-md font-medium transition-all', val === v ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+          className={cn('px-2.5 py-1 rounded-md font-medium transition-all', val === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
           {label}
         </button>
       ))}
@@ -96,10 +96,10 @@ export default function ChannelWeeklyPage() {
   )
 
   return (
-    <div className="space-y-4 p-4 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="eis-page space-y-4 p-4 animate-fade-in">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">채널 × 품목 {gran === 'month' ? '월간' : '주간'} 실적</h1>
+          <h1 className="eis-page-title text-xl font-bold text-gray-900">채널 × 품목 {gran === 'month' ? '월간' : '주간'} 실적</h1>
           <p className="text-sm text-gray-500 mt-0.5">정상/이월 분리 · 행 클릭 시 반대 표가 그 기준으로 변동 · {gran === 'month' ? '월 기준' : '주 시작일(월) 기준'}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -112,7 +112,7 @@ export default function ChannelWeeklyPage() {
       <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 w-fit text-xs">
         {visibleBrands.map(b => (
           <button key={b.value} onClick={() => onBrandChange(() => setBrand(b.value))}
-            className={cn('px-3 py-1.5 rounded-md font-medium transition-all', brand === b.value ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+            className={cn('px-3 py-1.5 rounded-md font-medium transition-all', brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
             {b.label}
           </button>
         ))}
@@ -120,7 +120,7 @@ export default function ChannelWeeklyPage() {
 
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4">
         {/* 좌측: 채널 */}
-        <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4 min-w-0">
+        <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4 min-w-0">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-700">
               채널별 {gran === 'month' ? '월간' : '주간'} 실적
@@ -134,7 +134,7 @@ export default function ChannelWeeklyPage() {
         </div>
 
         {/* 우측: 품목 */}
-        <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4 min-w-0">
+        <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4 min-w-0">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-semibold text-gray-700">
               품목별 {gran === 'month' ? '월간' : '주간'} 실적

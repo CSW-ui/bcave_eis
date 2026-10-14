@@ -169,11 +169,11 @@ export default function CarryoverPage() {
   })
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">이월재고 관리</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">이월재고 관리</h1>
           <p className="text-xs text-gray-400 mt-0.5">이월 상품 재고·매출·판매율 분석 · 적체 상품 관리</p>
         </div>
         <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ export default function CarryoverPage() {
             {visibleBrands.map(b => (
               <button key={b.value} onClick={() => setBrand(b.value)}
                 className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                  brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                  brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
                 {b.value !== 'all' && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1 mb-px" style={{ background: BRAND_COLORS[b.value] }} />}
                 {b.label}
               </button>
@@ -228,7 +228,7 @@ export default function CarryoverPage() {
             { title: '재고주수(평균)', value: `${data.kpi.avgInvWeeks}주`, color: data.kpi.avgInvWeeks >= 20 ? 'text-red-600' : data.kpi.avgInvWeeks >= 10 ? 'text-amber-600' : '' },
             { title: '적체 상품', value: `${data.kpi.staleCount}개`, color: data.kpi.staleCount > 0 ? 'text-red-600' : '' },
           ]).map(k => (
-            <div key={k.title} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div key={k.title} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase">{k.title}</p>
               <p className={cn('text-xl font-bold mt-1', k.color || 'text-gray-900')}>{k.value}</p>
             </div>
@@ -240,7 +240,7 @@ export default function CarryoverPage() {
       <div className="flex gap-3" style={{ height: 700 }}>
 
         {/* 품목별 이월 현황 */}
-        <div className="flex-[3.5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="eis-panel flex-[3.5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">품목별 이월 현황 <span className="font-normal text-gray-400 ml-1">클릭 시 상품 필터</span></h3>
           </div>
@@ -285,7 +285,7 @@ export default function CarryoverPage() {
         </div>
 
         {/* 채널별 이월 판매 */}
-        <div className="flex-[1.5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="eis-panel flex-[1.5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">채널별 이월 판매</h3>
           </div>
@@ -320,7 +320,7 @@ export default function CarryoverPage() {
         {/* 연도별 + AI 제안 */}
         <div className="flex-[2] flex flex-col gap-3 min-w-0">
           {/* 연도별 재고 */}
-          <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col" style={{maxHeight:300}}>
+          <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col" style={{maxHeight:300}}>
             <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
               <h3 className="text-xs font-semibold text-gray-700">연도별 이월 재고</h3>
             </div>
@@ -353,7 +353,7 @@ export default function CarryoverPage() {
           </div>
 
           {/* 날씨 기반 출고 제안 */}
-          <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1">
+          <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1">
             <div className="px-3 py-2 border-b border-surface-border bg-blue-50/50 shrink-0">
               <h3 className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
                 <CloudSun size={13} className="text-blue-500" />
@@ -416,7 +416,7 @@ export default function CarryoverPage() {
         </div>
 
         {/* 적체 상품 TOP 30 */}
-        <div className="flex-[5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
+        <div className="eis-panel flex-[5] bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0">
             <h3 className="text-xs font-semibold text-gray-700">
               {selItem ? `${selItem} 이월 상품` : '적체 상품 (재고금액 높은 순)'}

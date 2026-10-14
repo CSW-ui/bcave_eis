@@ -108,24 +108,24 @@ export default function IndustryPeersPage() {
   }, [data, gran])
 
   return (
-    <div className="space-y-4 p-4 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="eis-page space-y-4 p-4 animate-fade-in">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">동업계 비교 <span className="text-sm font-normal text-gray-400">(백화점·아울렛·쇼핑몰)</span></h1>
+          <h1 className="eis-page-title text-xl font-bold text-gray-900">동업계 비교 <span className="text-sm font-normal text-gray-400">(백화점·아울렛·쇼핑몰)</span></h1>
           <p className="text-sm text-gray-500 mt-0.5">전 매장 우리 브랜드 vs 동업계 · 행 클릭 시 {gran === 'month' ? '월간' : '주간'} 매트릭스 · 경쟁사 중복제거</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 text-[11px]">
-            {([['adult', '성인'], ['kids', '키즈']] as [ZoneT, string][]).map(([v, l]) => <button key={v} onClick={() => setZone(v)} className={cn('px-3 py-1 rounded-md font-medium transition-all', zone === v ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
+            {([['adult', '성인'], ['kids', '키즈']] as [ZoneT, string][]).map(([v, l]) => <button key={v} onClick={() => setZone(v)} className={cn('px-3 py-1 rounded-md font-medium transition-all', zone === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
           </div>
           <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 text-[11px]">
-            {([['all', '전체'], ['dept', '백화점'], ['outlet', '아울렛'], ['mall', '쇼핑몰'], ['duty', '면세점'], ['direct', '직영점']] as ['all' | 'dept' | 'outlet' | 'mall' | 'duty' | 'direct', string][]).map(([v, l]) => <button key={v} onClick={() => setCh(v)} className={cn('px-2.5 py-1 rounded-md font-medium transition-all', ch === v ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
+            {([['all', '전체'], ['dept', '백화점'], ['outlet', '아울렛'], ['mall', '쇼핑몰'], ['duty', '면세점'], ['direct', '직영점']] as ['all' | 'dept' | 'outlet' | 'mall' | 'duty' | 'direct', string][]).map(([v, l]) => <button key={v} onClick={() => setCh(v)} className={cn('px-2.5 py-1 rounded-md font-medium transition-all', ch === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
           </div>
           <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 text-[11px]">
-            {([['week', '주간'], ['month', '월간']] as [GranT, string][]).map(([v, l]) => <button key={v} onClick={() => setGran(v)} className={cn('px-2.5 py-1 rounded-md font-medium transition-all', gran === v ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
+            {([['week', '주간'], ['month', '월간']] as [GranT, string][]).map(([v, l]) => <button key={v} onClick={() => setGran(v)} className={cn('px-2.5 py-1 rounded-md font-medium transition-all', gran === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
           </div>
           <div className="flex items-center gap-0.5 bg-gray-100 rounded-lg p-0.5 text-[11px]">
-            {([['offline', '오프라인'], ['all', '전체']] as [ScopeT, string][]).map(([v, l]) => <button key={v} onClick={() => setScope(v)} className={cn('px-2.5 py-1 rounded-md font-medium transition-all', scope === v ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
+            {([['offline', '오프라인'], ['all', '전체']] as [ScopeT, string][]).map(([v, l]) => <button key={v} onClick={() => setScope(v)} className={cn('px-2.5 py-1 rounded-md font-medium transition-all', scope === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{l}</button>)}
           </div>
           <select value={pIdx} onChange={e => setPIdx(Number(e.target.value))} className="text-sm border border-surface-border rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-accent">
             {periods.map((p, i) => <option key={i} value={i}>{p.label}</option>)}
@@ -134,7 +134,7 @@ export default function IndustryPeersPage() {
       </div>
 
       {/* 최상단 시장 요약 — 우리 vs 주요 동업계 추이 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
         <h3 className="text-xs font-semibold text-gray-700 mb-2">시장 요약 <span className="font-normal text-gray-400">· 우리+주요 동업계 {gran === 'month' ? '월간' : '주간'} 추이 (최근 {mkt.buckets.length}) · {zone === 'kids' ? '키즈' : '성인'} · 전 매장 합산 · 단위 백만</span></h3>
         {loading ? <div className="h-56 bg-surface-subtle animate-pulse rounded-lg" /> : mkt.buckets.length === 0 ? <div className="h-20 flex items-center justify-center text-xs text-gray-300">데이터 없음</div> : (
           <div className="overflow-x-auto">
@@ -165,7 +165,7 @@ export default function IndustryPeersPage() {
         <p className="text-[10px] text-gray-400 mt-2">전주비 = 최근 마감주 vs 직전주 · ★=우리 · 경쟁사는 건물당 중복제거 후 전 매장 합산 · 채널 토글로 백화점/아울렛/쇼핑몰 구분</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
         <h3 className="text-xs font-semibold text-gray-700 mb-2">전 매장 ({(data?.buildings ?? []).length}) <span className="font-normal text-gray-400">· {zone === 'kids' ? '키즈' : '성인'} 조닝 · 단위 백만원 · 헤더 정렬 · 행 클릭 시 펼침</span></h3>
         {loading ? <div className="h-96 bg-surface-subtle animate-pulse rounded-lg" /> : (
           <div className="overflow-x-auto">

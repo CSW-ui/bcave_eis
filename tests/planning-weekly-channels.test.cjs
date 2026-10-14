@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
+require.extensions['.ts']=(m,file)=>m._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,file);
+const {weeklyChannelQuery,toWeeklyChannels}=require(path.resolve('src/lib/planning-weekly-channels.ts'));
+const q=weeklyChannelQuery('CO','CO2607CA16','2026-10-11');
+assert.ok(q.includes("v.SALEDT BETWEEN '20250101' AND '20261011'"));assert.ok(q.includes("BETWEEN '20261005' AND '20261011'"));assert.ok(q.includes("BETWEEN '20260928' AND '20261004'"));
+assert.ok(q.includes("SHOPCD NOT IN ('B6055','B6057','B6063')"));assert.ok(q.includes('SUM(v.SALEAMT_VAT_EX)'));assert.ok(!q.includes('SW_SALEINFO'));
+assert.throws(()=>weeklyChannelQuery('CO',"CO123' OR 1=1--",'2026-10-11'));
+assert.throws(()=>weeklyChannelQuery('CO','LE2603IP32','2026-10-11'));
+assert.throws(()=>weeklyChannelQuery('CO','CO2607CA16','2026-10-12'));
+assert.throws(()=>weeklyChannelQuery('all','CO2607CA16','2026-10-11'));
+const input=[{CHANNEL:'자사몰',REVENUE:800,QTY:10,TAG_AMOUNT:1100,W11_REVENUE:160,W10_REVENUE:100,W11_QTY:2},{CHANNEL:'백화점',REVENUE:200,QTY:2,TAG_AMOUNT:220,W11_REVENUE:0,W10_REVENUE:50}];
+const channels=toWeeklyChannels(input);assert.equal(channels[0].revenueShare,.8);assert.equal(channels[1].revenueShare,.2);assert.ok(Math.abs(channels[0].discountRate-.2)<1e-10);assert.equal(channels[0].wow,.6);assert.equal(channels[1].wow,-1);assert.equal(channels[0].weeks.length,12);assert.equal(channels[0].weekQty,2);
+assert.equal(channels.reduce((sum,c)=>sum+c.revenue,0),1000);assert.equal(channels.reduce((sum,c)=>sum+c.qty,0),12);
+const returns=toWeeklyChannels([{CHANNEL:'판매',REVENUE:120,QTY:2,TAG_AMOUNT:220},{CHANNEL:'반품',REVENUE:-20,QTY:-1,TAG_AMOUNT:-110}]);assert.equal(returns[0].revenueShare,1.2);assert.equal(returns[1].revenueShare,-.2);assert.equal(returns[1].discountRate,null);
+assert.equal(toWeeklyChannels([{REVENUE:0,QTY:0,TAG_AMOUNT:0}])[0].revenueShare,null);assert.equal(toWeeklyChannels([{REVENUE:-10,QTY:-1}])[0].revenueShare,null);
+assert.equal(toWeeklyChannels([{...input[0],TAG_MISSING_COUNT:1}])[0].discountRate,null);
+assert.equal(toWeeklyChannels([{...input[0],W10_REVENUE:0}])[0].wow,null);assert.equal(toWeeklyChannels([{...input[0],W10_REVENUE:-5}])[0].wow,null);
+assert.deepEqual(toWeeklyChannels([]),[]);console.log('Channel report checks passed: period alignment, access input validation, shares, returns, discount and week-over-week calculations.');

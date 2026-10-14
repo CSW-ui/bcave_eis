@@ -85,14 +85,14 @@ export default function SecuritySettingsPage() {
   if (loading) return <div className="p-6 text-sm text-gray-500">불러오는 중…</div>
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="eis-page p-6 max-w-2xl mx-auto">
       {/* 헤더 */}
-      <div className="flex items-start gap-3 mb-6">
+      <div className="eis-page-header flex items-start gap-3 mb-6">
         <div className="w-11 h-11 rounded-xl bg-brand-accent/10 flex items-center justify-center shrink-0">
           <ShieldCheck className="text-brand-accent" size={22} />
         </div>
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900">2단계 인증 (OTP)</h1>
+          <h1 className="eis-page-title text-xl font-bold text-gray-900">2단계 인증 (OTP)</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             비밀번호가 유출되어도 휴대폰 인증번호가 없으면 로그인할 수 없게 보호합니다.
           </p>
@@ -104,7 +104,7 @@ export default function SecuritySettingsPage() {
       {msg && <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3"><Check size={16} className="shrink-0" />{msg}</div>}
 
       {/* 메인 카드 */}
-      <div className="bg-white rounded-2xl border border-surface-border shadow-sm overflow-hidden">
+      <div className="eis-panel bg-white rounded-2xl border border-surface-border shadow-sm overflow-hidden">
         {/* 상태 헤더 */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-surface-border bg-gray-50/50">
           <div className="flex items-center gap-3">

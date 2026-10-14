@@ -312,11 +312,11 @@ export default function TargetProgressPage() {
   const scopeLabel = selBrand === 'all' ? '전체 브랜드' : (BRAND_NAMES[selBrand] ?? selBrand)
 
   return (
-    <div className="space-y-4 p-4 animate-fade-in">
+    <div className="eis-page space-y-4 p-4 animate-fade-in">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">목표 진도율</h1>
+          <h1 className="eis-page-title text-xl font-bold text-gray-900">목표 진도율</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {mode === 'dow' ? '전년 요일패턴 가중배분' : '균등배분'} 기준 · 채널별 일자별 진도율 (전일마감)
           </p>
@@ -327,7 +327,7 @@ export default function TargetProgressPage() {
             {([['dow', '요일가중'], ['even', '균등']] as [typeof mode, string][]).map(([k, label]) => (
               <button key={k} onClick={() => setMode(k)}
                 className={cn('px-2.5 py-1 rounded-md font-medium transition-all',
-                  mode === k ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                  mode === k ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
                 {label}
               </button>
             ))}
@@ -345,7 +345,7 @@ export default function TargetProgressPage() {
           {[{ v: 'all', l: '전체' }, ...brandTabs.map(b => ({ v: b, l: BRAND_NAMES[b] ?? b }))].map(t => (
             <button key={t.v} onClick={() => { setSelBrand(t.v); setSelChannel(null) }}
               className={cn('px-3 py-1.5 rounded-md font-medium transition-all',
-                selBrand === t.v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selBrand === t.v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {t.l}
             </button>
           ))}
@@ -372,7 +372,7 @@ export default function TargetProgressPage() {
               { label: '예상 착지', value: total.projected != null ? fmtW(total.projected) : '—', sub: total.monthTgt > 0 && total.projected != null ? `목표대비 ${Math.round(total.projected / total.monthTgt * 100)}%` : '—', color: progColor(total.progress) },
               { label: '일 필요액', value: total.needPerDay != null ? fmtW(total.needPerDay) : '—', sub: `잔여 ${remainDays}일` },
             ].map((c, i) => (
-              <div key={i} className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+              <div key={i} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
                 <p className="text-[10px] text-gray-400 uppercase tracking-wide">{c.label}</p>
                 <p className={cn('text-lg font-bold mt-1', c.color ?? 'text-gray-900')}>{c.value}</p>
                 <p className="text-[10px] text-gray-500 mt-0.5 truncate">{c.sub}</p>
@@ -382,7 +382,7 @@ export default function TargetProgressPage() {
 
           {/* 브랜드 요약표 (전체 탭) */}
           {selBrand === 'all' && brandMetrics.length > 1 && (
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">브랜드별 진도율 <span className="text-xs font-normal text-gray-400">· 단위 백만원 · 클릭 시 해당 브랜드로 전환</span></h3>
               {loading ? <div className="h-24 bg-surface-subtle animate-pulse rounded-lg" /> : (
                 <table className="w-full text-[11px]">
@@ -405,7 +405,7 @@ export default function TargetProgressPage() {
           )}
 
           {/* 채널 요약표 */}
-          <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+          <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">채널별 진도율 <span className="text-xs font-normal text-gray-400">· {scopeLabel} · 행 클릭 시 일자별 상세</span></h3>
             {loading ? <div className="h-40 bg-surface-subtle animate-pulse rounded-lg" /> : grouped.length === 0 ? (
               <div className="text-center py-10 text-xs text-gray-400">목표 또는 실적 데이터가 없습니다.</div>
@@ -429,7 +429,7 @@ export default function TargetProgressPage() {
           </div>
 
           {/* 일자별 드릴 */}
-          <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+          <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
               {scopeLabel} · {selChannel ?? '전체 채널'} <span className="text-xs font-normal text-gray-400">· 일자별 누적 목표 vs 실적</span>
             </h3>

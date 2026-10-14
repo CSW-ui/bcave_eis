@@ -278,10 +278,10 @@ export default function PeriodPage() {
   )}
 
   return (
-    <div className="p-4 space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="eis-page p-4 space-y-4 animate-fade-in">
+      <div className="eis-page-header flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">채널판매현황</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">채널판매현황</h1>
           <p className="text-xs text-gray-400 mt-0.5">브랜드×채널별 매출·수익성 종합 분석</p>
         </div>
         <button onClick={fetchData} disabled={loading}
@@ -291,13 +291,13 @@ export default function PeriodPage() {
       </div>
 
       {/* 필터 */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="eis-filter-bar flex flex-wrap gap-2 items-center">
         <span className="text-xs text-gray-400">브랜드</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {visibleBrands.map(b => (
             <button key={b.value} onClick={() => setBrand(b.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
+                brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
           ))}
         </div>
         <span className="text-xs text-gray-400 ml-2">채널</span>
@@ -354,14 +354,14 @@ export default function PeriodPage() {
       </div>
 
       {/* 테이블 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
         {loading ? (
           <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-[11px] border-collapse" style={{ minWidth: 1900 }}>
               <thead>
-                <tr className="bg-gray-800">
+                <tr className="eis-column-group bg-gray-800">
                   <th rowSpan={2} className="text-left px-1.5 py-1.5 sticky left-0 bg-gray-800 z-20 w-[160px] min-w-[160px] text-[11px] text-gray-300 font-bold" style={{ boxShadow: '4px 0 8px -2px rgba(0,0,0,0.2)' }}>구분</th>
                   <th colSpan={2} className="text-center px-1.5 py-1.5 text-[11px] text-gray-300 font-bold border-l border-gray-600">점포</th>
                   <th colSpan={9} className="text-center px-1.5 py-1.5 text-[11px] text-gray-200 font-bold border-l border-gray-600">총 매출</th>

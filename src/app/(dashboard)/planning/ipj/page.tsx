@@ -576,11 +576,11 @@ export default function IpjPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-4 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-lg font-bold text-gray-900">입판재현황</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">입판재현황</h1>
           <p className="text-xs text-gray-400 mt-0.5">재고 · 입고 · 매출 종합 현황</p>
         </div>
         <div className="flex gap-2">
@@ -600,13 +600,13 @@ export default function IpjPage() {
       </div>
 
       {/* 필터 */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="eis-filter-bar flex flex-wrap gap-2 items-center">
         <span className="text-xs text-gray-400">브랜드</span>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {visibleBrands.map(b => (
             <button key={b.value} onClick={() => setBrand(b.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {b.value !== 'all' && <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 mb-px" style={{ background: BRAND_COLORS[b.value] }} />}
               {b.label}
             </button>
@@ -632,7 +632,7 @@ export default function IpjPage() {
           {ITEM_CATEGORIES.map(cat => (
             <button key={cat} onClick={() => setSelCategory(cat)}
               className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
-                selCategory === cat ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selCategory === cat ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {cat}
             </button>
           ))}
@@ -658,7 +658,7 @@ export default function IpjPage() {
           {GENDER_FILTERS.map(g => (
             <button key={g} onClick={() => setSelGender(g)}
               className={cn('px-2 py-1 text-[11px] font-medium rounded-md transition-colors',
-                selGender === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>
+                selGender === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>
               {g}
             </button>
           ))}
@@ -668,7 +668,7 @@ export default function IpjPage() {
       {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700">{error}</div>}
 
       {/* 테이블 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
         {loading ? (
           <div className="space-y-2">{Array.from({ length: 10 }).map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}</div>
         ) : (
@@ -676,7 +676,7 @@ export default function IpjPage() {
             <table className="w-full text-[11px] border-collapse" style={{ minWidth: 2160 }}>
               <thead>
                 {/* 1행: 대분류 — 2개 큰 그룹 */}
-                <tr className="bg-gray-800">
+                <tr className="eis-column-group bg-gray-800">
                   <th rowSpan={3} className="text-center text-[11px] text-gray-300 font-bold py-1 sticky left-0 bg-gray-800 z-20 w-[32px] min-w-[32px] max-w-[32px]">구분</th>
                   <th rowSpan={3} className="text-center text-[11px] text-gray-300 font-bold py-1 sticky left-[32px] bg-gray-800 z-20 w-[120px] min-w-[120px] border-r-2 border-gray-500" style={{ boxShadow: '6px 0 12px -2px rgba(0,0,0,0.25)' }}>품목</th>
                   <th colSpan={14} className="text-center text-[11px] text-gray-200 font-bold py-1.5 border-l border-gray-600">총 재고 TAG 금액</th>

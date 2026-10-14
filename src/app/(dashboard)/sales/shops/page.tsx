@@ -218,12 +218,12 @@ export default function ShopsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Store size={18} className="text-gray-400" />
-          <h1 className="text-lg font-bold text-gray-900">매장별 실적</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">매장별 실적</h1>
           <span className="text-xs text-gray-400">단위: 백만원</span>
         </div>
         <div className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function ShopsPage() {
       </div>
 
       {/* 필터 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2.5">
+      <div className="eis-panel eis-filter-bar bg-white rounded-xl border border-surface-border shadow-sm p-3 space-y-2.5">
         {/* 기간 */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[11px] text-gray-500 w-12 shrink-0">기간</span>
@@ -339,7 +339,7 @@ export default function ShopsPage() {
             { title: 'ACH%', value: kpi.target > 0 ? `${kpi.ach}%` : '—',
               color: kpi.target > 0 ? (kpi.ach >= 100 ? 'text-emerald-600' : kpi.ach >= 80 ? 'text-amber-500' : 'text-red-500') : undefined },
           ] as { title: string; value: string; color?: string }[]).map(k => (
-            <div key={k.title} className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+            <div key={k.title} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
               <p className="text-[10px] text-gray-400 uppercase">{k.title}</p>
               <p className={cn('text-lg font-bold mt-0.5', k.color || 'text-gray-900')}>{k.value}</p>
             </div>
@@ -348,7 +348,7 @@ export default function ShopsPage() {
       )}
 
       {/* 테이블 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="px-3 py-2 border-b border-surface-border bg-surface-subtle shrink-0 flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700">매장 리스트</h3>
           <span className="text-[10px] text-gray-400">{loading ? '조회 중…' : `${rows.length}개`}</span>

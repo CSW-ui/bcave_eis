@@ -1,0 +1,60 @@
+/* Shared editorial design used by every authenticated EIS menu. */
+:root {
+  --eis-bg: #fafaf8;
+  --eis-paper: #fff;
+  --eis-soft: #f4f3ef;
+  --eis-ink: #1a1a1a;
+  --eis-secondary: #5a5a57;
+  --eis-muted: #70706a;
+  --eis-border: #e5e4df;
+  --eis-border-strong: #c8c7c0;
+  --eis-positive: #3f6b47;
+  --eis-negative: #c04a32;
+}
+.eis-workspace { width:100%; max-width:1720px; margin:0 auto; padding:24px 28px 40px; min-width:0; }
+.eis-workspace .eis-page { padding:0; gap:20px; min-width:0; }
+.eis-workspace .eis-page-header { border-bottom:1.5px solid var(--eis-ink); padding-bottom:14px; margin-bottom:2px; gap:12px; flex-wrap:wrap; }
+.eis-workspace .eis-page-title { font-size:18px; line-height:1.45; letter-spacing:-.025em; font-weight:700; color:var(--eis-ink); }
+.eis-workspace .eis-page > .eis-page-title { border-bottom:1.5px solid var(--eis-ink); padding-bottom:14px; margin-bottom:10px; }
+.eis-workspace .eis-page-header p { font-size:11px; line-height:1.65; color:var(--eis-secondary); margin-top:5px; }
+.eis-workspace .eis-page-header > .flex { flex-wrap:wrap; }
+.eis-workspace .eis-panel { border-color:var(--eis-border); border-radius:4px; box-shadow:none; }
+.eis-workspace .eis-filter-bar { padding:12px 14px; background:var(--eis-paper); border:1px solid var(--eis-border); border-radius:4px; }
+.eis-workspace .eis-filter-bar :is(select,input:not([type=checkbox]):not([type=radio])) { min-height:30px; }
+.eis-workspace button.bg-brand-accent :where(span,svg) { color:inherit; }
+.eis-workspace :is(input,select,textarea) { accent-color:var(--eis-ink); }
+.eis-workspace :is(select,input[type=date],input[type=month],input[type=text],input[type=number],input[type=password],input[type=email],textarea) { border-color:var(--eis-border-strong); border-radius:4px; }
+.eis-workspace :is(button,a,input,select,textarea):focus-visible,.eis-topnav :is(button,a):focus-visible { outline:2px solid #53715a; outline-offset:3px; }
+.eis-workspace h2:not(.eis-page-title) { letter-spacing:-.015em; }
+.eis-workspace h3 { font-size:12px; font-weight:650; color:var(--eis-ink); }
+.eis-workspace table { font-variant-numeric:tabular-nums; }
+.eis-workspace table .font-mono { font-family:var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif; font-variant-numeric:tabular-nums; }
+.eis-workspace thead { color:var(--eis-secondary); }
+.eis-workspace thead th { font-weight:600; }
+.eis-workspace .eis-column-group { background:var(--eis-soft); border-top:1px solid var(--eis-border); border-bottom:1px solid var(--eis-border-strong); }
+.eis-workspace .eis-column-group th { color:var(--eis-secondary); border-color:var(--eis-border-strong); font-weight:650; }
+.eis-workspace .recharts-cartesian-axis-tick text { fill:var(--eis-muted); font-family:inherit; }
+.eis-workspace .recharts-cartesian-grid line { stroke:var(--eis-border); }
+.eis-workspace .recharts-default-tooltip { border-color:var(--eis-border-strong)!important; border-radius:4px; box-shadow:0 5px 18px rgb(30 35 25 / .06); }
+.eis-topnav { background:var(--eis-paper); border-color:var(--eis-border); height:54px; padding-inline:28px; }
+.eis-topnav nav>div>button,.eis-topnav nav>a { border-radius:4px; }
+.eis-topnav [data-menu-panel] { border-radius:4px; border-color:var(--eis-border-strong); }
+@media(max-width:1024px) { .eis-workspace {padding:20px 18px 32px;} .eis-topnav{padding-inline:18px;} }
+@media(max-width:640px) {
+  .eis-workspace {padding:16px 12px 28px;}
+  .eis-topnav {padding-inline:10px;}
+  .eis-topnav>a {margin-right:10px;}
+  .eis-topnav nav {min-width:0;gap:1px;}
+  .eis-topnav nav>a,.eis-topnav nav>div>button {white-space:nowrap;padding:6px;font-size:11px;gap:3px;}
+  .eis-topnav>div:last-child>div>button {padding-inline:5px;}
+  .eis-workspace .eis-page-header {align-items:flex-start;}
+  .eis-workspace .eis-page-header>div {max-width:100%;}
+  .eis-workspace .eis-filter-bar {padding:10px;}
+  .eis-workspace .eis-page-title {font-size:17px;}
+}
+@media print {
+  .eis-workspace {max-width:none;padding:0;}
+  .eis-workspace .eis-page {padding:0;}
+  .eis-topnav {display:none;}
+  .eis-workspace .eis-page-header {break-after:avoid;}
+}

@@ -178,11 +178,11 @@ export default function DashboardPage() {
   }, [data, targets, region])
 
   return (
-    <div className="space-y-4 p-4 animate-fade-in">
+    <div className="eis-page space-y-4 p-4 animate-fade-in">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="eis-page-header flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">대시보드</h1>
+          <h1 className="eis-page-title text-xl font-bold text-gray-900">대시보드</h1>
           <p className="text-sm text-gray-500 mt-0.5">비케이브 전체 사업 현황</p>
         </div>
         <div className="flex items-center gap-3">
@@ -213,7 +213,7 @@ export default function DashboardPage() {
               className={cn(
                 'px-3 py-1.5 text-xs rounded-md font-medium transition-all',
                 region === key
-                  ? 'bg-white text-gray-900 shadow-sm'
+                  ? 'bg-brand-accent text-white shadow-none'
                   : 'text-gray-500 hover:text-gray-700'
               )}>
               {label}
@@ -226,7 +226,7 @@ export default function DashboardPage() {
       {loading && (
         <div className="grid grid-cols-5 gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div key={i} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <div className="h-2.5 w-16 bg-gray-200 rounded animate-pulse" />
               <div className="h-5 w-20 bg-gray-200 rounded animate-pulse mt-2" />
               <div className="h-2 w-24 bg-gray-200 rounded animate-pulse mt-2" />
@@ -258,7 +258,7 @@ export default function DashboardPage() {
         return (
           <div className={cn('grid gap-3', achPct !== null ? 'grid-cols-5' : 'grid-cols-4')}>
             {/* YTD 매출 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">YTD 매출</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{fmtW(y.rev)}</p>
               <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {fmtW(y.lyRev)}</p>
@@ -266,7 +266,7 @@ export default function DashboardPage() {
             </div>
             {/* 달성률 */}
             {achPct !== null && (
-              <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+              <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
                 <p className="text-[10px] text-gray-400 uppercase tracking-wide">{curMonth - 1}월까지 달성률</p>
                 <p className={cn('text-xl font-bold mt-1', achPct >= 90 ? 'text-emerald-600' : 'text-red-500')}>{achPct}%</p>
                 <p className="text-[10px] text-gray-500 mt-0.5">목표 {fmtW(achTarget)}</p>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
               </div>
             )}
             {/* 정상/이월 비중 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">정상/이월 비중</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{nc?.normRatio ?? 0}%</p>
               <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {nc?.lyNormRatio ?? 0}%</p>
@@ -282,7 +282,7 @@ export default function DashboardPage() {
               <p className="text-[9px] text-gray-400 mt-1">정상 {fmtW(nc?.normRev ?? 0)} · 이월 {fmtW(nc?.coRev ?? 0)}</p>
             </div>
             {/* YTD 매출원가율 + 정상/이월 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">YTD 매출원가율</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{y.cogsRate}%</p>
               <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {y.lyCogsRate}%</p>
@@ -294,7 +294,7 @@ export default function DashboardPage() {
               )}
             </div>
             {/* YTD 할인율 + 정상/이월 */}
-            <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+            <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">YTD 할인율</p>
               <p className="text-xl font-bold text-gray-900 mt-1">{y.dcRate}%</p>
               <p className="text-[10px] text-gray-500 mt-0.5">전년동기 {y.lyDcRate}%</p>
@@ -313,7 +313,7 @@ export default function DashboardPage() {
       {/* 차트 영역 */}
       <div className="grid grid-cols-3 gap-4">
         {/* 월별 매출 추이 */}
-        <div className="col-span-2 bg-white rounded-xl border border-surface-border shadow-sm p-4">
+        <div className="eis-panel col-span-2 bg-white rounded-xl border border-surface-border shadow-sm p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               월별 매출 추이 <span className="text-xs font-normal text-gray-400">({region === 'all' ? '전체' : region === 'domestic' ? '국내' : region === 'online' ? '온라인' : region === 'offline' ? '오프라인' : '해외'})</span>
@@ -461,7 +461,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 브랜드별 금월 목표 vs 달성 */}
-        <div className="col-span-1 bg-white rounded-xl border border-surface-border shadow-sm p-4">
+        <div className="eis-panel col-span-1 bg-white rounded-xl border border-surface-border shadow-sm p-4">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             브랜드별 {data?.kpi?.curMonth ?? ''}월 목표 달성현황
             <span className="text-xs font-normal text-gray-400 ml-1">({region === 'all' ? '전체' : region === 'domestic' ? '국내' : region === 'online' ? '온라인' : region === 'offline' ? '오프라인' : '해외'})</span>
@@ -518,7 +518,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 재고 현황 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm p-4">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">
           재고 현황
           <span className="text-xs font-normal text-gray-400 ml-1">

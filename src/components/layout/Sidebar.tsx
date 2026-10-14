@@ -26,7 +26,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     <aside
       className={cn(
         'fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-300 ease-in-out',
-        'bg-[#16213e] border-r border-sidebar-border',
+        'bg-sidebar-bg border-r border-sidebar-border',
         isOpen ? 'w-60' : 'w-16'
       )}
     >
@@ -37,13 +37,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <LayoutDashboard size={16} className="text-white" />
           </div>
           {isOpen && (
-            <span className="text-white font-semibold text-sm truncate">{BRAND.name}</span>
+            <span className="text-sidebar-text-active font-semibold text-sm truncate">{BRAND.name}</span>
           )}
         </div>
         {isOpen && (
           <button
             onClick={onToggle}
-            className="ml-auto text-sidebar-text hover:text-white transition-colors"
+            className="ml-auto text-sidebar-text hover:text-sidebar-text-active transition-colors"
           >
             <ChevronLeft size={16} />
           </button>
@@ -86,7 +86,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {!isOpen && (
           <button
             onClick={onToggle}
-            className="w-full flex items-center justify-center py-2 text-sidebar-text hover:text-white transition-colors"
+            className="w-full flex items-center justify-center py-2 text-sidebar-text hover:text-sidebar-text-active transition-colors"
           >
             <ChevronLeft size={16} className="rotate-180" />
           </button>
@@ -97,7 +97,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               <span className="text-brand-accent text-xs font-bold">BC</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-white font-medium truncate">B.cave</p>
+              <p className="text-xs text-sidebar-text-active font-medium truncate">B.cave</p>
               <p className="text-[10px] text-sidebar-text truncate">업무 자동화 플랫폼</p>
             </div>
           </div>

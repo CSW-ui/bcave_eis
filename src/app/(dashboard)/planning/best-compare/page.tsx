@@ -198,11 +198,11 @@ export default function BestComparePage() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <GitCompare size={18} className="text-gray-400" />
-          <h1 className="text-lg font-bold text-gray-900">베스트 상품 비교 (금년 vs 전년동기)</h1>
+          <h1 className="eis-page-title text-lg font-bold text-gray-900">베스트 상품 비교 (금년 vs 전년동기)</h1>
           <span className="text-xs text-gray-400">기간 설정 · 부가세 제외 · 매출 백만원</span>
         </div>
         <button onClick={downloadExcel} disabled={cyTop.length === 0}
@@ -212,19 +212,19 @@ export default function BestComparePage() {
       </div>
 
       {/* 필터 */}
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="eis-filter-bar flex flex-wrap gap-2 items-center">
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {brandTabs.map(b => (
             <button key={b.value} onClick={() => setBrand(b.value)}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
+                brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
           ))}
         </div>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {ITEM_GROUPS.map(g => (
             <button key={g} onClick={() => { setGroup(g); setSelItem(null) }}
               className={cn('px-3 py-1 text-xs font-medium rounded-md transition-colors',
-                group === g ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{g}</button>
+                group === g ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{g}</button>
           ))}
         </div>
         <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="text-xs border border-surface-border rounded px-2 py-1" />
@@ -246,14 +246,14 @@ export default function BestComparePage() {
           {([['amt', '금액'], ['qty', '수량']] as [Metric, string][]).map(([v, l]) => (
             <button key={v} onClick={() => setMetric(v)}
               className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                metric === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{l}</button>
+                metric === v ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{l}</button>
           ))}
         </div>
         <div className="flex gap-0.5 bg-surface-subtle rounded-lg p-0.5">
           {[10, 20, 30, 50].map(n => (
             <button key={n} onClick={() => setTopN(n)}
               className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                topN === n ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>Top{n}</button>
+                topN === n ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>Top{n}</button>
           ))}
         </div>
         <button onClick={fetchData} disabled={loading} className="flex items-center gap-1 text-xs text-gray-500 border border-surface-border rounded-lg px-2.5 py-1.5">

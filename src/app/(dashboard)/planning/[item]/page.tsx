@@ -215,16 +215,16 @@ export default function ItemDetailPage() {
   const clearFilters = () => { setSelWeek(null); setSelStyle(null); setSelChannel(null); setShopData([]) }
 
   return (
-    <div className="flex flex-col gap-3 p-4 min-h-0">
+    <div className="eis-page flex flex-col gap-3 p-4 min-h-0">
       {/* 헤더 */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="eis-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push('/planning')}
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-surface-border rounded-lg px-2.5 py-1.5 hover:bg-surface-subtle">
             <ArrowLeft size={12} /> 기획현황판
           </button>
           <div>
-            <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="eis-page-title text-lg font-bold text-gray-900 flex items-center gap-2">
               <Package size={18} className="text-gray-400" />{itemName}
             </h1>
             <p className="text-xs text-gray-400 mt-0.5">{seasonLabel} vs {compYear} 동시즌</p>
@@ -235,7 +235,7 @@ export default function ItemDetailPage() {
             {visibleBrands.map(b => (
               <button key={b.value} onClick={() => { setBrand(b.value); clearFilters() }}
                 className={cn('px-2.5 py-1 text-xs font-medium rounded-md transition-colors',
-                  brand === b.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
+                  brand === b.value ? 'bg-brand-accent text-white shadow-none' : 'text-gray-500 hover:text-gray-700')}>{b.label}</button>
             ))}
           </div>
           <button onClick={() => { clearFilters(); fetchWeekly(); fetchStyles() }} disabled={loading}
@@ -272,7 +272,7 @@ export default function ItemDetailPage() {
       <div className="grid grid-cols-8 gap-3">
         {loading ? Array.from({length:8}).map((_,i) => <div key={i} className="h-20 bg-surface-subtle animate-pulse rounded-xl" />) :
         kpi.map(k => (
-          <div key={k.t} className="bg-white rounded-xl border border-surface-border shadow-sm p-3">
+          <div key={k.t} className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-3">
             <p className="text-[10px] text-gray-400 uppercase tracking-wide">{k.t}</p>
             <p className="text-lg font-bold text-gray-900 mt-0.5">{k.v}</p>
             <span className={cn('text-[10px] font-medium', k.d.pos===null?'text-gray-300':k.d.pos?'text-emerald-600':'text-red-500')}>{k.d.t}</span>
@@ -282,7 +282,7 @@ export default function ItemDetailPage() {
 
       {/* 차트 + 채널 */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-2 bg-white rounded-xl border border-surface-border shadow-sm p-4">
+        <div className="eis-panel col-span-2 bg-white rounded-xl border border-surface-border shadow-sm p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-semibold text-gray-700">
               주간 매출 추이
@@ -323,7 +323,7 @@ export default function ItemDetailPage() {
         </div>
 
         {/* 채널별 (클릭 가능) */}
-        <div className="col-span-1 bg-white rounded-xl border border-surface-border shadow-sm p-4 flex flex-col">
+        <div className="eis-panel col-span-1 bg-white rounded-xl border border-surface-border shadow-sm p-4 flex flex-col">
           <h3 className="text-xs font-semibold text-gray-700 mb-2 shrink-0">
             유통채널별 판매
             {channelDelta && <span className="ml-1 font-normal text-[10px] text-brand-accent">· W{channelDelta.week} 전주대비 증감{channelDelta.isAuto ? ' (최근주)' : ''}</span>}
@@ -459,7 +459,7 @@ export default function ItemDetailPage() {
 
 
       {/* 전체 상품 테이블 */}
-      <div className="bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
+      <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm overflow-hidden">
         <div className="px-4 py-2.5 border-b border-surface-border bg-surface-subtle flex items-center justify-between">
           <h3 className="text-xs font-semibold text-gray-700">
             전체 상품 상세 <span className="font-normal text-gray-400 ml-1">{styles.length}개</span>
@@ -470,12 +470,12 @@ export default function ItemDetailPage() {
             <div className="flex gap-0.5 bg-gray-100 rounded-md p-0.5">
               <button onClick={() => setUnit('st')}
                 className={cn('px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
-                  unit === 'st' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600')}>
+                  unit === 'st' ? 'bg-brand-accent text-white shadow-none' : 'text-gray-400 hover:text-gray-600')}>
                 ST 단위
               </button>
               <button onClick={() => setUnit('sku')}
                 className={cn('px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
-                  unit === 'sku' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600')}>
+                  unit === 'sku' ? 'bg-brand-accent text-white shadow-none' : 'text-gray-400 hover:text-gray-600')}>
                 SKU 단위
               </button>
             </div>
@@ -486,7 +486,7 @@ export default function ItemDetailPage() {
           {sortedStyles.length > 0 ? (
             <table className="w-full text-[10px] border-collapse" style={{minWidth:1350}}>
               <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-800 border-b-2 border-gray-900">
+                <tr className="eis-column-group bg-gray-800 border-b-2 border-gray-900">
                   <th colSpan={unit === 'sku' ? 7 : 6} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">상품 정보</th>
                   <th colSpan={4} className="text-center text-[10px] text-gray-200 font-bold py-1 border-r border-gray-600">발주/입고</th>
                   <th colSpan={6} className="text-center text-[10px] text-blue-300 font-bold py-1 border-r border-gray-600">매출 (백만원)</th>

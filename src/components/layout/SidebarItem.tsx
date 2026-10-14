@@ -31,7 +31,7 @@ export function SidebarItem({ item, depth = 0, collapsed = false }: SidebarItemP
             depth === 0 ? 'font-medium' : 'font-normal',
             isActive
               ? 'bg-sidebar-bg-hover text-sidebar-text-active'
-              : 'text-sidebar-text hover:bg-sidebar-bg-hover hover:text-white'
+              : 'text-sidebar-text hover:bg-sidebar-bg-hover hover:text-sidebar-text-active'
           )}
           style={{ paddingLeft: depth > 0 ? `${12 + depth * 12}px` : undefined }}
         >
@@ -40,7 +40,7 @@ export function SidebarItem({ item, depth = 0, collapsed = false }: SidebarItemP
               <Icon
                 size={16}
                 className={cn(
-                  isActive ? 'text-brand-accent' : 'text-sidebar-text group-hover:text-white'
+                  isActive ? 'text-brand-accent' : 'text-sidebar-text group-hover:text-sidebar-text-active'
                 )}
               />
             )}
@@ -72,8 +72,8 @@ export function SidebarItem({ item, depth = 0, collapsed = false }: SidebarItemP
         'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all duration-150 group relative',
         depth === 0 ? 'font-medium' : 'font-normal',
         isActive
-          ? 'bg-sidebar-bg-hover text-white'
-          : 'text-sidebar-text hover:bg-sidebar-bg-hover hover:text-white'
+          ? 'bg-sidebar-bg-hover text-sidebar-text-active'
+          : 'text-sidebar-text hover:bg-sidebar-bg-hover hover:text-sidebar-text-active'
       )}
       style={{ paddingLeft: depth > 0 ? `${12 + depth * 12}px` : undefined }}
     >
@@ -84,7 +84,7 @@ export function SidebarItem({ item, depth = 0, collapsed = false }: SidebarItemP
         <Icon
           size={16}
           className={cn(
-            isActive ? 'text-brand-accent' : 'text-sidebar-text group-hover:text-white'
+            isActive ? 'text-brand-accent' : 'text-sidebar-text group-hover:text-sidebar-text-active'
           )}
         />
       )}

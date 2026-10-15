@@ -68,6 +68,13 @@ export function resolveAuthRequestOrigin(request: Request, config?: AuthUrlConfi
   if (host !== null) {
     const matches = allowed.filter(origin => origin.host === host.toLowerCase())
     if (matches.length === 0) return null
+    // TLS 종료 프록시는 공개 Host를 유지하면서 내부 전송을 http로 표시할 수 있다.
+    // 정확히 허용된 공개 forwarded host에만 설정된 HTTPS origin을 사용한다.
+    // 로컬 origin·알 수 없는 host·헤더 목록은 이 보정의 대상이 아니다.
+    if (forwardedHost !== null && forwardedProto === 'http') {
+      const publicOrigin = matches.find(origin => origin.protocol === 'https:' && !isLoopback(origin))
+      if (publicOrigin) return publicOrigin.origin
+    }
     if (forwardedProto !== null) {
       return matches.find(origin => origin.protocol === `${forwardedProto}:`)?.origin || null
     }

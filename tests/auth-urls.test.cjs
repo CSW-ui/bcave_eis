@@ -93,7 +93,7 @@ test('unknown direct Host values cannot fall back to a loopback request URL', ()
 });
 
 test('untrusted forwarded protocols and mismatched schemes fail closed', () => {
-  for (const proto of ['https, http', 'ftp', 'https://attacker.example', '', 'http']) {
+  for (const proto of ['https, http', 'ftp', 'https://attacker.example', '']) {
     assert.equal(resolve('http://localhost:3000/auth/callback', {
       'x-forwarded-host': 'portal.bcave.co.kr', 'x-forwarded-proto': proto,
     }), null, proto);
@@ -210,4 +210,38 @@ test('origin rejection diagnostics omit query strings, cookies and malformed hea
     assert.equal(messages[0][1].forwardedProto, 'https, http');
     assert.doesNotMatch(JSON.stringify(messages), /SECRET/);
   } finally { console.warn = original; }
+});
+
+
+test('TLS termination on an internal port preserves the exact public HTTPS origin', () => {
+  for (const internal of ['http://localhost:10010', 'http://127.0.0.1:10010', 'http://portal.bcave.co.kr']) {
+    for (const route of ['/auth/microsoft', '/auth/callback']) {
+      assert.equal(resolve(internal + route, {
+        host: 'portal.bcave.co.kr', 'x-forwarded-host': 'portal.bcave.co.kr', 'x-forwarded-proto': 'http',
+      }), production);
+    }
+  }
+  assert.equal(resolve('http://localhost:10010/auth/microsoft', {
+    host: 'localhost:10010', 'x-forwarded-host': 'localhost:10010', 'x-forwarded-proto': 'http',
+  }), null);
+  assert.equal(resolve('http://localhost:10010/auth/microsoft', {
+    host: 'portal.bcave.co.kr', 'x-forwarded-host': 'attacker.example', 'x-forwarded-proto': 'http',
+  }), null);
+});
+
+test('callback completes over an HTTP proxy transport using an HTTPS redirect URI', async () => {
+  const original = process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED;
+  process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED = 'true';
+  try {
+    const { callback, state } = callbackFixture();
+    const response = await callback(new Request('http://localhost:10010/auth/callback?code=valid&state=test-state', {
+      headers: { host: 'portal.bcave.co.kr', 'x-forwarded-host': 'portal.bcave.co.kr', 'x-forwarded-proto': 'http' },
+    }));
+    assert.equal(response.headers.get('location'), production + '/login?auth_complete=1');
+    assert.equal(state.exchanges[0].origin, production);
+    assert.match(response.headers.get('set-cookie'), /Secure/i);
+  } finally {
+    if (original === undefined) delete process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED;
+    else process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED = original;
+  }
 });

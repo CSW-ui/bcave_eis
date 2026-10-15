@@ -22,6 +22,8 @@ export async function middleware(request: NextRequest) {
     {
       global: { fetch: authServerFetch },
       cookies: {
+        // 사용자 객체는 중복 전송하지 않고 토큰만 쿠키에 저장한다.
+        encode: 'tokens-only',
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
@@ -107,7 +109,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: aal, error: aalError } = skipOtp
     ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
-    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel((await supabase.auth.getSession()).data.session?.access_token)
   if (aalError || !aal) {
     return isApiRoute
       ? reject(LOGIN_ERROR_MESSAGES.auth_unavailable, 503)

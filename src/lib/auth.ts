@@ -30,7 +30,7 @@ export async function getServerProfile(): Promise<AuthedProfile | null> {
   const skipOtp = await canCurrentAccountSkipOtp(supabase, user)
   const { data: aal, error: aalError } = skipOtp
     ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
-    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel((await supabase.auth.getSession()).data.session?.access_token)
   if (aalError || !aal) return null
   if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') return null
   if (process.env.REQUIRE_MFA === 'true' && aal.currentLevel !== 'aal2') return null

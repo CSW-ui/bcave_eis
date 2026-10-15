@@ -9,15 +9,34 @@ test('profile and single-session token are fetched together once for concurrent 
 test('profile reads stay isolated by Supabase client and by user UUID',async()=>{const a=client([{data:{id:'a'},error:null}]),b=client([{data:{id:'b'},error:null}]);await Promise.all([profiles.loadBrowserProfile(a,'a'),profiles.loadBrowserProfile(a,'b'),profiles.loadBrowserProfile(b,'a')]);assert.equal(a.calls.length,2);assert.equal(b.calls.length,1);});
 test('missing optional token column retains legacy profile access',async()=>{const c=client([{data:null,error:{code:'42703'}},{data:{id:'a',role:'staff',brands:['CO']},error:null}]);const result=await profiles.loadBrowserProfile(c,'a');assert.equal(result.role,'staff');assert.equal(result.session_token,undefined);assert.equal(c.calls.length,2);assert.ok(!c.calls[1].fields.includes('session_token'));});
 test('permission or network failures cannot be hidden as missing optional columns',async()=>{const c=client([{data:null,error:{code:'42501'}}]);await assert.rejects(profiles.loadBrowserProfile(c,'a'));assert.equal(c.calls.length,1);});
-async function providerHarness(account,snapshot){const effects=[],states=[],listeners=new Map(),handlers=[];let signsOut=0;const originalWindow=global.window,originalStorage=global.localStorage;
+async function providerHarness(account,snapshot,hydratedUser,hydrateError){const effects=[],states=[],listeners=new Map(),handlers=[];let signsOut=0;const originalWindow=global.window,originalStorage=global.localStorage;
  const React=require('react');const fakeReact={...React,useState(value){const i=states.length;states.push(value);return [value,next=>{states[i]=next}]},useEffect(fn){effects.push(fn)}};
- const client={auth:{onAuthStateChange(fn){handlers.push(fn);return {data:{subscription:{unsubscribe(){}}}}},async getSession(){return {data:{session:{user:account}}}},async signOut(){signsOut++}}};
+ const client={auth:{onAuthStateChange(fn){handlers.push(fn);return {data:{subscription:{unsubscribe(){}}}}},async getSession(){return {data:{session:{user:account}}}},async getUser(){return {data:{user:hydratedUser??null},error:hydrateError??null}},async signOut(){signsOut++}}};
  global.window={location:{href:''},addEventListener(k,v){listeners.set(k,v)},removeEventListener(k){listeners.delete(k)}};global.localStorage={getItem:()=> 'local-token'};
  const auth=load('src/contexts/AuthContext.tsx',{'react':fakeReact,'@/lib/supabase-browser':{createSupabaseBrowserClient:()=>client},'@/lib/browser-profile':{loadBrowserProfile:async()=>snapshot},'@/lib/auth-policy':{isApprovedRole:r=>['admin','staff','manager','vendor'].includes(r)},'@/lib/account-source':{getAuthSource:u=>u?.app_metadata?.auth_source??'email',getAccountDisplayEmail:u=>u.email}});
- try{auth.AuthProvider({children:null});const cleanup=effects[0]();handlers[0]('INITIAL_SESSION',{user:account});await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));const result={states:[...states],signsOut,redirect:window.location.href};cleanup();return result;}finally{global.window=originalWindow;global.localStorage=originalStorage;}}
+ try{auth.AuthProvider({children:null});const cleanup=effects[0]();handlers[0]('INITIAL_SESSION',{user:account,access_token:'e30.'+Buffer.from(JSON.stringify({sub:hydratedUser?.id??account?.id})).toString('base64url')+'.c2ln'});await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));const result={states:[...states],signsOut,redirect:window.location.href};cleanup();return result;}finally{global.window=originalWindow;global.localStorage=originalStorage;}}
 test('initial auth event renders approved roles and brands without bypassing the current profile',async()=>{const user={id:'a',email:'a@bcave.co.kr',app_metadata:{auth_source:'microsoft',microsoft_access_approved:true}};const r=await providerHarness(user,{id:'a',role:'staff',brands:['CO'],session_token:'local-token'});assert.equal(r.states[1].role,'staff');assert.deepEqual(r.states[1].brands,['CO']);assert.equal(r.states[2],false);assert.equal(r.signsOut,0);});
 test('single-session mismatch still logs out and redirects',async()=>{const r=await providerHarness({id:'a',email:'a@bcave.co.kr',app_metadata:{}},{id:'a',role:'admin',brands:[],session_token:'other-device'});assert.equal(r.signsOut,1);assert.equal(r.redirect,'/login');assert.equal(r.states[1],null);});
 test('an unapproved Microsoft account cannot expose a trigger-created profile',async()=>{const r=await providerHarness({id:'a',email:'a@bcave.co.kr',app_metadata:{auth_source:'microsoft',microsoft_access_approved:false}},{id:'a',role:'staff',brands:[]});assert.equal(r.states[1],null);assert.equal(r.states[2],false);});
 async function targetMutationCase(kind){const effects=[],states=[];const React=require('react');const fake={...React,useRef:v=>({current:v}),useState(v){const i=states.length;states.push(v);return [v,x=>{states[i]=x}]},useMemo:fn=>fn(),useCallback:fn=>fn,useEffect:fn=>effects.push(fn)};const hook=load('src/hooks/useTargetData.ts',{react:fake,'@/lib/in-flight':flight});const original=global.fetch;let oldResolve,gets=0;global.fetch=async(_url,options={})=>{if(options.method)return new Response('{}',{status:200});gets++;if(gets===1)return new Promise(r=>{oldResolve=r});return new Response(JSON.stringify({data:[{yyyymm:'202610',brandnm:'CO',target:2}]}));};try{const instance=hook.useTargetData();effects[0]();await new Promise(r=>setImmediate(r));if(kind==='save')await instance.saveTargets([{yyyymm:'202610',brandnm:'CO',target:2}]);else await instance.clearTargets();oldResolve(new Response(JSON.stringify({data:[{yyyymm:'202610',brandnm:'CO',target:1}]})));await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));return {states,gets};}finally{global.fetch=original;}}
 test('target upload forces a fresh read and an older in-flight result cannot overwrite it',async()=>{const r=await targetMutationCase('save');assert.equal(r.gets,2);assert.equal(r.states[0][0].target,2);assert.equal(r.states[2],false);});
 test('target deletion cannot be undone by an earlier in-flight read or leave loading stuck',async()=>{const r=await targetMutationCase('delete');assert.deepEqual(r.states[0],[]);assert.equal(r.states[2],false);});
+
+
+test('tokens-only initial session without a user hydrates before rendering approved permissions',async()=>{
+ const user={id:'a',email:'a@bcave.co.kr',app_metadata:{auth_source:'microsoft',microsoft_access_approved:true}};
+ const r=await providerHarness(undefined,{id:'a',role:'admin',brands:[]},user);
+ assert.equal(r.states[0].id,'a');assert.equal(r.states[1].role,'admin');assert.equal(r.states[2],false);
+});
+test('tokens-only user lookup failure cannot render a profile',async()=>{
+ const r=await providerHarness(undefined,{id:'a',role:'admin',brands:[]},undefined,new Error('offline'));
+ assert.equal(r.states[0],null);assert.equal(r.states[1],null);assert.equal(r.states[2],false);
+});
+
+
+test('a previous EIS user in separate browser storage cannot replace the current MS user',async()=>{
+ const old={id:'old-eis',email:'old@bcave.co.kr',app_metadata:{}};
+ const current={id:'ms-current',email:'ms@bcave.co.kr',app_metadata:{auth_source:'microsoft',microsoft_access_approved:true}};
+ const r=await providerHarness(old,{id:'ms-current',role:'staff',brands:['CO']},current);
+ assert.equal(r.states[0].id,'ms-current');assert.equal(r.states[1].id,'ms-current');assert.deepEqual(r.states[1].brands,['CO']);
+});

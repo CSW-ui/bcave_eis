@@ -54,7 +54,7 @@ export default function PasswordSettingsPage() {
       if (signInErr) { setError('현재 비밀번호가 일치하지 않습니다.'); setLoading(false); return }
 
       // 2) MFA가 켜져 있으면 OTP로 AAL2 승격이 필요
-      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel((await supabase.auth.getSession()).data.session?.access_token)
       const needStepUp = aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2'
       if (needStepUp) {
         const { data: factors } = await supabase.auth.mfa.listFactors()

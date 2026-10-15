@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   const skipOtp = await canCurrentAccountSkipOtp(supabase, user)
   const { data: aal, error: aalError } = skipOtp
     ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
-    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel((await supabase.auth.getSession()).data.session?.access_token)
   if (aalError || !aal) {
     return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.auth_unavailable }, { status: 503 })
   }

@@ -1,7 +1,8 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
+import { decodeJwt } from 'jose/jwt/decode'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { isApprovedRole } from '@/lib/auth-policy'
 import { loadBrowserProfile } from '@/lib/browser-profile'
@@ -72,14 +73,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // tokens-only 쿠키에서 시작하면 사용자 객체가 아직 별도 저장소에 없을 수 있다.
+    // 라이브러리의 placeholder를 프로필/권한 판단에 사용하지 않는다.
+    async function syncSession(session: Session | null, preserveOnFailure = false) {
+      const current = ++generation
+      try {
+        let account: User | null = null
+        if (session) {
+          try {
+            if (typeof session.user?.id === 'string' && decodeJwt(session.access_token).sub === session.user.id) account = session.user
+          } catch { /* SDK placeholder or mismatched/stale browser user */ }
+          if (!account) {
+            const result = await supabase.auth.getUser()
+            if (result.error) throw result.error
+            account = result.data.user
+          }
+        }
+        if (!disposed && current === generation) await syncUser(account, preserveOnFailure)
+      } catch {
+        if (!disposed && current === generation) {
+          if (!preserveOnFailure) { setUser(null); setProfile(null) }
+          setLoading(false)
+        }
+      }
+    }
+
     // INITIAL_SESSION supplies the first session; a separate getSession would
     // duplicate that profile read. Do not await Supabase calls inside its callback.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      queueMicrotask(() => { if (!disposed) void syncUser(session?.user ?? null) })
+      queueMicrotask(() => { if (!disposed) void syncSession(session) })
     })
     const onFocus = () => {
       void supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!disposed && session?.user) void syncUser(session.user, true)
+        if (!disposed && session) void syncSession(session, true)
       })
     }
     window.addEventListener('focus', onFocus)

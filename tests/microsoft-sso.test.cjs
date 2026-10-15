@@ -1116,7 +1116,8 @@ authTest('every existing EIS password session is checked against its authenticat
   assert.deepEqual(await (await sessionGet()).json(), { valid: true, role: 'staff', authSource: 'email', skipOtp: false, legacyMicrosoftLinked: false });
   assert.equal((await helpers.getServerProfile()).role, 'staff');
   assert.equal((await middleware(request('/api/sales?brand=CO'))).headers.get('x-middleware-next'), '1');
-  assert.equal(state.calls.getSession, 4);
+  // 세 서버 경로의 MFA 검사는 tokens-only placeholder 대신 명시적인 세션 JWT를 전달한다.
+  assert.equal(state.calls.getSession, 7);
   assert.equal(state.calls.getUser, 4);
 }, { SUPABASE_SECRET_KEY: undefined });
 

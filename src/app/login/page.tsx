@@ -48,7 +48,7 @@ export default function LoginPage() {
 
     const { data: aal, error: aalError } = sessionStatus.skipOtp === true
       ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
-      : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      : await supabase.auth.mfa.getAuthenticatorAssuranceLevel((await supabase.auth.getSession()).data.session?.access_token)
     if (aalError || !aal) throw new Error(LOGIN_ERROR_MESSAGES.auth_unavailable)
     if (aal.currentLevel !== 'aal2' && aal.nextLevel === 'aal2') {
       const { data: factors, error: factorError } = await supabase.auth.mfa.listFactors()

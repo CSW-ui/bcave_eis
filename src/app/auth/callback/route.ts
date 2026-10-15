@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { isApprovedRole } from '@/lib/auth-policy'
-import { resolveAuthRequestOrigin } from '@/lib/auth-urls'
+import { resolveAuthRequestOrigin, logAuthOriginRejection } from '@/lib/auth-urls'
 import { exchangeMicrosoftAuthCode, verifyMicrosoftIdToken, MICROSOFT_TRANSACTION_COOKIE } from '@/lib/microsoft-auth'
 import { ensureMicrosoftAccount } from '@/lib/microsoft-account'
 import { getAuthSource } from '@/lib/account-source'
@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     origin = null
   }
   if (!origin) {
+    logAuthOriginRejection(request)
     return NextResponse.json({ error: '허용되지 않은 로그인 주소입니다.' }, { status: 400 })
   }
   function finish(response: NextResponse) {

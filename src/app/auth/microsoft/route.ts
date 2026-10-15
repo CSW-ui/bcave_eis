@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { resolveAuthRequestOrigin } from '@/lib/auth-urls'
+import { resolveAuthRequestOrigin, logAuthOriginRejection } from '@/lib/auth-urls'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { MICROSOFT_SESSION_COOKIE } from '@/lib/microsoft-session'
 import {
@@ -11,7 +11,10 @@ import {
 export async function GET(request: Request) {
   let origin: string | null
   try { origin = resolveAuthRequestOrigin(request) } catch { origin = null }
-  if (!origin) return new NextResponse('Invalid authentication origin', { status: 400 })
+  if (!origin) {
+    logAuthOriginRejection(request)
+    return new NextResponse('Invalid authentication origin', { status: 400, headers: { 'Cache-Control': 'no-store' } })
+  }
 
   const failure = () => NextResponse.redirect(new URL('/login?error=sso_disabled', origin))
   if (process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED !== 'true') return failure()

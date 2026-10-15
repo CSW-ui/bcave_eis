@@ -79,3 +79,20 @@ export function resolveAuthRequestOrigin(request: Request, config?: AuthUrlConfi
   const protocol = forwardedProto ? `${forwardedProto}:` : requestUrl.protocol
   return allowed.find(origin => origin.host === requestUrl.host && origin.protocol === protocol)?.origin || null
 }
+
+// 거절된 요청만 진단한다. URL 쿼리·쿠키·인증 코드·환경 변수 값은 기록하지 않는다.
+export function logAuthOriginRejection(request: Request): void {
+  const safeHeader = (name: string) => {
+    const value = request.headers.get(name)
+    if (value === null) return null
+    return value.length <= 200 && /^[a-z0-9.:[\], \-]+$/i.test(value) ? value : '[invalid]'
+  }
+  let configuration = 'valid'
+  try { getAllowedAuthOrigins() } catch { configuration = 'invalid' }
+  console.warn('[Microsoft SSO] origin_rejected', {
+    configuration,
+    host: safeHeader('host'),
+    forwardedHost: safeHeader('x-forwarded-host'),
+    forwardedProto: safeHeader('x-forwarded-proto'),
+  })
+}

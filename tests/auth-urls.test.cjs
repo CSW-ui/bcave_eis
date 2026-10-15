@@ -123,7 +123,7 @@ function callbackFixture() {
   const account = { id: 'isolated-user-id', email: 'alias@microsoft-sso.invalid', app_metadata: { auth_source: 'microsoft', microsoft_access_approved: true } };
   const query = { select() { return query; }, eq() { return query; }, async maybeSingle() { return { data: { role: 'staff' }, error: null }; } };
   const callback = load('src/app/auth/callback/route.ts', {
-    '@/lib/auth-urls': { resolveAuthRequestOrigin: request => urls.resolveAuthRequestOrigin(request, defaults) },
+    '@/lib/auth-urls': { resolveAuthRequestOrigin: request => urls.resolveAuthRequestOrigin(request, defaults), logAuthOriginRejection() {} },
     '@/lib/auth-network': load('src/lib/auth-network.ts'),
     '@/lib/auth-policy': { isApprovedRole: role => role === 'staff' },
     '@/lib/microsoft-auth': {
@@ -194,4 +194,20 @@ test('callback rejects an untrusted forwarded origin before attempting PKCE code
   assert.equal(response.status, 400);
   assert.equal(response.headers.get('location'), null);
   assert.deepEqual(state.exchanges, []);
+});
+
+
+test('origin rejection diagnostics omit query strings, cookies and malformed headers', () => {
+  const messages = [];
+  const original = console.warn;
+  console.warn = (...args) => messages.push(args);
+  try {
+    urls.logAuthOriginRejection(new Request('http://localhost:3000/auth/callback?code=SECRET_CODE&state=SECRET_STATE', {
+      headers: { host: 'portal.bcave.co.kr', 'x-forwarded-host': 'https://user:SECRET_PASSWORD@evil.example/path', 'x-forwarded-proto': 'https, http', cookie: 'session=SECRET_COOKIE' },
+    }));
+    assert.equal(messages[0][1].host, 'portal.bcave.co.kr');
+    assert.equal(messages[0][1].forwardedHost, '[invalid]');
+    assert.equal(messages[0][1].forwardedProto, 'https, http');
+    assert.doesNotMatch(JSON.stringify(messages), /SECRET/);
+  } finally { console.warn = original; }
 });

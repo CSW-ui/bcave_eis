@@ -7,6 +7,9 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isApprovedRole } from '@/lib/auth-policy'
+import { isCurrentAccountSessionAllowed, canCurrentAccountSkipOtp } from '@/lib/server-account-session'
+import { getAccountDisplayEmail } from '@/lib/account-source'
 
 export interface AuthedProfile {
   id: string
@@ -21,6 +24,16 @@ export async function getServerProfile(): Promise<AuthedProfile | null> {
   const supabase = createSupabaseServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
+  if (!await isCurrentAccountSessionAllowed(supabase, user)) return null
+
+  // 자체 인증 API의 사용자 경로도 미들웨어와 동일한 OTP 정책을 적용한다.
+  const skipOtp = await canCurrentAccountSkipOtp(supabase, user)
+  const { data: aal, error: aalError } = skipOtp
+    ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalError || !aal) return null
+  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') return null
+  if (process.env.REQUIRE_MFA === 'true' && aal.currentLevel !== 'aal2') return null
 
   // RLS 영향 없이 신뢰 가능한 프로필을 읽기 위해 service-role 클라이언트 사용
   const { data } = await supabaseAdmin
@@ -28,8 +41,8 @@ export async function getServerProfile(): Promise<AuthedProfile | null> {
     .select('id, email, name, role, brands')
     .eq('id', user.id)
     .single()
-  if (!data) return null
-  return data as AuthedProfile
+  if (!data || !isApprovedRole(data.role)) return null
+  return { ...data, email: getAccountDisplayEmail(user) || data.email } as AuthedProfile
 }
 
 /**

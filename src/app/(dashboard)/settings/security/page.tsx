@@ -20,6 +20,8 @@ export default function SecuritySettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [hasMicrosoftLink, setHasMicrosoftLink] = useState(false)
+  const [unlinking, setUnlinking] = useState(false)
 
   async function copySecret() {
     if (!secret) return
@@ -33,12 +35,30 @@ export default function SecuritySettingsPage() {
   async function refresh() {
     setLoading(true)
     const { data } = await supabase.auth.mfa.listFactors()
+    try {
+      const accountResponse = await fetch('/api/auth/session', { cache: 'no-store' })
+      const account = await accountResponse.json()
+      setHasMicrosoftLink(accountResponse.ok && account.legacyMicrosoftLinked === true)
+    } catch { setHasMicrosoftLink(false) }
     const verified = (data?.totp ?? []).filter(f => f.status === 'verified')
     setHasFactor(verified.length > 0)
     setLoading(false)
   }
 
   useEffect(() => { refresh() /* eslint-disable-next-line */ }, [])
+
+  async function unlinkMicrosoft() {
+    setUnlinking(true); setError(null); setMsg(null)
+    try {
+      const response = await fetch('/api/auth/unlink-microsoft', { method: 'POST' })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || '연결 해제에 실패했습니다.')
+      setMsg('Microsoft 로그인 연결을 해제했습니다. EIS 계정 정보는 유지됩니다.')
+      await refresh()
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : '연결 해제에 실패했습니다.')
+    } finally { setUnlinking(false) }
+  }
 
   async function startEnroll() {
     setError(null); setMsg(null)
@@ -102,6 +122,17 @@ export default function SecuritySettingsPage() {
       {/* 알림 */}
       {error && <div className="mb-4 flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3"><ShieldAlert size={16} className="shrink-0" />{error}</div>}
       {msg && <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3"><Check size={16} className="shrink-0" />{msg}</div>}
+
+      {hasMicrosoftLink && (
+        <div className="mb-6 rounded-2xl border border-surface-border bg-white p-5">
+          <h2 className="text-sm font-semibold text-gray-900">기존 Microsoft 로그인 연결</h2>
+          <p className="mt-2 text-sm text-gray-500">이 EIS 계정에 연결된 Microsoft 로그인 수단을 해제합니다. EIS 비밀번호, 권한과 OTP는 유지됩니다.</p>
+          <button type="button" onClick={unlinkMicrosoft} disabled={unlinking}
+            className="mt-3 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600 disabled:opacity-50">
+            {unlinking ? '해제 중...' : 'Microsoft 로그인 연결 해제'}
+          </button>
+        </div>
+      )}
 
       {/* 메인 카드 */}
       <div className="eis-panel bg-white rounded-2xl border border-surface-border shadow-sm overflow-hidden">

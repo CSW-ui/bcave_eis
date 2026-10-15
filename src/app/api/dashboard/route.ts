@@ -416,10 +416,10 @@ export async function GET(req: NextRequest) {
         }
       }
       // 달성률: 전월 마감 기준 (당월 제외)
-      let achRev = 0, achLyRev = 0
+      let achRev = 0
       for (const [mm, v] of monthlyMap) {
         if (mm >= cmMm) continue // 당월 이후 제외
-        achRev += v.actual; achLyRev += v.lastYear
+        achRev += v.actual
       }
       return {
         rev, lyRev,
@@ -504,6 +504,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ kpi, monthly, brands, brandMonth, invTable, ytd, normCo })
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+    console.error('[Dashboard] data_unavailable', { reason: err instanceof Error ? err.name : 'unknown' })
+    return NextResponse.json({ error: '대시보드 데이터 서버에 일시적으로 연결할 수 없습니다.' }, { status: 503, headers: { 'Cache-Control': 'no-store', 'Retry-After': '3' } })
   }
 }

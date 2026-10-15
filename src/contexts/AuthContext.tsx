@@ -3,6 +3,9 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { isApprovedRole } from '@/lib/auth-policy'
+import { loadBrowserProfile } from '@/lib/browser-profile'
+import { getAccountDisplayEmail, getAuthSource } from '@/lib/account-source'
 
 interface Profile {
   id: string
@@ -28,7 +31,7 @@ const AuthContext = createContext<AuthContextValue>({
   profile: null,
   loading: true,
   signOut: async () => {},
-  allowedBrands: null,
+  allowedBrands: [],
   isAdmin: false,
 })
 
@@ -38,71 +41,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const supabase = createSupabaseBrowserClient()
 
-  async function loadProfile(userId: string) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, email, name, role, brands, vendor_name')
-      .eq('id', userId)
-      .single()
-    if (data) setProfile(data as Profile)
-  }
-
-  // 단일 세션 강제: 다른 기기에서 로그인하면 먼저 접속한 쪽을 로그아웃.
-  // session_token 컬럼이 없으면(마이그레이션 전) 조용히 통과한다.
-  async function checkSingleSession(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('session_token')
-        .eq('id', userId)
-        .single()
-      if (error || !data) return
-      const remote = (data as { session_token?: string }).session_token
-      const local = typeof window !== 'undefined'
-        ? localStorage.getItem('bcave_session_token')
-        : null
-      if (remote && local && remote !== local) {
-        await supabase.auth.signOut()
-        window.location.href = '/login'
-      }
-    } catch {
-      // 컬럼 미생성 등 — 무시
-    }
-  }
-
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        // 프로필만 화면 렌더에 필요하므로 이것만 대기한다.
-        await loadProfile(session.user.id)
-        setLoading(false)
-        // 단일 세션 검증은 화면 표시를 막지 않도록 백그라운드로 처리
-        // (불일치 시 내부에서 로그아웃/리다이렉트)
-        void checkSingleSession(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        loadProfile(session.user.id)
-      } else {
+    let disposed = false
+    let generation = 0
+    async function syncUser(account: User | null, preserveOnFailure = false) {
+      const current = ++generation
+      if (disposed) return
+      setUser(account)
+      if (!account || (getAuthSource(account) === 'microsoft' && account.app_metadata.microsoft_access_approved !== true)) {
         setProfile(null)
+        setLoading(false)
+        return
       }
-    })
+      try {
+        const data = await loadBrowserProfile(supabase, account.id)
+        if (disposed || current !== generation) return
+        const local = localStorage.getItem('bcave_session_token')
+        if (data?.session_token && local && data.session_token !== local) {
+          await fetch('/api/auth/session', { method: 'DELETE', signal: AbortSignal.timeout(5_000) }).catch(() => {})
+          await supabase.auth.signOut()
+          window.location.href = '/login'
+          return
+        }
+        setProfile(data && isApprovedRole(data.role)
+          ? { ...data, email: getAccountDisplayEmail(account) || data.email } as Profile : null)
+      } catch {
+        if (!disposed && current === generation && !preserveOnFailure) setProfile(null)
+      } finally {
+        if (!disposed && current === generation) setLoading(false)
+      }
+    }
 
-    // 창이 다시 활성화될 때마다 단일 세션 재확인 (다른 기기 로그인 즉시 감지)
+    // INITIAL_SESSION supplies the first session; a separate getSession would
+    // duplicate that profile read. Do not await Supabase calls inside its callback.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      queueMicrotask(() => { if (!disposed) void syncUser(session?.user ?? null) })
+    })
     const onFocus = () => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) checkSingleSession(session.user.id)
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!disposed && session?.user) void syncUser(session.user, true)
       })
     }
     window.addEventListener('focus', onFocus)
-
     return () => {
+      disposed = true
+      generation++
       subscription.unsubscribe()
       window.removeEventListener('focus', onFocus)
     }
@@ -111,11 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAdmin = profile?.role === 'admin'
   // admin 또는 brands가 비어있으면 전체 접근 (null = 필터 없음)
-  const allowedBrands = (isAdmin || !profile?.brands?.length) ? null : profile.brands
+  const allowedBrands = !profile ? [] : (isAdmin || !profile.brands?.length) ? null : profile.brands
 
   async function signOut() {
     const isVendor = profile?.role === 'vendor'
     if (typeof window !== 'undefined') localStorage.removeItem('bcave_session_token')
+    await fetch('/api/auth/session', { method: 'DELETE', signal: AbortSignal.timeout(5_000) }).catch(() => {})
     await supabase.auth.signOut()
     window.location.href = isVendor ? '/vendor/login' : '/login'
   }

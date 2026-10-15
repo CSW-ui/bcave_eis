@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { createInFlightLoader } from '@/lib/in-flight'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 
 export interface MonthlyTarget {
   yyyymm: string   // e.g. "202603"
@@ -22,6 +23,8 @@ function dedupeTargets(raw: MonthlyTarget[]): MonthlyTarget[] {
 }
 
 export function useTargetData() {
+  const load = useRef(createInFlightLoader()).current
+  const requestGeneration = useRef(0)
   const [rawTargets, setRawTargets] = useState<MonthlyTarget[]>([])
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -30,11 +33,16 @@ export function useTargetData() {
   const targets = useMemo(() => dedupeTargets(rawTargets), [rawTargets])
 
   // 서버에서 목표 데이터 로드
-  const fetchTargets = useCallback(async () => {
+  const fetchTargets = useCallback(async (force = false) => {
+    const generation = ++requestGeneration.current
     setLoading(true)
     try {
-      const res = await fetch('/api/targets', { cache: 'no-store' })
-      const json = await res.json()
+      const json = await load(force ? `targets:${generation}` : 'targets', async () => {
+        const res = await fetch('/api/targets', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Targets unavailable')
+        return await res.json()
+      })
+      if (generation !== requestGeneration.current) return
       if (json.data) {
         setRawTargets(json.data)
         // 가장 최근 updated_at 을 lastUpdated 로 사용
@@ -45,8 +53,8 @@ export function useTargetData() {
         setLastUpdated(latest)
       }
     } catch {}
-    finally { setLoading(false) }
-  }, [])
+    finally { if (generation === requestGeneration.current) setLoading(false) }
+  }, [load])
 
   useEffect(() => { fetchTargets() }, [fetchTargets])
 
@@ -61,7 +69,7 @@ export function useTargetData() {
       const j = await res.json().catch(() => ({ error: res.statusText }))
       throw new Error(j.error || `저장 실패 (${res.status})`)
     }
-    await fetchTargets()
+    await fetchTargets(true)
   }, [fetchTargets])
 
   // 서버에서 목표 데이터 전체 삭제
@@ -69,6 +77,8 @@ export function useTargetData() {
     try {
       const res = await fetch('/api/targets', { method: 'DELETE' })
       if (res.ok) {
+        requestGeneration.current++
+        setLoading(false)
         setRawTargets([])
         setLastUpdated(null)
       }

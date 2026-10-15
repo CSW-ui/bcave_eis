@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTargetData, MonthlyTarget } from '@/hooks/useTargetData'
 import { cn } from '@/lib/utils'
 import { BRAND_NAMES } from '@/lib/constants'
-import { Upload, Trash2, UserPlus, Edit2, X, Check, Shield, Eye, EyeOff, ShieldOff } from 'lucide-react'
+import { Upload, Trash2, UserPlus, Edit2, X, Check, Eye, ShieldOff } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import type { AuthSource } from '@/lib/account-source'
 
 const ROLES = [
   { value: 'admin', label: '어드민', desc: '전체 접근' },
@@ -18,8 +19,15 @@ const BRAND_OPTIONS = Object.entries(BRAND_NAMES).map(([code, name]) => ({ code,
 
 interface UserProfile {
   id: string; email: string; name: string
-  role: 'admin' | 'manager' | 'staff' | 'vendor'
+  role: 'admin' | 'manager' | 'staff' | 'vendor' | null
   brands: string[]; vendor_name?: string
+  authSource: AuthSource; displayEmail: string; hasProfile: boolean
+}
+
+interface LoginEvent {
+  id: number; user_id: string | null; email: string | null
+  displayEmail: string | null; authSource: AuthSource | null
+  ip: string | null; user_agent: string | null; created_at: string
 }
 
 type Tab = 'users' | 'targets'
@@ -32,19 +40,28 @@ export default function AdminPage() {
   // ── 사용자 관리 ──
   const [users, setUsers] = useState<UserProfile[]>([])
   const [usersLoading, setUsersLoading] = useState(true)
+  const [accountFilter, setAccountFilter] = useState<AuthSource | 'all'>('all')
+  const [usersError, setUsersError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editUser, setEditUser] = useState<UserProfile | null>(null)
   const [form, setForm] = useState({ email: '', password: '', name: '', role: 'staff', brands: [] as string[] })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const [eventsTarget, setEventsTarget] = useState<UserProfile | null>(null)
+  const [loginEvents, setLoginEvents] = useState<LoginEvent[]>([])
+  const [eventsLoading, setEventsLoading] = useState(false)
+  const [eventsError, setEventsError] = useState<string | null>(null)
+  const eventsRequest = useRef(0)
 
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true)
+    setUsersError(null)
     try {
       const res = await fetch('/api/admin/users')
       const json = await res.json()
+      if (!res.ok) throw new Error(json.error || '계정 목록을 불러오지 못했습니다.')
       if (json.users) setUsers(json.users)
-    } catch {}
+    } catch (error) { setUsersError(error instanceof Error ? error.message : '계정 목록을 불러오지 못했습니다.') }
     finally { setUsersLoading(false) }
   }, [])
 
@@ -59,7 +76,7 @@ export default function AdminPage() {
 
   const handleEdit = (u: UserProfile) => {
     setEditUser(u)
-    setForm({ email: u.email, password: '', name: u.name, role: u.role, brands: [...u.brands] })
+    setForm({ email: u.email, password: '', name: u.name, role: u.role ?? '', brands: [...u.brands] })
     setShowForm(true)
     setMsg(null)
   }
@@ -75,13 +92,14 @@ export default function AdminPage() {
     setSaving(true); setMsg(null)
     try {
       if (editUser) {
+        if (!form.role) throw new Error('승인할 역할을 선택해주세요.')
         // 수정
         const body: Record<string, unknown> = { id: editUser.id, name: form.name, role: form.role, brands: form.brands }
-        if (form.password) body.password = form.password
+        if (form.password && editUser.authSource !== 'microsoft') body.password = form.password
         const res = await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         const json = await res.json()
         if (!res.ok) throw new Error(json.error)
-        setMsg({ type: 'ok', text: '수정 완료' })
+        setMsg({ type: 'ok', text: editUser.hasProfile ? '수정 완료' : '권한 등록 완료' })
       } else {
         // 생성
         if (!form.email || !form.password || !form.name) { setMsg({ type: 'err', text: '필수 항목을 입력해주세요.' }); setSaving(false); return }
@@ -92,21 +110,38 @@ export default function AdminPage() {
       }
       fetchUsers()
       setTimeout(() => { setShowForm(false); setMsg(null) }, 1000)
-    } catch (e: any) {
-      setMsg({ type: 'err', text: e.message || '오류 발생' })
+    } catch (e: unknown) {
+      setMsg({ type: 'err', text: e instanceof Error ? e.message : '오류 발생' })
     }
     finally { setSaving(false) }
   }
 
   const handleDelete = async (u: UserProfile) => {
     if (u.id === profile?.id) return alert('본인 계정은 삭제할 수 없습니다.')
-    if (!confirm(`${u.name} (${u.email}) 계정을 삭제하시겠습니까?`)) return
+    if (!confirm(`${u.name} (${u.displayEmail}) ${u.authSource === 'microsoft' ? 'Microsoft' : 'EIS'} 계정을 삭제하시겠습니까?`)) return
     try {
       const res = await fetch(`/api/admin/users?id=${u.id}`, { method: 'DELETE' })
       if (!res.ok) { const j = await res.json(); alert(j.error) }
       fetchUsers()
     } catch {}
   }
+
+  const openLoginEvents = async (u: UserProfile) => {
+    const requestId = ++eventsRequest.current
+    setEventsTarget(u); setLoginEvents([]); setEventsError(null); setEventsLoading(true)
+    try {
+      const res = await fetch(`/api/admin/login-events?userId=${encodeURIComponent(u.id)}`)
+      const json = await res.json()
+      if (requestId !== eventsRequest.current) return
+      if (!res.ok) throw new Error(json.error || '로그인 기록을 불러오지 못했습니다.')
+      setLoginEvents(json.events ?? [])
+    } catch (error) {
+      if (requestId !== eventsRequest.current) return
+      setEventsError(error instanceof Error ? error.message : '로그인 기록을 불러오지 못했습니다.')
+    } finally { if (requestId === eventsRequest.current) setEventsLoading(false) }
+  }
+
+  const closeLoginEvents = () => { eventsRequest.current++; setEventsTarget(null) }
 
   // MFA 초기화 모달 상태
   const [mfaTarget, setMfaTarget] = useState<UserProfile | null>(null)
@@ -230,11 +265,24 @@ export default function AdminPage() {
             </button>
           </div>
 
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-gray-100">
+            {([['all', '전체'], ['email', 'EIS 계정'], ['microsoft', 'Microsoft 계정']] as const).map(([source, label]) => (
+              <button key={source} onClick={() => setAccountFilter(source)}
+                className={cn('px-3 py-1.5 text-xs rounded-lg border transition-colors', accountFilter === source
+                  ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-500 border-gray-200 hover:bg-gray-50')}>
+                {label}
+              </button>
+            ))}
+            <span className="text-[11px] text-gray-400">Microsoft 계정은 관리자 승인과 브랜드 권한 부여 후 이용할 수 있습니다. 기존 EIS 권한은 승계되지 않습니다.</span>
+          </div>
+
           {/* 생성/수정 폼 */}
           {showForm && (
             <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-gray-700">{editUser ? '계정 수정' : '새 계정 생성'}</span>
+                <span className="text-sm font-semibold text-gray-700">{editUser
+                  ? `${editUser.authSource === 'microsoft' ? 'Microsoft' : 'EIS'} ${editUser.hasProfile ? '계정 수정' : '권한 등록'}`
+                  : '새 EIS 계정 생성'}</span>
                 <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
               </div>
               <div className="grid grid-cols-2 gap-3 max-w-lg">
@@ -245,23 +293,27 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <label className="text-[11px] text-gray-500 font-medium">이메일 *</label>
-                  <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={!!editUser}
+                  <input value={editUser?.displayEmail ?? form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} disabled={!!editUser}
                     className={cn('w-full mt-0.5 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none', editUser && 'bg-gray-100 text-gray-400')} />
                 </div>
-                <div>
+                {editUser?.authSource !== 'microsoft' && <div>
                   <label className="text-[11px] text-gray-500 font-medium">{editUser ? '비밀번호 (변경 시)' : '비밀번호 *'}</label>
                   <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                     placeholder={editUser ? '변경 없으면 비워두세요' : ''}
                     className="w-full mt-0.5 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none" />
-                </div>
+                </div>}
                 <div>
                   <label className="text-[11px] text-gray-500 font-medium">역할 *</label>
                   <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
                     className="w-full mt-0.5 px-2.5 py-1.5 text-sm border border-gray-200 rounded-lg focus:border-gray-400 focus:outline-none bg-white">
+                    {!editUser?.hasProfile && editUser && <option value="">승인할 역할을 선택하세요</option>}
                     {ROLES.map(r => <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>)}
                   </select>
                 </div>
               </div>
+              {editUser?.authSource === 'microsoft' && (
+                <p className="mt-3 text-[11px] text-gray-500">회사 비밀번호는 Microsoft에서 관리합니다. EIS 계정과 권한이 별도로 적용됩니다.</p>
+              )}
               {/* 브랜드 권한 */}
               {form.role !== 'admin' && (
                 <div className="mt-3">
@@ -282,7 +334,7 @@ export default function AdminPage() {
               <div className="flex items-center gap-2 mt-4">
                 <button onClick={handleSave} disabled={saving}
                   className="flex items-center gap-1.5 text-xs font-medium text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-50 px-4 py-1.5 rounded-lg transition-colors">
-                  <Check size={13} /> {saving ? '저장 중...' : '저장'}
+                  <Check size={13} /> {saving ? '저장 중...' : editUser && !editUser.hasProfile ? '권한 등록' : '저장'}
                 </button>
                 <button onClick={() => setShowForm(false)} className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">취소</button>
                 {msg && <span className={cn('text-xs font-medium', msg.type === 'ok' ? 'text-blue-600' : 'text-red-500')}>{msg.text}</span>}
@@ -292,7 +344,9 @@ export default function AdminPage() {
 
           {/* 사용자 목록 */}
           <div className="overflow-x-auto">
-            {usersLoading ? (
+            {usersError ? (
+              <div className="p-8 text-center text-xs text-red-600">{usersError}<button onClick={fetchUsers} className="ml-3 underline">다시 시도</button></div>
+            ) : usersLoading ? (
               <div className="p-8 text-center text-xs text-gray-400">로딩 중...</div>
             ) : (
               <table className="w-full text-xs">
@@ -300,25 +354,34 @@ export default function AdminPage() {
                   <tr className="border-b border-gray-100 bg-gray-50/50 text-gray-500 font-semibold">
                     <th className="text-left px-4 py-2.5">이름</th>
                     <th className="text-left px-3 py-2.5">이메일</th>
+                    <th className="text-center px-3 py-2.5">계정 유형</th>
                     <th className="text-center px-3 py-2.5">역할</th>
                     <th className="text-left px-3 py-2.5">접근 브랜드</th>
                     <th className="text-center px-3 py-2.5 w-[110px]">관리</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.filter(u => u.role !== 'vendor').map(u => (
+                  {users.filter(u => u.role !== 'vendor' && (accountFilter === 'all' || u.authSource === accountFilter)).map(u => (
                     <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-gray-800">{u.name}</td>
-                      <td className="px-3 py-2.5 text-gray-500">{u.email}</td>
+                      <td className="px-3 py-2.5 text-gray-500">{u.displayEmail}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', u.authSource === 'microsoft'
+                          ? 'bg-sky-100 text-sky-700' : 'bg-gray-100 text-gray-600')}>
+                          {u.authSource === 'microsoft' ? 'Microsoft' : 'EIS'}
+                        </span>
+                      </td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold',
-                          u.role === 'admin' ? 'bg-violet-100 text-violet-700' :
+                          !u.hasProfile ? 'bg-amber-100 text-amber-700' : u.role === 'admin' ? 'bg-violet-100 text-violet-700' :
                           u.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')}>
-                          {u.role === 'admin' ? '어드민' : u.role === 'manager' ? '매니저' : '스태프'}
+                          {!u.hasProfile ? '권한 미등록' : u.role === 'admin' ? '어드민' : u.role === 'manager' ? '매니저' : '스태프'}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
-                        {u.role === 'admin' ? (
+                        {!u.hasProfile ? (
+                          <span className="text-amber-600 text-[10px]">승인 대기</span>
+                        ) : u.role === 'admin' ? (
                           <span className="text-gray-400 text-[10px]">전체</span>
                         ) : u.brands.length === 0 ? (
                           <span className="text-gray-400 text-[10px]">전체</span>
@@ -339,6 +402,9 @@ export default function AdminPage() {
                           </button>
                           <button onClick={() => openResetMfa(u)} className="p-1 text-gray-400 hover:text-amber-600 transition-colors" title="2단계 인증(OTP) 초기화">
                             <ShieldOff size={13} />
+                          </button>
+                          <button onClick={() => openLoginEvents(u)} className="p-1 text-gray-400 hover:text-blue-600 transition-colors" title="로그인 기록">
+                            <Eye size={13} />
                           </button>
                           {u.id !== profile?.id && (
                             <button onClick={() => handleDelete(u)} className="p-1 text-gray-400 hover:text-red-500 transition-colors" title="삭제">
@@ -419,6 +485,37 @@ export default function AdminPage() {
         </div>
       )}
 
+      {eventsTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeLoginEvents}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">로그인 기록</h3>
+                <p className="text-xs text-gray-500 mt-1">{eventsTarget.name} · {eventsTarget.displayEmail} · {eventsTarget.authSource === 'microsoft' ? 'Microsoft' : 'EIS'} 계정</p>
+              </div>
+              <button onClick={closeLoginEvents} className="text-gray-400 hover:text-gray-600" aria-label="로그인 기록 닫기"><X size={16} /></button>
+            </div>
+            {eventsLoading ? <p className="p-6 text-xs text-center text-gray-400">불러오는 중…</p>
+              : eventsError ? <p className="p-6 text-xs text-center text-red-600">{eventsError}</p>
+              : loginEvents.length === 0 ? <p className="p-6 text-xs text-center text-gray-400">이 계정의 로그인 기록이 없습니다.</p>
+              : <div className="overflow-auto max-h-80">
+                <table className="w-full text-xs">
+                  <thead><tr className="border-b border-gray-100 text-gray-500">
+                    <th className="text-left py-2 pr-3">로그인 시각 (한국)</th>
+                    <th className="text-left py-2 pr-3">IP</th>
+                    <th className="text-left py-2">기기 / 브라우저</th>
+                  </tr></thead>
+                  <tbody>{loginEvents.map(event => <tr key={event.id} className="border-b border-gray-50">
+                    <td className="py-2 pr-3 whitespace-nowrap">{new Date(event.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{event.ip || '—'}</td>
+                    <td className="py-2 text-gray-500 break-all">{event.user_agent || '—'}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>}
+          </div>
+        </div>
+      )}
+
       {/* ── MFA 초기화 확인 모달 ── */}
       {mfaTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -432,7 +529,7 @@ export default function AdminPage() {
                 <h3 className="text-sm font-bold text-gray-900">2단계 인증(OTP) 초기화</h3>
                 <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                   <span className="font-medium text-gray-700">{mfaTarget.name}</span>
-                  <span className="text-gray-400"> ({mfaTarget.email})</span> 의 2단계 인증을 초기화합니다.
+                                  <span className="text-gray-400"> ({mfaTarget.displayEmail}, {mfaTarget.authSource === 'microsoft' ? 'Microsoft' : 'EIS'})</span> 의 EIS 2단계 인증을 초기화합니다.
                   초기화하면 <span className="font-medium text-gray-700">다음 로그인 시 OTP를 다시 등록</span>해야 합니다.
                 </p>
               </div>

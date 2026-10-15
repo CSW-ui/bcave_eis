@@ -1,3 +1,4 @@
+import { fetchShortWeather, getWeatherSchedule, temperature } from '@/lib/weather'
 import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
 import { VALID_BRANDS } from '@/lib/constants'
@@ -116,25 +117,17 @@ export async function GET(req: Request) {
     let weatherInfo = ''
     try {
       const now = new Date()
-      const kstHour = now.getHours()
-      const useYesterday = kstHour < 6
-      const baseD = useYesterday ? new Date(now.getTime() - 86400000) : now
-      const baseDate = `${baseD.getFullYear()}${String(baseD.getMonth()+1).padStart(2,'0')}${String(baseD.getDate()).padStart(2,'0')}`
-      const baseTime = useYesterday ? '2300' : '0500'
-      const wRes = await fetch(`https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=${encodeURIComponent(WEATHER_API_KEY)}&pageNo=1&numOfRows=300&dataType=JSON&base_date=${baseDate}&base_time=${baseTime}&nx=60&ny=127`)
-      const wJson = await wRes.json()
-      if (wJson.response?.header?.resultCode !== '00') {
-        console.error('[기상청] forecast 응답 에러:', wJson.response?.header?.resultMsg)
-      }
-      const items = wJson.response?.body?.items?.item ?? []
+      const { today } = getWeatherSchedule(now)
+      const result = await fetchShortWeather(WEATHER_API_KEY, now)
+      const items = result.items.filter(item => item.fcstDate === today && temperature(item.fcstValue) !== null)
       const temps = items.filter((i: any) => i.category === 'TMP').map((i: any) => ({ date: i.fcstDate, time: i.fcstTime, temp: Number(i.fcstValue) }))
       const tmx = items.filter((i: any) => i.category === 'TMX').map((i: any) => Number(i.fcstValue))
       const tmn = items.filter((i: any) => i.category === 'TMN').map((i: any) => Number(i.fcstValue))
       weatherInfo = tmx.length || tmn.length
         ? `서울 기온 예보: 최고 ${tmx[0] ?? '?'}°C, 최저 ${tmn[0] ?? '?'}°C. 시간별: ${temps.slice(0, 8).map((t: any) => `${t.time.slice(0,2)}시 ${t.temp}°C`).join(', ')}`
         : '기온 데이터 없음'
-    } catch (err) {
-      console.error('[기상청] forecast API 호출 실패:', err)
+    } catch {
+      console.error('[기상청] forecast API 호출 실패')
       weatherInfo = '기온 데이터 조회 실패'
     }
 

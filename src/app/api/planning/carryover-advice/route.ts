@@ -1,3 +1,4 @@
+import { fetchShortWeather, getWeatherSchedule, temperature } from '@/lib/weather'
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -28,27 +29,16 @@ export async function POST(req: Request) {
   let weatherInfo = ''
   try {
     const now = new Date()
-    const kstHour = now.getHours()  // 서버가 KST 기준
-    // 05시 이전이면 전날 23시 발표 데이터 사용
-    const useYesterday = kstHour < 6
-    const baseD = useYesterday ? new Date(now.getTime() - 86400000) : now
-    const baseDate = `${baseD.getFullYear()}${String(baseD.getMonth()+1).padStart(2,'0')}${String(baseD.getDate()).padStart(2,'0')}`
-    const baseTime = useYesterday ? '2300' : '0500'
-    const url = `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst?serviceKey=${encodeURIComponent(WEATHER_API_KEY)}&pageNo=1&numOfRows=50&dataType=JSON&base_date=${baseDate}&base_time=${baseTime}&nx=60&ny=127`
-    const wRes = await fetch(url)
-    const wJson = await wRes.json()
-    const resultCode = wJson.response?.header?.resultCode
-    if (resultCode !== '00') {
-      console.error('[기상청] 응답 에러:', wJson.response?.header?.resultMsg ?? resultCode)
-    }
-    const items = wJson.response?.body?.items?.item ?? []
+    const { today } = getWeatherSchedule(now)
+    const result = await fetchShortWeather(WEATHER_API_KEY, now)
+    const items = result.items.filter(item => item.fcstDate === today && temperature(item.fcstValue) !== null)
     const tmx = items.find((i: any) => i.category === 'TMX')?.fcstValue
     const tmn = items.find((i: any) => i.category === 'TMN')?.fcstValue
-    weatherInfo = tmx || tmn
+    weatherInfo = tmx !== undefined || tmn !== undefined
       ? `서울 오늘 최고 ${tmx ?? '?'}°C, 최저 ${tmn ?? '?'}°C`
       : '기온 데이터 없음'
-  } catch (err) {
-    console.error('[기상청] API 호출 실패:', err)
+  } catch {
+    console.error('[기상청] API 호출 실패')
     weatherInfo = '기온 데이터 조회 실패'
   }
 

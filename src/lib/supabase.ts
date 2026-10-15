@@ -1,3 +1,4 @@
+import { authServerFetch } from '@/lib/auth-network'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -8,4 +9,7 @@ const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY!
 export const supabase = createClient(supabaseUrl, supabasePublishableKey)
 
 // 서버 전용 (secret key) — API Route, Server Component에서만 사용
-export const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey)
+export const supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, {
+  global: { fetch: authServerFetch },
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+})

@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Microsoft 회사 계정 로그인은 기존 EIS 이메일·비밀번호 계정과 별도로 관리합니다. 이메일이 같아도 UUID·권한·OTP를 연결하거나 복사하지 않습니다. 자동 프로필이 있어도 명시적 관리자 승인 전에는 접근할 수 없습니다. [설정 가이드](docs/microsoft-sso.md)와 [.env.microsoft.example](.env.microsoft.example)을 확인하세요. 별도 UUID 생성·실제 미승인 접근 차단과 인증 테스트 178개를 확인했고, 기존 EIS 비밀번호·OTP 로그인과 독립 MS 관리자 계정의 OTP 없는 대시보드 진입을 로컬에서 확인했습니다. Microsoft가 검증한 `bcave.co.kr` 이메일만 SSO를 허용합니다. 과거 연결 해제는 Supabase 소유자 정책에 막혀 소유자 조치가 남아 있습니다. Node.js 20.19.0 이상 또는 22.12.0 이상의 지원 버전을 사용하며, 운영 배포는 사용자가 직접 진행합니다.
+
 First, run the development server:
 
 ```bash

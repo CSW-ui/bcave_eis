@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { createInFlightLoader } from '@/lib/in-flight'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTargetData } from '@/hooks/useTargetData'
 import Link from 'next/link'
 import { Upload } from 'lucide-react'
@@ -82,6 +83,9 @@ export default function DashboardPage() {
   const { allowedBrands, loading: authLoading } = useAuth()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const dataRequest = useRef(0)
+  const load = useRef(createInFlightLoader()).current
+  const [dataError, setDataError] = useState<string | null>(null)
   const [region, setRegion] = useState<Region>('all')
   const [brandSel, setBrandSel] = useState<string>('all') // 브랜드 코드 (CO/WA/LE/CK/LK) 또는 'all'
 
@@ -89,14 +93,27 @@ export default function DashboardPage() {
   const allowedParam = allowedBrands ? allowedBrands.join(',') : ''
 
   const fetchData = useCallback(async (r: Region, b: string, allowed: string) => {
+    const requestId = ++dataRequest.current
     setLoading(true)
+    setDataError(null)
     try {
-      const res = await fetch(`/api/dashboard?region=${r}&brand=${b}&allowed=${allowed}`)
-      const j = await res.json()
-      setData(j)
-    } catch {}
-    finally { setLoading(false) }
-  }, [])
+      const url = `/api/dashboard?region=${r}&brand=${b}&allowed=${allowed}`
+      const j = await load(url, async () => {
+        const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(45_000) })
+        const result = await res.json()
+        if (!res.ok || !result.kpi || !Array.isArray(result.monthly) || !Array.isArray(result.brands)) {
+          throw new Error('Dashboard unavailable')
+        }
+        return result
+      })
+      if (requestId === dataRequest.current) setData(j)
+    } catch {
+      if (requestId !== dataRequest.current) return
+      setData(null)
+      setDataError('대시보드 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.')
+    }
+    finally { if (requestId === dataRequest.current) setLoading(false) }
+  }, [load])
 
   useEffect(() => {
     if (authLoading) return // 권한 로딩 완료 후 fetch (전체 브랜드 깜빡임 방지)
@@ -176,6 +193,17 @@ export default function DashboardPage() {
       return { brand: b.brand, actual: b.cmRev, target: brandTarget || undefined, pct }
     })
   }, [data, targets, region])
+
+  if (dataError) return (
+    <div className="eis-page p-4">
+      <h1 className="eis-page-title text-xl font-bold text-gray-900 mb-4">대시보드</h1>
+      <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+        <p>{dataError}</p>
+        <button onClick={() => fetchData(region, brandSel, allowedParam)}
+          className="mt-3 rounded-lg border border-red-300 px-3 py-2 font-medium">다시 불러오기</button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="eis-page space-y-4 p-4 animate-fade-in">

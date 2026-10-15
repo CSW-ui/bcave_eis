@@ -1,7 +1,29 @@
+import { MICROSOFT_SESSION_COOKIE } from '@/lib/microsoft-session'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isApprovedRole, LOGIN_ERROR_MESSAGES } from '@/lib/auth-policy'
+import { isCurrentAccountSessionAllowed, canCurrentAccountSkipOtp } from '@/lib/server-account-session'
+import { getAccountDisplayEmail, getAuthSource, getLegacyMicrosoftProviderIds } from '@/lib/account-source'
+
+export async function GET() {
+  const supabase = createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || !await isCurrentAccountSessionAllowed(supabase, user)) {
+    return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.sso_session_required }, { status: 401 })
+  }
+  const { data: profile, error } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).maybeSingle()
+  if (error) return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.auth_unavailable }, { status: 503 })
+  if (!isApprovedRole(profile?.role)) return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.not_approved }, { status: 403 })
+  return NextResponse.json({ valid: true, role: profile.role, authSource: getAuthSource(user),
+    skipOtp: await canCurrentAccountSkipOtp(supabase, user),
+    legacyMicrosoftLinked: getAuthSource(user) === 'email'
+      && user.identities?.some(identity => getLegacyMicrosoftProviderIds().includes(identity.provider)) === true,
+  }, {
+    headers: { 'Cache-Control': 'no-store' },
+  })
+}
 
 /**
  * POST /api/auth/session
@@ -17,6 +39,32 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+  }
+  if (!await isCurrentAccountSessionAllowed(supabase, user)) {
+    return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.sso_session_required }, { status: 401 })
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (profileError) {
+    return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.auth_unavailable }, { status: 503 })
+  }
+  if (!isApprovedRole(profile?.role)) {
+    return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.not_approved }, { status: 403 })
+  }
+
+  const skipOtp = await canCurrentAccountSkipOtp(supabase, user)
+  const { data: aal, error: aalError } = skipOtp
+    ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalError || !aal) {
+    return NextResponse.json({ error: LOGIN_ERROR_MESSAGES.auth_unavailable }, { status: 503 })
+  }
+  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+    return NextResponse.json({ error: '인증 앱의 OTP 확인이 필요합니다.' }, { status: 403 })
   }
 
   const sessionToken = crypto.randomUUID()
@@ -38,7 +86,7 @@ export async function POST(req: Request) {
     const ua = req.headers.get('user-agent') || null
     await supabaseAdmin.from('login_events').insert({
       user_id: user.id,
-      email: user.email,
+      email: getAccountDisplayEmail(user),
       ip,
       user_agent: ua,
     })
@@ -46,5 +94,16 @@ export async function POST(req: Request) {
     // login_events 테이블 미생성 — 무시
   }
 
-  return NextResponse.json({ sessionToken })
+  const redirectTo = process.env.REQUIRE_MFA === 'true' && aal.currentLevel !== 'aal2'
+    ? '/settings/security'
+    : profile.role === 'vendor' ? '/vendor' : '/dashboard'
+  return NextResponse.json({ sessionToken, redirectTo })
+}
+
+// Clearing this browser's proof is allowed even after its auth session expires.
+// Supabase session revocation remains the existing client's signOut operation.
+export async function DELETE() {
+  const response = NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } })
+  response.cookies.set(MICROSOFT_SESSION_COOKIE, '', { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 0 })
+  return response
 }

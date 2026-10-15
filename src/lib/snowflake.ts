@@ -70,60 +70,85 @@ function buildJwt(): string {
   return `${signing}.${signature}`
 }
 
-export async function snowflakeQuery<T = Record<string, unknown>>(
-  sql: string
-): Promise<T[]> {
-  const jwt = buildJwt()
+type StatementResult = {
+  statementHandle?: string
+  resultSetMetaData?: { rowType?: { name: string }[]; partitionInfo?: unknown[] }
+  data?: unknown[][]
+}
 
-  const res = await fetch(`${BASE_URL}/api/v2/statements`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${jwt}`,
-      'Content-Type': 'application/json',
-      'X-Snowflake-Authorization-Token-Type': 'KEYPAIR_JWT',
-    },
-    body: JSON.stringify({
-      statement: sql,
-      database: DATABASE,
-      schema: SCHEMA,
-      warehouse: WAREHOUSE,
-      timeout: 30,
-    }),
-  })
+const activeQueries = new Map<string, Promise<Record<string, unknown>[]>>()
 
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Snowflake 쿼리 실패: ${res.status} ${text}`)
-  }
+function transientTransport(error: unknown) {
+  const value = error as { name?: string; cause?: { code?: string } }
+  return value?.name === 'TimeoutError'
+    || ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'UND_ERR_SOCKET', 'UND_ERR_CONNECT_TIMEOUT'].includes(value?.cause?.code ?? '')
+}
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-  const json = await res.json()
-
-  const cols: string[] = json.resultSetMetaData?.rowType?.map((c: { name: string }) => c.name) ?? []
-  const rows: unknown[][] = json.data ?? []
-
-  // 파티션 처리: Snowflake REST API는 대량 결과를 여러 파티션으로 분할
-  const totalPartitions = json.resultSetMetaData?.partitionInfo?.length ?? 1
-  const statementHandle = json.statementHandle
-
-  if (totalPartitions > 1 && statementHandle) {
-    for (let p = 1; p < totalPartitions; p++) {
-      const partRes = await fetch(
-        `${BASE_URL}/api/v2/statements/${statementHandle}?partition=${p}`,
-        {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-            'X-Snowflake-Authorization-Token-Type': 'KEYPAIR_JWT',
-          },
+async function executeQuery(sql: string): Promise<Record<string, unknown>[]> {
+  const deadline = Date.now() + 35_000
+  const requestId = crypto.randomUUID()
+  async function send(path: string, body?: string): Promise<{ status: number; result: StatementResult }> {
+    for (let attempt = 0; ; attempt++) {
+      const remaining = deadline - Date.now()
+      if (remaining <= 0) throw new Error('Snowflake query timed out')
+      const retry = body && attempt > 0 ? '&retry=true' : ''
+      try {
+        const response = await fetch(`${BASE_URL}${path}${retry}`, {
+          method: body ? 'POST' : 'GET',
+          headers: { Authorization: `Bearer ${buildJwt()}`, 'Content-Type': 'application/json',
+            'X-Snowflake-Authorization-Token-Type': 'KEYPAIR_JWT' },
+          ...(body ? { body } : {}),
+          cache: 'no-store', signal: AbortSignal.timeout(Math.min(10_000, remaining)),
+        })
+        if ([429, 500, 502, 503, 504].includes(response.status) && attempt < 2) {
+          await response.body?.cancel()
+          await wait(250 * 2 ** attempt + Math.floor(Math.random() * 100))
+          continue
         }
-      )
-      if (partRes.ok) {
-        const partJson = await partRes.json()
-        if (partJson.data) rows.push(...partJson.data)
+        if (!response.ok) {
+          await response.body?.cancel()
+          throw new Error(`Snowflake request failed (${response.status})`)
+        }
+        return { status: response.status, result: await response.json() as StatementResult }
+      } catch (error) {
+        if (attempt >= 2 || !transientTransport(error)) throw error
+        await wait(250 * 2 ** attempt + Math.floor(Math.random() * 100))
       }
     }
   }
+  const body = JSON.stringify({ statement: sql, database: DATABASE, schema: SCHEMA, warehouse: WAREHOUSE, timeout: 30 })
+  let response = await send(`/api/v2/statements?requestId=${requestId}`, body)
+  // A 202 is a running query, never an empty result. Poll the known handle.
+  while (response.status === 202) {
+    const handle = response.result.statementHandle
+    if (!handle || !/^[a-z0-9-]+$/i.test(handle)) throw new Error('Invalid Snowflake statement handle')
+    await wait(250)
+    response = await send(`/api/v2/statements/${handle}`)
+  }
+  const json = response.result
+  if (!Array.isArray(json.resultSetMetaData?.rowType) || !Array.isArray(json.data)) {
+    throw new Error('Invalid Snowflake result')
+  }
+  const cols = json.resultSetMetaData.rowType.map(c => c.name)
+  const rows = [...json.data]
+  const partitions = json.resultSetMetaData.partitionInfo?.length ?? 1
+  for (let partition = 1; partition < partitions; partition++) {
+    if (!json.statementHandle || !/^[a-z0-9-]+$/i.test(json.statementHandle)) throw new Error('Invalid Snowflake partition handle')
+    const part = await send(`/api/v2/statements/${json.statementHandle}?partition=${partition}`)
+    if (part.status !== 200 || !Array.isArray(part.result.data)) throw new Error('Incomplete Snowflake partition')
+    rows.push(...part.result.data)
+  }
+  return rows.map(row => Object.fromEntries(cols.map((col, i) => [col, row[i]])))
+}
 
-  return rows.map((row) =>
-    Object.fromEntries(cols.map((col, i) => [col, row[i]]))
-  ) as T[]
+export async function snowflakeQuery<T = Record<string, unknown>>(sql: string): Promise<T[]> {
+  // Coalesce concurrent identical reads (including React dev-mode double loads).
+  // The exact SQL, including its permission filters, is the key; no results persist.
+  if (!/^\s*SELECT\b/i.test(sql)) return await executeQuery(sql) as T[]
+  const existing = activeQueries.get(sql)
+  if (existing) return existing as Promise<T[]>
+  const query = executeQuery(sql)
+  activeQueries.set(sql, query)
+  try { return await query as T[] } finally { activeQueries.delete(sql) }
 }

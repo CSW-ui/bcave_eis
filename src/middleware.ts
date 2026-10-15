@@ -1,20 +1,31 @@
+import { authServerFetch, isTransientAuthFailure } from '@/lib/auth-network'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { isApprovedRole, LOGIN_ERROR_MESSAGES } from '@/lib/auth-policy'
+import { isAccountSessionAllowed, requiresAccountSessionCheck, MICROSOFT_SESSION_COOKIE, canSkipMicrosoftOtp, renewMicrosoftSessionProof, MICROSOFT_SESSION_COOKIE_MAX_AGE } from '@/lib/microsoft-session'
 
-// 자체 인증(시크릿)으로 보호되는 서버-서버 API — 사용자 세션 게이트 제외
+// 자체 인증(시크릿)으로 보호되는 서버-서버 API — 라우트가 직접 검증한다.
 const SELF_AUTH_API = ['/api/replenishment/cron', '/api/replenishment/calculate']
 
 export async function middleware(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({ request })
+  const pathname = request.nextUrl.pathname
+  // PKCE 코드를 세션으로 교환하기 전에는 로그인 세션이 없을 수 있다.
+  if ((pathname === '/api/auth/session' && request.method === 'DELETE') || pathname === '/auth/callback' || pathname === '/auth/microsoft' || SELF_AUTH_API.includes(pathname)) {
+    return NextResponse.next({ request })
+  }
 
+  let supabaseResponse = NextResponse.next({ request })
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      global: { fetch: authServerFetch },
       cookies: {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -23,103 +34,115 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // 세션 갱신 쿠키가 리다이렉트·오류·rewrite 응답에서도 유실되지 않도록 한다.
+  function withAuthCookies(response: NextResponse) {
+    supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie))
+    return response
+  }
+  const redirect = (path: string) => withAuthCookies(NextResponse.redirect(new URL(path, request.url)))
+  const reject = (error: string, status: number) => withAuthCookies(NextResponse.json({ error }, { status }))
 
-  const pathname = request.nextUrl.pathname
-  const isLoginPage = pathname.startsWith('/login')
-  const isApiRoute = pathname.startsWith('/api')
-  const isVendorRoute = pathname.startsWith('/vendor')
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError && isTransientAuthFailure(userError) && pathname !== '/login') {
+    const response = reject('인증 서버 연결이 일시적으로 불안정합니다. 잠시 후 다시 시도해주세요.', 503)
+    response.headers.set('Retry-After', '3')
+    response.headers.set('Cache-Control', 'no-store')
+    return response
+  }
+  const isLoginPage = pathname === '/login'
+  const isApiRoute = pathname.startsWith('/api/')
+  const isVendorRoute = pathname === '/vendor' || pathname.startsWith('/vendor/')
 
-  // ─── API 라우트: 로그인 필수 + 브랜드 권한 서버 강제 ───────────────
+  // 로그인 페이지에서 두 방식의 OTP와 로그인 마무리 처리를 공통으로 수행한다.
+  if (isLoginPage) return supabaseResponse
+  if (!user) {
+    if (isApiRoute) return reject('로그인이 필요합니다.', 401)
+    if (isVendorRoute) return supabaseResponse
+    return redirect('/login')
+  }
+
+  let skipOtp = false
+  if (requiresAccountSessionCheck(user)) {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !await isAccountSessionAllowed(user, sessionData.session,
+      request.cookies.get(MICROSOFT_SESSION_COOKIE)?.value)) {
+      return isApiRoute
+        ? reject(LOGIN_ERROR_MESSAGES.sso_session_required, 401)
+        : redirect('/login?error=sso_session_required')
+    }
+    skipOtp = await canSkipMicrosoftOtp(user, sessionData.session, request.cookies.get(MICROSOFT_SESSION_COOKIE)?.value)
+    const renewed = await renewMicrosoftSessionProof(user, sessionData.session, request.cookies.get(MICROSOFT_SESSION_COOKIE)?.value)
+    if (renewed) {
+      const existingCookies = supabaseResponse.cookies.getAll()
+      request.cookies.set(MICROSOFT_SESSION_COOKIE, renewed)
+      supabaseResponse = NextResponse.next({ request })
+      existingCookies.forEach(cookie => supabaseResponse.cookies.set(cookie))
+      supabaseResponse.cookies.set(MICROSOFT_SESSION_COOKIE, renewed, {
+        httpOnly: true, sameSite: 'lax', path: '/', maxAge: MICROSOFT_SESSION_COOKIE_MAX_AGE,
+        secure: request.nextUrl.protocol === 'https:' || !['localhost', '127.0.0.1', '[::1]'].includes(request.nextUrl.hostname),
+      })
+    }
+
+  }
+
+  // SSO로 자동 생성된 Auth 계정만으로는 데이터에 접근할 수 없다.
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role, brands')
+    .eq('id', user.id)
+    .maybeSingle()
+  if (profileError) {
+    return isApiRoute
+      ? reject(LOGIN_ERROR_MESSAGES.auth_unavailable, 503)
+      : redirect('/login?error=auth_unavailable')
+  }
+  if (!isApprovedRole(profile?.role)) {
+    return isApiRoute
+      ? reject(LOGIN_ERROR_MESSAGES.not_approved, 403)
+      : redirect('/login?error=not_approved')
+  }
+
+  // 로그인 화면이 OTP 전에 세션의 계정 유형을 확인하는 읽기 전용 요청.
+  if (pathname === '/api/auth/session' && request.method === 'GET') return supabaseResponse
+
+  const { data: aal, error: aalError } = skipOtp
+    ? { data: { currentLevel: 'aal2', nextLevel: 'aal2' }, error: null }
+    : await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalError || !aal) {
+    return isApiRoute
+      ? reject(LOGIN_ERROR_MESSAGES.auth_unavailable, 503)
+      : redirect('/login?error=auth_unavailable')
+  }
+  const needStepUp = aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2'
+  const needEnroll = process.env.REQUIRE_MFA === 'true' && aal.nextLevel === 'aal1'
+  if (needStepUp) {
+    return isApiRoute ? reject('인증 앱의 OTP 확인이 필요합니다.', 403) : redirect('/login')
+  }
+  if (needEnroll) {
+    if (isApiRoute && pathname !== '/api/auth/session') {
+      return reject('2단계 인증 등록이 필요합니다.', 403)
+    }
+    const isSecurityPage = pathname === '/settings/security' || pathname.startsWith('/settings/security/')
+    if (!isApiRoute && !isSecurityPage) return redirect('/settings/security')
+  }
+
   if (isApiRoute) {
-    // 크론/계산 등 자체 시크릿으로 인증하는 엔드포인트는 통과 (라우트가 직접 검증)
-    if (SELF_AUTH_API.some(p => pathname.startsWith(p))) return supabaseResponse
-
-    // 로그인 안 됐으면 즉시 401 (페이지처럼 리다이렉트하지 않음)
-    if (!user) {
-      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
-    }
-
-    // 브랜드 권한 강제: ?brand= 파라미터를 사용자 허용 브랜드로 클램프
-    // (화면에서만 막던 것을 서버에서 막아 ?brand=all 우회를 차단)
     const url = request.nextUrl
-    if (url.searchParams.has('brand')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, brands')
-        .eq('id', user.id)
-        .single()
-
-      const restricted =
-        profile &&
-        profile.role !== 'admin' &&
-        Array.isArray(profile.brands) &&
-        profile.brands.length > 0
-
-      if (restricted) {
-        const allowed: string[] = profile!.brands
-        const requested = url.searchParams.get('brand')!
-        const effective =
-          requested === 'all'
-            ? allowed
-            : requested.split(',').filter(b => allowed.includes(b))
-
-        if (effective.length === 0) {
-          return NextResponse.json(
-            { error: '해당 브랜드 조회 권한이 없습니다.' },
-            { status: 403 }
-          )
-        }
-
-        // 권한 밖 브랜드를 요청했으면 허용 범위로 치환 후 라우트로 전달
-        if (effective.join(',') !== requested) {
-          const rewritten = url.clone()
-          rewritten.searchParams.set('brand', effective.join(','))
-          return NextResponse.rewrite(rewritten)
-        }
+    // 기존에 승인된 사용자의 빈 brands(전체 브랜드) 의미는 유지한다.
+    if (url.searchParams.has('brand') && profile.role !== 'admin' &&
+        Array.isArray(profile.brands) && profile.brands.length > 0) {
+      const allowed: string[] = profile.brands
+      const requested = url.searchParams.get('brand')!
+      const effective = requested === 'all'
+        ? allowed
+        : requested.split(',').filter(b => allowed.includes(b))
+      if (effective.length === 0) return reject('해당 브랜드 조회 권한이 없습니다.', 403)
+      if (effective.join(',') !== requested) {
+        const rewritten = url.clone()
+        rewritten.searchParams.set('brand', effective.join(','))
+        return withAuthCookies(NextResponse.rewrite(rewritten, { request: { headers: request.headers } }))
       }
     }
-
-    return supabaseResponse
-  }
-
-  // 협력사 경로는 자체 인증 처리 (vendor layout에서 처리)
-  if (isVendorRoute) return supabaseResponse
-
-  // 로그인 안된 상태에서 login 페이지 외 접근 → /login으로
-  if (!user && !isLoginPage) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // ─── 2단계 인증(OTP) 전사 강제 (REQUIRE_MFA=true 일 때만) ───
-  // 모든 계정이 OTP를 쓰도록 강제: 미등록자는 등록 페이지로, 등록했지만
-  // 이번 세션에 OTP를 안 푼 경우(미완료)는 로그인으로 돌려보낸다.
-  // 계정을 외부에 공유해도 OTP 기기가 없으면 로그인 불가.
-  let mfaSatisfied = true
-  if (process.env.REQUIRE_MFA === 'true' && user) {
-    try {
-      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-      const needEnroll = aal?.nextLevel === 'aal1'                                   // 등록된 인증수단 없음
-      const needStepUp = aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2'   // 등록했으나 OTP 미완료
-      mfaSatisfied = !needEnroll && !needStepUp
-      const isSecurityPage = pathname.startsWith('/settings/security')
-      if (!isLoginPage) {
-        if (needStepUp) {
-          return NextResponse.redirect(new URL('/login', request.url))
-        }
-        if (needEnroll && !isSecurityPage) {
-          return NextResponse.redirect(new URL('/settings/security', request.url))
-        }
-      }
-    } catch {
-      // 확인 실패 시 잠금 회피(가용성 우선) — 로그인 챌린지가 1차 방어선
-      mfaSatisfied = true
-    }
-  }
-
-  // 이미 로그인되고 OTP까지 충족된 상태에서 /login 접근 → /dashboard로
-  if (user && isLoginPage && mfaSatisfied) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse

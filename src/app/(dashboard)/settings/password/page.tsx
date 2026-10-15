@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAuth } from '@/contexts/AuthContext'
+import { getAccountDisplayEmail, getAuthSource } from '@/lib/account-source'
 
 const MIN_LEN = 10 // 비밀번호 정책과 동일하게 유지
 
 export default function PasswordSettingsPage() {
   const supabase = createSupabaseBrowserClient()
-  const { user, profile } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const email = user?.email ?? profile?.email ?? ''
+  const isMicrosoft = getAuthSource(user) === 'microsoft'
 
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -25,6 +27,7 @@ export default function PasswordSettingsPage() {
 
   // 실제 비밀번호 변경 (AAL2 충족 상태에서 호출)
   async function applyPasswordChange() {
+    if (isMicrosoft) return false
     const { error: updErr } = await supabase.auth.updateUser({ password: next })
     if (updErr) { setError(updErr.message); return false }
     setDone(true)
@@ -36,6 +39,7 @@ export default function PasswordSettingsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    if (isMicrosoft) return
 
     if (next.length < MIN_LEN) { setError(`새 비밀번호는 ${MIN_LEN}자 이상이어야 합니다.`); return }
     if (!/[a-zA-Z]/.test(next) || !/[0-9]/.test(next)) { setError('새 비밀번호에 영문과 숫자를 모두 포함하세요.'); return }
@@ -74,6 +78,7 @@ export default function PasswordSettingsPage() {
 
   async function handleMfaVerify(e: React.FormEvent) {
     e.preventDefault()
+    if (isMicrosoft) return
     if (!mfaFactorId) return
     setError(null); setLoading(true)
     try {
@@ -92,6 +97,22 @@ export default function PasswordSettingsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (authLoading) return <div className="p-6 text-sm text-gray-500">불러오는 중…</div>
+
+  if (isMicrosoft) {
+    return (
+      <div className="eis-page p-6 max-w-md">
+        <h1 className="eis-page-title text-xl font-bold text-gray-900 mb-1">Microsoft 계정 비밀번호</h1>
+        <p className="text-sm text-gray-500 mb-6">{getAccountDisplayEmail(user)}</p>
+        <div className="eis-panel bg-white border border-surface-border rounded-xl p-5 space-y-3">
+          <p className="text-sm text-gray-700">회사 계정의 비밀번호는 Microsoft에서 관리합니다.</p>
+          <a href="https://myaccount.microsoft.com" target="_blank" rel="noopener noreferrer"
+            className="inline-block text-sm font-medium text-brand-accent underline">Microsoft 계정 관리 열기</a>
+        </div>
+      </div>
+    )
   }
 
   return (

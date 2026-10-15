@@ -1,3 +1,4 @@
+import { authServerFetch } from '@/lib/auth-network'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -7,6 +8,7 @@ export function createSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      global: { fetch: authServerFetch },
       cookies: {
         getAll() { return cookieStore.getAll() },
         setAll(cookiesToSet) {

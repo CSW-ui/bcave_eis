@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { TopNav } from '@/components/layout/TopNav'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import '@/app/eis-theme.css'
@@ -44,17 +44,30 @@ function LayoutSkeleton() {
 }
 
 function DashboardGuard({ children }: { children: React.ReactNode }) {
-  const { profile, loading } = useAuth()
+  const { profile, loading, signOut } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
+  const isSecurityPage = pathname === '/settings/security' || pathname.startsWith('/settings/security/')
 
   useEffect(() => {
-    if (!loading && profile?.role === 'vendor') {
+    if (!loading && profile?.role === 'vendor' && !isSecurityPage) {
       router.replace('/vendor')
     }
-  }, [loading, profile, router])
+  }, [loading, profile, router, isSecurityPage])
 
   // vendor는 전용 화면으로 리다이렉트되므로 렌더하지 않음
-  if (profile?.role === 'vendor') return null
+  if (profile?.role === 'vendor' && !isSecurityPage) return null
+
+  if (!loading && !profile) {
+    return (
+      <div className="min-h-screen bg-surface-subtle flex items-center justify-center p-4">
+        <div role="alert" className="max-w-sm rounded-2xl border border-surface-border bg-white p-6 text-center">
+          <p className="text-sm text-gray-700">사용자 권한을 확인할 수 없습니다. 관리자에게 계정 등록 상태를 확인해주세요.</p>
+          <button onClick={signOut} className="mt-4 text-sm font-medium text-brand-accent">로그인 화면으로 돌아가기</button>
+        </div>
+      </div>
+    )
+  }
 
   // 인증 로딩 중에도 프레임(TopNav)과 스켈레톤을 즉시 보여준다 (백지 방지)
   return (

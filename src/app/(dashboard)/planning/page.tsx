@@ -41,7 +41,7 @@ interface PlanKpi {
 interface PlanChannel { channel: string; qty: number; amt: number }
 interface TopStyle { styleCd: string; styleNm: string; item: string; tagPrice: number; saleQty: number; saleAmt: number; cwAmt: number; pwAmt: number; m4Amt: number; cwQty: number; m4Qty: number; wow: number }
 interface WeatherTemp { date: string; dateLabel: string; day?: string; tmx: number | null; tmn: number | null; avg: number | null; weather?: string }
-interface WeatherData { temps: WeatherTemp[]; avgTemp: number | null; laterAvg?: number | null; recommendations: { label: string; items: string[]; period?: string }[]; tempTrend: string | null; alerts?: string[] }
+interface WeatherData { temps: WeatherTemp[]; avgTemp: number | null; avgDays?: number; forecastDate?: string; timeZone?: string; laterAvg?: number | null; recommendations: { label: string; items: string[]; period?: string }[]; tempTrend: string | null; alerts?: string[] }
 interface WeekTrend { week: number; cy: number; ly: number }
 interface GenderSale { gender: string; amt: number; ordTagAmt: number; salesRate: number; invTagAmt: number; dcRate: number }
 interface PlanData { kpi: PlanKpi; items: PlanItem[]; channels: PlanChannel[]; topStyles: TopStyle[]; weeklyTrend: WeekTrend[]; genderSales?: GenderSale[] }
@@ -144,7 +144,7 @@ export default function PlanningDashboard() {
 
   // 날씨 데이터 (한번만)
   useEffect(() => {
-    fetch('/api/weather').then(r => r.json()).then(j => { if (!j.error) setWeather(j) }).catch(() => {})
+    fetch('/api/weather', { cache: 'no-store' }).then(r => r.json()).then(j => { if (!j.error) setWeather(j) }).catch(() => {})
   }, [])
 
   // 베스트 스타일 클릭 → 해당 상품 채널별 매출 조회
@@ -737,6 +737,7 @@ export default function PlanningDashboard() {
           {weather && (
             <div className="col-span-3 bg-gradient-to-b from-sky-50 to-blue-50 rounded-xl border border-sky-200 shadow-sm p-4 flex flex-col gap-2.5">
               <h3 className="text-base font-bold text-sky-800">날씨 기반 추천</h3>
+              {weather.forecastDate && <p className="text-xs text-sky-600">한국시간 기준 · {weather.forecastDate.slice(0, 4)}.{weather.forecastDate.slice(4, 6)}.{weather.forecastDate.slice(6)}</p>}
               <div className="flex flex-wrap gap-1.5">
                 {weather.temps.slice(0, 10).map(t => {
                   const isWeekend = t.day === '토' || t.day === '일'
@@ -747,8 +748,8 @@ export default function PlanningDashboard() {
                       <span className={cn('text-xs font-semibold', isWeekend ? 'text-red-400' : 'text-sky-500')}>{t.day}</span>
                       <span className="text-[11px] text-sky-400">{t.dateLabel}</span>
                       <span className="text-lg leading-none my-0.5">{wIcon}</span>
-                      <span className="text-sm font-bold text-sky-800">{t.tmx ?? '?'}°</span>
-                      <span className="text-xs text-sky-400">{t.tmn ?? '?'}°</span>
+                      <span className="text-sm font-bold text-sky-800">{t.tmx !== null ? `${t.tmx}°` : '—'}</span>
+                      <span className="text-xs text-sky-400">{t.tmn !== null ? `${t.tmn}°` : '—'}</span>
                       {rainPct != null && rainPct > 0 && (
                         <span className={cn('text-[9px] font-semibold mt-0.5', rainPct >= 60 ? 'text-blue-600' : 'text-sky-400')}>{rainPct}%</span>
                       )}
@@ -756,7 +757,7 @@ export default function PlanningDashboard() {
                   )
                 })}
               </div>
-              <div className="text-sm text-sky-600 font-semibold">3일 평균 {weather.avgTemp}°C{weather.laterAvg != null ? ` · 후반 ${weather.laterAvg}°C` : ''}</div>
+              <div className="text-sm text-sky-600 font-semibold">{weather.avgTemp === null ? '단기예보 미수신' : `${weather.avgDays !== undefined && weather.avgDays < 3 ? `${weather.avgDays}일 자료 평균` : '3일 평균'} ${weather.avgTemp}°C`}{weather.laterAvg != null ? ` · 후반 ${weather.laterAvg}°C` : ''}</div>
               {weather.recommendations.map((rec, i) => (
                 <div key={i}>
                   <span className="text-sm font-bold text-sky-700">{rec.period ? `[${rec.period}] ` : ''}{rec.label}:</span>

@@ -116,7 +116,7 @@ test('additional local configuration cannot allow arbitrary external redirect ta
   }
 });
 
-function callbackFixture() {
+function callbackFixture(exchangeError) {
   const state = { exchanges: [], grants: [], tokenChecks: [], accounts: [], otp: [] };
   const transactionCookie = 'test-encrypted-transaction';
   const identity = { tenantId: 'tenant-id', objectId: 'object-id', email: 'staff@example.test', name: 'Staff' };
@@ -130,6 +130,7 @@ function callbackFixture() {
       MICROSOFT_TRANSACTION_COOKIE: 'eis-microsoft-sso',
       async exchangeMicrosoftAuthCode(input) {
         state.exchanges.push(input);
+        if (exchangeError) throw exchangeError;
         return { idToken: 'test-id-token', nonce: 'raw-nonce', accessToken: 'test-access-token' };
       },
       async verifyMicrosoftIdToken(input) { state.tokenChecks.push(input); return identity; },
@@ -243,5 +244,33 @@ test('callback completes over an HTTP proxy transport using an HTTPS redirect UR
   } finally {
     if (original === undefined) delete process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED;
     else process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED = original;
+  }
+});
+
+
+test('callback logs failed stage and timing without disclosing exception messages or codes', async () => {
+  const originalEnabled = process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED;
+  const originalWarn = console.warn;
+  const originalInfo = console.info;
+  const logs = [];
+  process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED = 'true';
+  console.warn = (...args) => logs.push(args);
+  console.info = (...args) => logs.push(args);
+  try {
+    const { callback } = callbackFixture(new TypeError('SECRET_PROVIDER_RESPONSE'));
+    const response = await callback(new Request(production + '/auth/callback?code=SECRET_CODE&state=SECRET_STATE'));
+    assert.equal(response.status, 307);
+    assert.equal(response.headers.get('location'), production + '/login?error=auth_unavailable');
+    const failure = logs.find(row => row[0] === '[Microsoft SSO] callback_failed')[1];
+    assert.equal(failure.stage, 'token_exchange');
+    assert.equal(failure.kind, 'TypeError');
+    assert.equal(typeof failure.elapsedMs, 'number');
+    assert.ok(logs.some(row => row[0] === '[Microsoft SSO] response_prepared'));
+    assert.doesNotMatch(JSON.stringify(logs), /SECRET/);
+  } finally {
+    console.warn = originalWarn;
+    console.info = originalInfo;
+    if (originalEnabled === undefined) delete process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED;
+    else process.env.NEXT_PUBLIC_MICROSOFT_SSO_ENABLED = originalEnabled;
   }
 });

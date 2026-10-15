@@ -19,6 +19,8 @@ function logMicrosoftFailure(stage: string, error?: { status?: number; code?: st
 }
 
 export async function GET(request: Request) {
+  const startedAt = Date.now()
+  let stage = 'origin'
   const url = new URL(request.url)
   let origin: string | null
   try {
@@ -34,6 +36,9 @@ export async function GET(request: Request) {
     response.headers.set('Cache-Control', 'no-store')
     response.cookies.set(MICROSOFT_TRANSACTION_COOKIE, '', {
       httpOnly: true, secure: origin!.startsWith('https:'), sameSite: 'lax', path: '/auth', maxAge: 0,
+    })
+    console.info('[Microsoft SSO] response_prepared', {
+      stage, status: response.status, elapsedMs: Date.now() - startedAt,
     })
     return response
   }
@@ -54,6 +59,7 @@ export async function GET(request: Request) {
   if (!code) return failure('sso_failed')
 
   try {
+    stage = 'token_exchange'
     const microsoft = await exchangeMicrosoftAuthCode({
       code,
       state: url.searchParams.get('state') || '',
@@ -61,10 +67,13 @@ export async function GET(request: Request) {
       origin,
     })
     // Microsoft 서명·issuer·audience·nonce·tid·oid를 직접 검증한다.
+    stage = 'token_verification'
     const identity = await verifyMicrosoftIdToken({ idToken: microsoft.idToken, nonce: microsoft.nonce })
+    stage = 'account_lookup'
     const account = await ensureMicrosoftAccount(identity)
     if (account.app_metadata.microsoft_access_approved !== true) return failure('sso_not_approved')
     // MS 계정의 별도 UUID만 조회한다. 같은 이메일의 EIS 프로필로 대체하지 않는다.
+    stage = 'profile_lookup'
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('role')
@@ -82,6 +91,7 @@ export async function GET(request: Request) {
     for (let attempt = 0; attempt < 3; attempt++) {
       // Never replay a possibly consumed OTP. Generate a fresh grant for the same
       // verified, independent account on every recovery attempt.
+      stage = 'session_grant'
       const grant = await supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email: account.email! })
       if (grant.error) {
         logMicrosoftFailure('session_grant', grant.error)
@@ -95,6 +105,7 @@ export async function GET(request: Request) {
         || getAuthSource(grant.data.user) !== 'microsoft'
         || grant.data.user.app_metadata.microsoft_access_approved !== true) return failure('sso_failed')
       supabase ??= createSupabaseServerClient()
+      stage = 'session_exchange'
       const { data, error } = await supabase.auth.verifyOtp({
         type: 'magiclink', token_hash: grant.data.properties.hashed_token,
       })
@@ -117,6 +128,7 @@ export async function GET(request: Request) {
       break
     }
     if (!completed?.session) return failure('auth_unavailable')
+    stage = 'session_proof'
     const proof = await createMicrosoftSessionProof({
       userId: account.id, sessionId: getSessionId(completed.session.access_token),
       tenantId: identity.tenantId, objectId: identity.objectId,
@@ -130,7 +142,12 @@ export async function GET(request: Request) {
     })
     return response
   } catch (error) {
-    logMicrosoftFailure('callback')
+    // 메시지·stack·외부 응답 원문에는 코드/토큰/URL이 섞일 수 있으므로 기록하지 않는다.
+    const knownNames = ['Error', 'TypeError', 'TimeoutError', 'AbortError', 'MicrosoftDomainNotAllowedError']
+    const kind = error instanceof Error && knownNames.includes(error.name) ? error.name : 'OtherError'
+    console.warn('[Microsoft SSO] callback_failed', {
+      stage, kind, elapsedMs: Date.now() - startedAt,
+    })
     if (error instanceof Error && error.name === 'MicrosoftDomainNotAllowedError') return failure('sso_domain_not_allowed')
     return failure('auth_unavailable')
   }

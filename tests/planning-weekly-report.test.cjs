@@ -9,7 +9,7 @@ assert.throws(()=>report.weeklyQuery(['CO\''],'26',['가을'],'2026-10-11'));
 assert.throws(()=>report.weeklyQuery(['CO'],'26',['가을\''],'2026-10-11'));
 const query=report.weeklyQuery(['CO'],'26',['가을'],'2026-10-11');
 const transferCodes = "'B6055','WA9015','B6057','CO9039','B6063','CO9040'";
-assert.ok(query.includes('SALEAMT_VAT_EX'));assert.ok(query.includes("WHINDT <= '20261011'"));assert.ok(query.includes("ORDDT <= '20261011'"));assert.ok(query.includes('s.SALEAMT AS SALEAMT_VAT_EX'));
+assert.ok(query.includes('SALEAMT_VAT_EX'));assert.ok(query.includes("WHINDT <= '20261011'"));assert.ok(query.includes("ORDDT <= '20261011'"));assert.ok(query.includes('END AS SALEAMT_VAT_EX'));
 assert.ok(query.includes(`SHOPCD NOT IN (${transferCodes})`));
 assert.ok(query.includes(`v.SHOPCD IN (${transferCodes})`));
 const row={BRANDCD:'CO',STYLECD:'CO2607CA16',STYLENM:'test',IN_QTY:100,TRF_QTY:20,SALE_QTY:40,STOCK:60,COLORS:'[{"code":"BK","name":"BLACK","orderQty":50}]',W8:1,W9:1,W10:2,W11:2};
@@ -27,7 +27,7 @@ assert.equal(report.toWeeklyProduct({...discountRow,SALE_QTY:0}).discountRate,nu
 assert.equal(report.toWeeklyProduct({...discountRow,SALE_QTY:-1,SALE_TAG_AMT:-110}).discountRate,null);
 assert.equal(report.toWeeklyProduct({...discountRow,TAG_MISSING_COUNT:1}).discountRate,null);
 assert.ok(report.toWeeklyProduct({...discountRow,SALE_AMT:1100}).discountRate<0);
-assert.ok(query.includes('SUM(v.TAGPRICE*v.SALEQTY) SALE_TAG_AMT'));
+assert.ok(query.includes('SUM(v.TAGPRICE*v.FINANCIAL_SALEQTY) SALE_TAG_AMT'));
 const url='https://bmbx-prd.my.commercecloud.salesforce.com/dw/image/v2/x/CO2607CA16BK_1_hash.jpg';
 assert.equal(images.extractMallImage(`<img src="${url}?sw=800&amp;q=60">`,'CO','CO2607CA16BK','https://www.covernat.co.kr/product/CO2607CA16BK'),url+'?sw=800&q=60');
 assert.equal(images.extractMallImage(`<img src="${url}">`,'CO','CO2607CA16PI','https://www.covernat.co.kr/product/CO2607CA16PI'),null);

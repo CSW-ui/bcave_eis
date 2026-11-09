@@ -66,7 +66,7 @@ export async function GET(req: Request) {
         SELECT v.SHOPCD, v.SHOPCD as SHOPNM_SALE, MAX(si.SHOPNM) as SHOPNM, MAX(si.AREANM) as AREANM,
           SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEQTY ELSE 0 END) as MTD_QTY,
-          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY ELSE 0 END) as MTD_COST,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.FINANCIAL_SALEQTY ELSE 0 END) as MTD_COST,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as CW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${pwStart}' AND '${pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as PW_REV
         FROM ${SALES_VIEW} v
@@ -92,7 +92,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT v.STYLECD, MAX(sti.STYLENM) as STYLENM, v.BRANDCD,
           SUM(v.SALEAMT_VAT_EX) as REVENUE, SUM(v.SALEQTY) as QTY,
-          SUM(COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY) as COST_TOTAL,
+          SUM(COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as COST_TOTAL,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cwStart}' AND '${cwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as CW_REV,
           SUM(CASE WHEN v.SALEDT BETWEEN '${pwStart}' AND '${pwEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as PW_REV
         FROM ${SALES_VIEW} v
@@ -125,7 +125,7 @@ export async function GET(req: Request) {
       // 할인율용: 매장별 VW_SALES_VAT (SHOPCD별 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(`
         SELECT v.SHOPCD,
-          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) as MTD_TAG,
           SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -139,7 +139,7 @@ export async function GET(req: Request) {
       // 할인율용: 상품별 VW_SALES_VAT (STYLECD별)
       snowflakeQuery<Record<string, string>>(`
         SELECT v.STYLECD,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_TOTAL,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) as TAG_TOTAL,
           SUM(v.SALEAMT_VAT_EX) as SALE_TOTAL
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -154,7 +154,7 @@ export async function GET(req: Request) {
       // 할인율용: 품목별 VW_SALES_VAT (ITEMNM별)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
-          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) as MTD_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) as MTD_TAG,
           SUM(CASE WHEN v.SALEDT BETWEEN '${monthStart}' AND '${monthEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) as MTD_SALE
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

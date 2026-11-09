@@ -15,7 +15,7 @@ export function getChannelGroup(nm: string): ChannelGroup {
     n.includes('백화점') || n.includes('아울렛') || n.includes('가두') ||
     n.includes('직영') || n.includes('대리') || n.includes('면세') ||
     n.includes('팝업') || n.includes('편집') || n.includes('오프') ||
-    n.includes('로드샵') || n.includes('부티크') || n.includes('쇼핑몰') || n.includes('사입')
+    n.includes('로드샵') || n.includes('부티크') || n.includes('쇼핑몰') || n.includes('본사매장') || n.includes('사입') || n === '위탁처'
   ) return '오프라인'
   return '온라인'
 }

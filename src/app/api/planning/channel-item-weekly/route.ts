@@ -52,7 +52,7 @@ export async function GET(req: Request) {
       ${vin} as VIN,
       SUM(v.SALEAMT_VAT_EX) as REV,
       SUM(v.SALEQTY) as QTY,
-      SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG
+      SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) as TAG
     FROM ${SALES_VIEW} v
     JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
     WHERE ${vBrandClause} ${genderWhere} ${styleWhere} ${extraWhere} AND ${dateWindow}

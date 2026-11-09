@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
 import { supabaseAdmin } from '@/lib/supabase'
 import { VALID_BRANDS } from '@/lib/constants'
+import { REPLENISHMENT_NORMAL_SALE, REPLENISHMENT_RETAIL_SHOP, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // GET /api/replenishment/shops?brand=CO
 export async function GET(req: Request) {
@@ -16,20 +17,18 @@ export async function GET(req: Request) {
   try {
     // Snowflake에서 오프라인 매장 목록 (면세/해외/온라인/B2B 제외)
     const shops = await snowflakeQuery<Record<string, string>>(`
-      SELECT s.SHOPCD, MAX(s.SHOPNM) as SHOPNM,
+      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, MAX(si.SHOPNM) as SHOPNM,
+        MAX(si.OLD_SHOPCD) AS OLD_SHOPCD,
         MAX(si.SHOPTYPENM) as SHOPTYPENM, MAX(si.AREANM) as AREANM
       FROM BCAVE.SEWON.SW_SALEINFO s
-      LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON s.SHOPCD = si.SHOPCD
+      LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
+      LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON COALESCE(alias.SHOPCD, s.SHOPCD) = si.SHOPCD
       WHERE s.BRANDCD = '${brand}'
         AND s.SALEDT >= TO_CHAR(DATEADD(DAY, -30, CURRENT_DATE()), 'YYYYMMDD')
         AND s.SALEQTY > 0
-        AND s.PRICETYPE = '0'
-        AND COALESCE(si.SHOPTYPENM, '') NOT LIKE '%면세%'
-        AND COALESCE(si.SHOPTYPENM, '') NOT LIKE '%해외%'
-        AND COALESCE(si.SHOPTYPENM, '') NOT LIKE '%온라인%'
-        AND COALESCE(si.SHOPTYPENM, '') NOT LIKE '%B2B%'
-        AND COALESCE(si.SHOPTYPENM, '') NOT LIKE '%오프라인 위탁%'
-      GROUP BY s.SHOPCD
+        AND ${REPLENISHMENT_NORMAL_SALE}
+        AND ${REPLENISHMENT_RETAIL_SHOP}
+      GROUP BY 1
       ORDER BY SHOPTYPENM, SHOPNM
     `)
 
@@ -43,12 +42,13 @@ export async function GET(req: Request) {
 
     // 매장별 최근 3개월 정상 매출 집계 (자동 등급 산정용, 행사 제외)
     const salesRank = await snowflakeQuery<Record<string, string>>(`
-      SELECT s.SHOPCD, SUM(s.SALEAMT) as SALE_AMT
+      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, SUM(s.SALEAMT) as SALE_AMT
       FROM BCAVE.SEWON.SW_SALEINFO s
+      LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
       WHERE s.BRANDCD = '${brand}'
         AND s.SALEDT >= TO_CHAR(DATEADD(DAY, -90, CURRENT_DATE()), 'YYYYMMDD')
-        AND s.SALEQTY > 0 AND s.PRICETYPE = '0'
-      GROUP BY s.SHOPCD
+        AND s.SALEQTY > 0 AND ${REPLENISHMENT_NORMAL_SALE}
+      GROUP BY 1
     `)
     const salesMap = new Map(salesRank.map(r => [r.SHOPCD, Number(r.SALE_AMT) || 0]))
 
@@ -69,7 +69,7 @@ export async function GET(req: Request) {
       shopNm: s.SHOPNM ?? s.SHOPCD,
       shopType: s.SHOPTYPENM ?? '',
       area: s.AREANM ?? '',
-      grade: gradeMap.get(s.SHOPCD) ?? autoGradeMap.get(s.SHOPCD) ?? 'B',
+      grade: gradeMap.get(s.SHOPCD) ?? gradeMap.get(s.OLD_SHOPCD) ?? autoGradeMap.get(s.SHOPCD) ?? 'B',
       saleAmt: salesMap.get(s.SHOPCD) ?? 0,
       autoGrade: autoGradeMap.get(s.SHOPCD) ?? 'B',
     }))

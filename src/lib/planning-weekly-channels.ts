@@ -17,8 +17,8 @@ export function weeklyChannelQuery(brand: string, style: string, asOf: string) {
   const weeks = reportWeeks(asOf)
   return `SELECT COALESCE(NULLIF(TRIM(v.SHOPTYPENM),''),'미분류') CHANNEL,
     SUM(v.SALEAMT_VAT_EX) REVENUE,SUM(v.SALEQTY) QTY,
-    SUM(v.TAGPRICE*v.SALEQTY) TAG_AMOUNT,
-    COUNT_IF(v.SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
+    SUM(v.TAGPRICE*v.FINANCIAL_SALEQTY) TAG_AMOUNT,
+    COUNT_IF(v.FINANCIAL_SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
     ${weeks.map((w,i) => `SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEAMT_VAT_EX ELSE 0 END) W${i}_REVENUE,
     SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEQTY ELSE 0 END) W${i}_QTY`).join(',\n    ')}
     FROM ${SALES_VIEW} v

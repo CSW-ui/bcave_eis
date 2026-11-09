@@ -13,7 +13,7 @@ assert.equal(change(30,0),null);assert.equal(change(30,-10),null);
 assert.equal(weeklyMetric({...p,history:{0:{...empty,q:40,a:100,tag:1000,missing:1}}},0,false,'q',weeks).discount,null);
 assert.throws(()=>weeklySalesQuery(['CO\''],'26',['가을'],'2026-10-11'));
 assert.throws(()=>weeklySalesQuery(['CO'],'26',['겨울\''],'2026-10-11'));
-const sql=weeklySalesQuery(['CO'],'26',['가을'],'2026-10-11');assert.ok(sql.includes("SHOPTYPENM='온라인B2B'"));assert.ok(sql.includes('SALEAMT_VAT_EX'));assert.ok(sql.includes('s.SALEAMT AS SALEAMT_VAT_EX'));
+const sql=weeklySalesQuery(['CO'],'26',['가을'],'2026-10-11');assert.ok(sql.includes("SHOPTYPENM='온라인B2B'"));assert.ok(sql.includes('SALEAMT_VAT_EX'));assert.ok(sql.includes('END AS SALEAMT_VAT_EX'));
 if(fs.existsSync('live.json')){
  const products=JSON.parse(fs.readFileSync('live.json')).map(toWeeklySalesProduct);assert.equal(products.length,331);
  for(const product of products){const m=weeklyMetric(product,12,true,'q',weeks);assert.equal(m.cum.q,product.sales);assert.ok(Math.abs(m.cum.a-product.revenue)<.01);assert.equal(m.cum.inbound,product.inbound);assert.equal(m.cum.transfer,product.transfer);assert.equal(m.tw,product.weeks[11]);}

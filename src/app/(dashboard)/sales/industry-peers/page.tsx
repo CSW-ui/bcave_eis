@@ -10,7 +10,7 @@ type GranT = 'week' | 'month'
 type ZoneT = 'adult' | 'kids'
 interface Building { bld: string; ourAmt: number; total: number; share: number | null; bestRank: number | null; topBrand: string; topIsOurs: boolean; compCnt: number; ours: Record<string, number> }
 interface MatrixRow { brand: string; isOurs: boolean; bucket: string; amt: number }
-interface ApiData { buildings: Building[]; marketTrend: MatrixRow[] }
+interface ApiData { buildings: Building[]; marketTrend: MatrixRow[]; meta?: { to: string; peerThrough: string | null } }
 
 const OUR_CODE = new Set(['CO', 'LE', 'WA', 'CK', 'LK'])
 const nm = (b: string) => OUR_CODE.has(b) ? (BRAND_NAMES[b] ?? b) : b
@@ -133,6 +133,13 @@ export default function IndustryPeersPage() {
         </div>
       </div>
 
+      {data?.meta && (data.meta.peerThrough === null || data.meta.peerThrough < data.meta.to) ? (
+        <p role="status" className="text-xs text-amber-800">
+          {data.meta.peerThrough
+            ? `동업계 자료는 ${data.meta.peerThrough.replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3')}까지 있습니다. 선택 기간의 비교 수치는 일부 자료만 반영합니다.`
+            : '선택 기간에 동업계 자료가 없습니다.'}
+        </p>
+      ) : null}
       {/* 최상단 시장 요약 — 우리 vs 주요 동업계 추이 */}
       <div className="eis-panel bg-white rounded-xl border border-surface-border shadow-sm p-4">
         <h3 className="text-xs font-semibold text-gray-700 mb-2">시장 요약 <span className="font-normal text-gray-400">· 우리+주요 동업계 {gran === 'month' ? '월간' : '주간'} 추이 (최근 {mkt.buckets.length}) · {zone === 'kids' ? '키즈' : '성인'} · 전 매장 합산 · 단위 백만</span></h3>
@@ -190,7 +197,7 @@ export default function IndustryPeersPage() {
                       <td className="py-1 px-2 font-mono font-semibold text-gray-900 border-l border-gray-100">{fmtW(b.ourAmt)}</td>
                       <td className="py-1 px-2 font-mono text-gray-600">{b.share != null ? `${b.share}%` : '—'}</td>
                       <td className={cn('py-1 px-2 font-mono font-bold', rankCls(b.bestRank))}>{b.bestRank ?? '—'}</td>
-                      <td className={cn('py-1 pl-2 text-left truncate max-w-[120px]', b.topIsOurs ? 'text-emerald-600 font-semibold' : 'text-gray-500')}>{b.topIsOurs ? `우리 1위 (${nm(b.topBrand)})` : nm(b.topBrand)}</td>
+                      <td className={cn('py-1 pl-2 text-left truncate max-w-[120px]', b.topIsOurs ? 'text-emerald-600 font-semibold' : 'text-gray-500')}>{b.topIsOurs ? `우리 1위 (${nm(b.topBrand)})` : b.topBrand ? nm(b.topBrand) : '—'}</td>
                     </tr>,
                     exp ? (
                       <tr key={b.bld + '_x'} className="bg-gray-50/40">

@@ -3,7 +3,7 @@ require.extensions['.ts']=(m,file)=>m._compile(ts.transpileModule(fs.readFileSyn
 const {weeklyChannelQuery,toWeeklyChannels}=require(path.resolve('src/lib/planning-weekly-channels.ts'));
 const q=weeklyChannelQuery('CO','CO2607CA16','2026-10-11');
 assert.ok(q.includes("v.SALEDT BETWEEN '20250101' AND '20261011'"));assert.ok(q.includes("BETWEEN '20261005' AND '20261011'"));assert.ok(q.includes("BETWEEN '20260928' AND '20261004'"));
-assert.ok(q.includes("SHOPCD NOT IN ('B6055','WA9015','B6057','CO9039','B6063','CO9040')"));assert.ok(q.includes('SUM(v.SALEAMT_VAT_EX)'));assert.ok(q.includes('s.SALEAMT AS SALEAMT_VAT_EX'));
+assert.ok(q.includes("SHOPCD NOT IN ('B6055','WA9015','B6057','CO9039','B6063','CO9040')"));assert.ok(q.includes('SUM(v.SALEAMT_VAT_EX)'));assert.ok(q.includes('END AS SALEAMT_VAT_EX'));
 assert.throws(()=>weeklyChannelQuery('CO',"CO123' OR 1=1--",'2026-10-11'));
 assert.throws(()=>weeklyChannelQuery('CO','LE2603IP32','2026-10-11'));
 assert.throws(()=>weeklyChannelQuery('CO','CO2607CA16','2026-10-12'));

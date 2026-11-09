@@ -35,8 +35,8 @@ export async function GET(req: Request) {
   const dateWhere = `(${cyCond} OR ${lyCond})`
   // styleSql 후보 축소용(시즌 선택 시 두 연차 상품만 스캔)
   const styleSeasonWhere = year ? ` AND sti.YEARCD IN ('${year}','${lyYear}')${seasonClause}` : ''
-  const TAG = `(sti.TAGPRICE / 1.1) * v.SALEQTY`
-  const COST = `COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY`
+  const TAG = `(sti.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY`
+  const COST = `COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.FINANCIAL_SALEQTY`
   const PC = `LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON sti.STYLECD = pc.STYLECD AND sti.BRANDCD = pc.BRANDCD`
 
   // 1) 품목별 전체 집계 (그래프)

@@ -47,6 +47,7 @@ function DashboardGuard({ children }: { children: React.ReactNode }) {
   const { profile, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const showsSales = pathname === '/dashboard' || /^\/(sales|planning)(\/|$)/.test(pathname)
   const isSecurityPage = pathname === '/settings/security' || pathname.startsWith('/settings/security/')
 
   useEffect(() => {
@@ -73,7 +74,14 @@ function DashboardGuard({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-surface-subtle">
       <TopNav />
-      <main className="eis-workspace">{loading ? <LayoutSkeleton /> : children}</main>
+      <main className="eis-workspace">
+        {!loading && showsSales ? (
+          <p className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+            2026년 10월 이후 티몰 글로벌·도우인 판매 수량은 집계됩니다. 원화 정산 자료가 연결될 때까지 해당 매출은 원화 합계에서 제외됩니다.
+          </p>
+        ) : null}
+        {loading ? <LayoutSkeleton /> : children}
+      </main>
     </div>
   )
 }

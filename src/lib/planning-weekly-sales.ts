@@ -15,8 +15,8 @@ export function weeklySalesQuery(brands:string[],year:string,seasons:string[],as
  IFF(v.SHOPTYPENM='온라인B2B' AND NOT (${isTransfer}),v.SALEQTY,0) BQ,
  IFF(v.SHOPTYPENM='온라인B2B' AND NOT (${isTransfer}),v.SALEAMT_VAT_EX,0) BA,
  0 INBOUND,IFF(${isTransfer},v.SALEQTY,0) TRANSFER,
- IFF(${isTransfer},0,v.TAGPRICE*v.SALEQTY) TAG,
- IFF(NOT (${isTransfer}) AND v.SALEQTY<>0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE<=0),1,0) MISSING
+ IFF(${isTransfer},0,v.TAGPRICE*v.FINANCIAL_SALEQTY) TAG,
+ IFF(NOT (${isTransfer}) AND v.FINANCIAL_SALEQTY<>0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE<=0),1,0) MISSING
  FROM ${SALES_VAT_VIEW} v JOIN base e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
  WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}'
  UNION ALL SELECT w.STYLECD,w.WHINDT,0,0,0,0,w.INQTY,0,0,0

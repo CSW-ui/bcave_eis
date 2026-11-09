@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { ERP_NET_SALES_AMOUNT, SALES_WITH_CURRENT_SHOP } from '@/lib/sales-scope'
 import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 
 // GET /api/sales/shops?from=20260101&to=20260521&brands=all&channels=백화점,직영점
@@ -43,8 +44,8 @@ export async function GET(req: Request) {
       --   워크인: SALETYPE in (정상,NULL) × PRICETYPE in (정상,할인,균일,NULL)
       --   기타: 라이브 + 온라인 + 행사 + 직원판매 + 비품 + 대여 + 외매조정 + 기획 등
       SELECT SHOPCD, BRANDCD,
-        SUM(SALEAMT / 1.1) AS PROMO_REV
-      FROM BCAVE.SEWON.SW_SALEINFO
+        SUM(${ERP_NET_SALES_AMOUNT}) AS PROMO_REV
+      FROM ${SALES_WITH_CURRENT_SHOP}
       WHERE NOT (
         (SALETYPENM IS NULL OR SALETYPENM = '정상')
         AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
@@ -67,8 +68,8 @@ export async function GET(req: Request) {
       MAX(si.SHOPNM) as SHOPNM, MAX(si.AREANM) as AREANM,
       SUM(v.SALEAMT_VAT_EX) as REV,
       SUM(v.SALEQTY) as QTY,
-      SUM(COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.SALEQTY) as COST,
-      SUM((sti.TAGPRICE / 1.1) * v.SALEQTY) as TAG,
+      SUM(COALESCE(pc.PRECOST, sti.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as COST,
+      SUM((sti.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) as TAG,
       SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) as NORM_REV,
       SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) as CO_REV,
       MAX(promo.PROMO_REV) as PROMO_REV,

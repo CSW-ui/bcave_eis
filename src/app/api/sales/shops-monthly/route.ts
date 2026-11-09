@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
-import { SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // 목표/캐시 영향 없이 항상 최신 집계
 export const dynamic = 'force-dynamic'
@@ -19,11 +18,11 @@ export async function GET(req: Request) {
   const lyYear = String(Number(year) - 1)
 
   const channels = (searchParams.get('channels') || '').split(',').filter(Boolean)
-  const shopCode = 'COALESCE(alias.SHOPCD, v.SHOPCD)'
-  const channel = 'COALESCE(si.SHOPTYPENM, v.SHOPTYPENM)'
   const channelList = channels.map(c => `'${c.replace(/'/g, "''")}'`).join(',')
   const channelClause = channels.length > 0
-    ? `AND (${channel} IN (${channelList}) OR legacy.SHOPTYPENM IN (${channelList}) OR v.SHOPTYPENM IN (${channelList}))`
+    ? `AND (v.SHOPTYPENM IN (${channelList})
+      ${channels.includes('온라인') ? "OR v.SHOPTYPENM LIKE '온라인%'" : ''}
+      ${channels.includes('수출') ? "OR v.SHOPTYPENM LIKE '해외%'" : ''})`
     : ''
 
   // 집계 단위: 월(1~12) 또는 주(ISO 주차). CY/LY는 같은 버킷번호로 매칭(월:동월, 주:동주차)
@@ -39,7 +38,7 @@ export async function GET(req: Request) {
   const vin = `CASE WHEN sti.YEARCD = SUBSTRING(v.SALEDT, 3, 2) THEN 'N' ELSE 'C' END`
 
   const sql = `
-    SELECT ${shopCode} AS SHOPCD, v.BRANDCD, ${channel} AS SHOPTYPENM,
+    SELECT v.SHOPCD, v.BRANDCD, v.SHOPTYPENM,
       MAX(si.SHOPNM) as SHOPNM, MAX(si.AREANM) as AREANM,
       SUBSTRING(v.SALEDT, 1, 4) as YR,
       ${bucketNum} as MM,
@@ -47,11 +46,9 @@ export async function GET(req: Request) {
       ${vin} as VIN,
       SUM(v.SALEAMT_VAT_EX) as REV,
       SUM(v.SALEQTY) as QTY,
-      SUM((sti.TAGPRICE / 1.1) * v.SALEQTY) as TAG
+      SUM((sti.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) as TAG
     FROM ${SALES_VIEW} v
-    LEFT JOIN ${SHOP_CODE_ALIASES} alias ON v.SHOPCD = alias.OLD_SHOPCD
-    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON ${shopCode} = si.SHOPCD
-    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO legacy ON si.OLD_SHOPCD = legacy.SHOPCD
+    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON v.SHOPCD = si.SHOPCD
     LEFT JOIN BCAVE.SEWON.SW_STYLEINFO sti ON v.STYLECD = sti.STYLECD AND v.BRANDCD = sti.BRANDCD
     WHERE v.BRANDCD IN ${inClause}
       AND v.SALEDT BETWEEN '${lyYear}0101' AND '${year}1231'
@@ -98,7 +95,8 @@ export async function GET(req: Request) {
     }
 
     const total = (o: ShopAgg) => Object.values(o.n.rev).reduce((s, v) => s + v, 0) + Object.values(o.c.rev).reduce((s, v) => s + v, 0)
-    const list = Array.from(shops.values()).filter(s => total(s) > 0)
+    const hasSales = (s: ShopAgg) => total(s) > 0 || [s.n, s.c].some(v => Object.values(v.qty).some(q => q !== 0))
+    const list = Array.from(shops.values()).filter(hasSales)
     return NextResponse.json({ maxMonth, weekDates, shops: list, meta: { year, lyYear, gran } })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })

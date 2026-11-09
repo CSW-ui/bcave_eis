@@ -281,6 +281,7 @@ function fixture(overrides = {}) {
       ...mocks,
       '@/lib/auth': helpers,
       '@/lib/constants': { VALID_BRANDS: new Set(['CO']) },
+      '@/lib/sales-scope': load('src/lib/sales-scope.ts'),
       '@/lib/snowflake': {
         snowflakeQuery() { throw new Error('Authentication tests must not query data'); },
       },

@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
   const overseasChannel = "(SHOPTYPENM LIKE '%해외%' OR SHOPTYPENM LIKE '%수출%')"
   const regionFilterMap: Record<string, string> = {
     domestic: `AND NOT ${overseasChannel}`,
-    online: `AND NOT ${overseasChannel} AND SHOPTYPENM NOT IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰')`,
-    offline: `AND NOT ${overseasChannel} AND SHOPTYPENM IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰')`,
+    online: `AND NOT ${overseasChannel} AND SHOPTYPENM NOT IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰','오프라인 위탁','오프라인 사입','본사매장','위탁처','사입')`,
+    offline: `AND NOT ${overseasChannel} AND SHOPTYPENM IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰','오프라인 위탁','오프라인 사입','본사매장','위탁처','사입')`,
     overseas: `AND ${overseasChannel}`,
   }
   const regionFilter = regionFilterMap[region] || ''
@@ -114,9 +114,9 @@ export async function GET(req: NextRequest) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.YEARCD AS YR,
           SUM(v.SALEQTY) AS SALE_QTY,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS SALE_TAG,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS SALE_TAG,
           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) AS COST_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
@@ -129,9 +129,9 @@ export async function GET(req: NextRequest) {
       // 6. 할인율용: VW_SALES_VAT 기반 KPI (금월/전년동월 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(`
         SELECT
-          SUM(CASE WHEN v.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CM_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) AS CM_TAG,
           SUM(CASE WHEN v.SALEDT BETWEEN '${cmStart}' AND '${cmEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CM_SALE,
-          SUM(CASE WHEN v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS LY_TAG,
+          SUM(CASE WHEN v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) AS LY_TAG,
           SUM(CASE WHEN v.SALEDT BETWEEN '${lyStart}' AND '${lyEnd}' THEN v.SALEAMT_VAT_EX ELSE 0 END) AS LY_SALE
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
       // 7. 할인율용: 월별 VW_SALES_VAT (올해+전년)
       snowflakeQuery<{ M: string; TAG: number; SALE: number }>(`
         SELECT SUBSTRING(v.SALEDT, 1, 6) AS M,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG,
           SUM(v.SALEAMT_VAT_EX) AS SALE
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
       // 8. 매출원가용: 월별 PRODCOST (올해+전년)
       snowflakeQuery<{ M: string; COST: number }>(`
         SELECT SUBSTRING(v.SALEDT, 1, 6) AS M,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS COST
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) AS COST
         FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
@@ -195,7 +195,7 @@ export async function GET(req: NextRequest) {
           SELECT s.STYLECD, SUM(s.INVQTY) as QTY
           FROM BCAVE.SEWON.SW_SHOPINV_20251231 s
           JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-          WHERE sh.SHOPTYPENM NOT IN ('온라인(무신사)','온라인(자사몰)','온라인(위탁몰)','온라인B2B','해외 위탁','오프라인 위탁','면세점','해외 사입')
+          WHERE sh.SHOPTYPENM NOT IN ('온라인(무신사)','온라인(자사몰)','온라인(위탁몰)','온라인B2B','해외 위탁','오프라인 위탁','면세점','해외 사입','온라인','수출','위탁처')
           GROUP BY s.STYLECD
           UNION ALL
           SELECT STYLECD, SUM(INVQTY) as QTY FROM BCAVE.SEWON.SW_WHINV_20251231 GROUP BY STYLECD
@@ -214,7 +214,7 @@ export async function GET(req: NextRequest) {
       // 11. 2026년 판매 할인율 — 상품 YEARCD별 (VW_SALES_VAT)
       snowflakeQuery<Record<string, string>>(`
         SELECT si.YEARCD AS YR,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG_AMT,
           SUM(v.SALEAMT_VAT_EX) AS SALE_PRICE_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -234,7 +234,7 @@ export async function GET(req: NextRequest) {
           SELECT s.STYLECD, SUM(s.INVQTY) as QTY
           FROM BCAVE.SEWON.SW_SHOPINV s
           JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
-          WHERE sh.SHOPTYPENM NOT IN ('온라인(무신사)','온라인(자사몰)','온라인(위탁몰)','온라인B2B','해외 위탁','오프라인 위탁','면세점','해외 사입')
+          WHERE sh.SHOPTYPENM NOT IN ('온라인(무신사)','온라인(자사몰)','온라인(위탁몰)','온라인B2B','해외 위탁','오프라인 위탁','면세점','해외 사입','온라인','수출','위탁처')
           GROUP BY s.STYLECD
           UNION ALL
           SELECT STYLECD, SUM(AVAILQTY) as QTY FROM BCAVE.SEWON.SW_WHINV GROUP BY STYLECD
@@ -252,7 +252,7 @@ export async function GET(req: NextRequest) {
 
       // 13. 전년 당월 동기간 원가 (YTD 매출원가율 동기간 보정용)
       snowflakeQuery<Record<string, string>>(`
-        SELECT SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) AS LY_CM_COST
+        SELECT SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) AS LY_CM_COST
         FROM ${SALES_VIEW} v
         LEFT JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
@@ -271,11 +271,11 @@ export async function GET(req: NextRequest) {
           SELECT
             SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
             SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_REV,
-            SUM(CASE WHEN ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS NORM_COST,
-            SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS CO_COST,
-            SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS NORM_TAG,
+            SUM(CASE WHEN ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY ELSE 0 END) AS NORM_COST,
+            SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY ELSE 0 END) AS CO_COST,
+            SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) AS NORM_TAG,
             SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_SALE,
-            SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CO_TAG,
+            SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) AS CO_TAG,
             SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_SALE
           FROM ${SALES_VIEW} v
           JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -296,11 +296,11 @@ export async function GET(req: NextRequest) {
           SELECT
             SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_REV,
             SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_REV,
-            SUM(CASE WHEN ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS NORM_COST,
-            SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY ELSE 0 END) AS CO_COST,
-            SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS NORM_TAG,
+            SUM(CASE WHEN ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY ELSE 0 END) AS NORM_COST,
+            SUM(CASE WHEN NOT ${isNorm} THEN COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY ELSE 0 END) AS CO_COST,
+            SUM(CASE WHEN ${isNorm} THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) AS NORM_TAG,
             SUM(CASE WHEN ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS NORM_SALE,
-            SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.SALEQTY ELSE 0 END) AS CO_TAG,
+            SUM(CASE WHEN NOT ${isNorm} THEN (si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY ELSE 0 END) AS CO_TAG,
             SUM(CASE WHEN NOT ${isNorm} THEN v.SALEAMT_VAT_EX ELSE 0 END) AS CO_SALE
           FROM ${SALES_VIEW} v
           JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

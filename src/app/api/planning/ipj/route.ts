@@ -35,7 +35,7 @@ export async function GET(req: Request) {
   const prevYear = String(Number(year) - 1)
 
   const sBrandClause = `s.BRANDCD IN ${brandInClause}`
-  const onlineChannels = `'온라인(무신사)','온라인(위탁몰)','온라인(자사몰)','온라인B2B'`
+  const onlineChannels = `'온라인','온라인(무신사)','온라인(위탁몰)','온라인(자사몰)','온라인B2B'`
   // NULL-safe: SHOPTYPENM이 NULL인 행도 정상/이월에 포함시킴 (3치 논리로 누락되던 문제 수정)
   const excludeOverseas = `AND (v.SHOPTYPENM IS NULL OR v.SHOPTYPENM != '해외 사입')`
 
@@ -95,7 +95,7 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as SALE_AMT,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as COST_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
@@ -149,7 +149,7 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as CO_SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as CO_SALE_AMT,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as CO_COST_AMT,
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as CO_COST_AMT,
           COUNT(DISTINCT si.STYLECD) as CO_ST_CNT,
           COUNT(DISTINCT si.STYLECD) as CO_STCL_CNT
         FROM ${SALES_VIEW} v
@@ -216,7 +216,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM(v.SALEAMT_VAT_EX) as LY_SALE_AMT,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as LY_COST_AMT,
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as LY_COST_AMT,
           SUM(v.SALEQTY) as LY_SALE_QTY
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -232,7 +232,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM(v.SALEAMT_VAT_EX) as LY_CO_SALE_AMT,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as LY_CO_COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as LY_CO_COST_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
@@ -248,7 +248,7 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as OV_SALE_QTY,
           SUM(v.SALEAMT_VAT_EX) as OV_SALE_AMT,
-          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.SALEQTY) as OV_COST_AMT
+          SUM(COALESCE(pc.PRECOST, si.PRODCOST, 0) * v.FINANCIAL_SALEQTY) as OV_COST_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM BCAVE.SEWON.SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON si.STYLECD = pc.STYLECD AND si.BRANDCD = pc.BRANDCD
@@ -277,7 +277,7 @@ export async function GET(req: Request) {
           CASE WHEN si.YEARCD = '${year}' AND si.SEASONNM IN (${seasonList}) THEN 'NORM'
                WHEN v.SHOPTYPENM = '해외 사입' THEN 'OV'
                ELSE 'CO' END as SALE_TYPE,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_AMT,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) as TAG_AMT,
           SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -291,7 +291,7 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           CASE WHEN si.YEARCD = '${prevYear}' AND si.SEASONNM IN (${seasonList}) THEN 'NORM'
                ELSE 'CO' END as SALE_TYPE,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) as TAG_AMT,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) as TAG_AMT,
           SUM(v.SALEAMT_VAT_EX) as SALE_PRICE_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

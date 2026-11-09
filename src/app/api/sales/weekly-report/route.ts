@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const yy = cy0.slice(2, 4) // 당해년도 2자리 (소진율/정상 기준)
 
   const win = (a: string, b: string, col: string) => `SUM(CASE WHEN v.SALEDT BETWEEN '${a}' AND '${b}' THEN ${col} ELSE 0 END)`
-  const TAG = `(sti.TAGPRICE / 1.1) * v.SALEQTY`
+  const TAG = `(sti.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY`
   const dateWhere = `(v.SALEDT BETWEEN '${ly0}' AND '${ly1}' OR v.SALEDT BETWEEN '${pv0}' AND '${pv1}' OR v.SALEDT BETWEEN '${cy0}' AND '${cy1}')`
   const brandWhere = `v.BRANDCD IN ('CO','WA','LE','CK','LK')`
   // 기준주의 시즌 판별(2~7월=S/S, 그 외=F/W) → 정상 = 당해 연차 + 당해 시즌(반기). 전년주도 같은 시즌과 자동 정렬

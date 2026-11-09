@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { ERP_NET_SALES_AMOUNT } from '@/lib/sales-scope'
 import { snowflakeQuery, parseBrandParam, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
 
 // GET /api/planning/style-search?brands=all&year=26&seasons=봄,여름&item=&q=&from=20260501&to=20260520
@@ -62,16 +63,16 @@ export async function GET(req: Request) {
       -- 기타매출 = 워크인 외 모든 매출 (단, 맞교환·예약(완불) 제외)
       SELECT STYLECD,
         SUM(SALEQTY) as QTY,
-        SUM(SALEAMT) / 1.1 as REV,
+        SUM(${ERP_NET_SALES_AMOUNT}) as REV,
         SUM(CASE WHEN
           (SALETYPENM IS NULL OR SALETYPENM = '정상')
           AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
-          THEN SALEAMT ELSE 0 END) / 1.1 as STORE_REV,
+          THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as STORE_REV,
         SUM(CASE WHEN NOT (
           (SALETYPENM IS NULL OR SALETYPENM = '정상')
           AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
         ) AND (SALETYPENM IS NULL OR SALETYPENM NOT IN ('맞교환','예약(완불)'))
-          THEN SALEAMT ELSE 0 END) / 1.1 as OTHER_REV
+          THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as OTHER_REV
       FROM BCAVE.SEWON.SW_SALEINFO
       WHERE STYLECD IN (SELECT STYLECD FROM base_styles)
         AND SALEDT BETWEEN '${from}' AND '${to}'
@@ -80,7 +81,7 @@ export async function GET(req: Request) {
     ),
     transfer_agg AS (
       -- 자회사 해외법인 이전분 (대만/일본/중국 B.CAVE)
-      SELECT STYLECD, SUM(SALEQTY) as TRF_QTY, SUM(SALEAMT) / 1.1 as TRF_REV
+      SELECT STYLECD, SUM(SALEQTY) as TRF_QTY, SUM(${ERP_NET_SALES_AMOUNT}) as TRF_REV
       FROM BCAVE.SEWON.SW_SALEINFO
       WHERE STYLECD IN (SELECT STYLECD FROM base_styles)
         AND SALEDT BETWEEN '${from}' AND '${to}'

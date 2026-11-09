@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
+import { SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // 백화점·아울렛 동업계 비교 — 전 매장(건물) 단위, 성인/키즈 조닝
 //  우리=VW(VAT포함 ×1.1), 경쟁=SW_INDUSTRYPEERS(비우리 PEERNM)
@@ -7,6 +8,17 @@ import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
 //  '와릿이즌'(BR045)=우리 와키윌리이므로 경쟁사 제외
 const OUR_PEER_EXCL = `('커버낫','LEE','CK','와릿이즌')`
 const BLD = `REGEXP_REPLACE(sh.SHOPNM,'_[^_]+$','')`
+const PEER_SALES = `(
+  SELECT COALESCE(alias.SHOPCD, p.SHOPCD) AS SHOPCD, p.SALEDT, p.PEERCD, p.PEERNM, p.PRICETYPE,
+         MAX(p.PRICETYPENM) AS PRICETYPENM, SUM(p.SALEAMT) AS SALEAMT
+  FROM BCAVE.SEWON.SW_INDUSTRYPEERS p
+  LEFT JOIN ${SHOP_CODE_ALIASES} alias ON p.SHOPCD = alias.OLD_SHOPCD
+  GROUP BY 1, alias.SHOPCD, p.SHOPCD, p.SALEDT, p.PEERCD, p.PEERNM, p.PRICETYPE
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY COALESCE(alias.SHOPCD, p.SHOPCD), p.SALEDT, p.PEERCD, p.PEERNM, p.PRICETYPE
+    ORDER BY IFF(alias.SHOPCD IS NULL, 0, 1), p.SHOPCD
+  ) = 1
+)`
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -42,7 +54,7 @@ export async function GET(req: Request) {
           UNION ALL
           SELECT PEERNM AS BR, FALSE AS OURS, BK, MAX(AMT) AS AMT FROM (
             SELECT PEERNM, ${bucketPeer} AS BK, SHOPCD, SUM(SALEAMT) AS AMT
-            FROM BCAVE.SEWON.SW_INDUSTRYPEERS WHERE SHOPCD IN (SELECT SHOPCD FROM shops) AND PEERNM NOT IN ${OUR_PEER_EXCL} ${pt} AND SALEDT BETWEEN '${from}' AND '${to}'
+            FROM ${PEER_SALES} WHERE SHOPCD IN (SELECT SHOPCD FROM shops) AND PEERNM NOT IN ${OUR_PEER_EXCL} ${pt} AND SALEDT BETWEEN '${from}' AND '${to}'
             GROUP BY PEERNM, ${bucketPeer}, SHOPCD
           ) GROUP BY PEERNM, BK
         )
@@ -51,7 +63,7 @@ export async function GET(req: Request) {
     }
 
     // ── 전 매장 요약 + 우리 브랜드별 + 시장 추이(주간/월간) ──
-    const [summaryRaw, ourRaw, marketRaw] = await Promise.all([
+    const [summaryRaw, ourRaw, marketRaw, coverage] = await Promise.all([
       snowflakeQuery<Record<string, string>>(`
         WITH our_bld AS (
           SELECT ${BLD} AS BLD, v.BRANDCD AS BR, TRUE AS OURS, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
@@ -62,7 +74,7 @@ export async function GET(req: Request) {
         comp_ded AS (
           SELECT BLD, PEERNM AS BR, FALSE AS OURS, MAX(AMT) AS AMT FROM (
             SELECT ${BLD} AS BLD, p.PEERNM, p.SHOPCD, SUM(p.SALEAMT) AS AMT
-            FROM BCAVE.SEWON.SW_INDUSTRYPEERS p JOIN BCAVE.SEWON.SW_SHOPINFO sh ON p.SHOPCD=sh.SHOPCD
+            FROM ${PEER_SALES} p JOIN BCAVE.SEWON.SW_SHOPINFO sh ON p.SHOPCD=sh.SHOPCD
             WHERE p.PEERNM NOT IN ${OUR_PEER_EXCL} ${pt} AND p.SALEDT BETWEEN '${from}' AND '${to}' AND p.SHOPCD IN ${ourShopsSub}
             GROUP BY ${BLD}, p.PEERNM, p.SHOPCD
           ) GROUP BY BLD, PEERNM
@@ -101,11 +113,17 @@ export async function GET(req: Request) {
         SELECT PEERNM AS BR, FALSE AS OURS, BK, SUM(BLD_MAX) AS AMT FROM (
           SELECT BLD, PEERNM, BK, MAX(CNT_AMT) AS BLD_MAX FROM (
             SELECT ${BLD} AS BLD, p.PEERNM AS PEERNM, ${bucketPeer} AS BK, p.SHOPCD, SUM(p.SALEAMT) AS CNT_AMT
-            FROM BCAVE.SEWON.SW_INDUSTRYPEERS p JOIN BCAVE.SEWON.SW_SHOPINFO sh ON p.SHOPCD=sh.SHOPCD
+            FROM ${PEER_SALES} p JOIN BCAVE.SEWON.SW_SHOPINFO sh ON p.SHOPCD=sh.SHOPCD
             WHERE p.PEERNM NOT IN ${OUR_PEER_EXCL} ${pt} AND p.SALEDT BETWEEN '${from}' AND '${to}' AND p.SHOPCD IN ${ourShopsSub}
             GROUP BY ${BLD}, p.PEERNM, ${bucketPeer}, p.SHOPCD
           ) GROUP BY BLD, PEERNM, BK
         ) GROUP BY PEERNM, BK
+      `),
+      snowflakeQuery<{ PEER_THROUGH: string | null }>(`
+        SELECT MAX(SALEDT) AS PEER_THROUGH
+        FROM ${PEER_SALES}
+        WHERE SHOPCD IN ${ourShopsSub} AND PEERNM NOT IN ${OUR_PEER_EXCL} ${pt}
+          AND SALEDT BETWEEN '${from}' AND '${to}'
       `),
     ])
 
@@ -118,21 +136,22 @@ export async function GET(req: Request) {
     const buildings = summaryRaw.map(r => {
       const ourAmt = Number(r.OUR_AMT) || 0
       const total = Number(r.TOTAL) || 0
+      const compCnt = Number(r.COMP_CNT) || 0
       return {
         bld: r.BLD,
         ourAmt, total,
-        share: total > 0 ? Math.round(ourAmt / total * 1000) / 10 : null,
-        bestRank: r.OUR_BEST_RANK != null ? Number(r.OUR_BEST_RANK) : null,
-        topBrand: r.TOP_BRAND,
-        topIsOurs: String(r.TOP_IS_OURS) === '1',
-        compCnt: Number(r.COMP_CNT) || 0,
+        share: compCnt > 0 && total > 0 ? Math.round(ourAmt / total * 1000) / 10 : null,
+        bestRank: compCnt > 0 && r.OUR_BEST_RANK != null ? Number(r.OUR_BEST_RANK) : null,
+        topBrand: compCnt > 0 ? r.TOP_BRAND : '',
+        topIsOurs: compCnt > 0 && String(r.TOP_IS_OURS) === '1',
+        compCnt,
         ours: ourByBld.get(r.BLD) ?? {},
       }
     }).filter(b => b.ourAmt > 0).sort((a, b) => b.ourAmt - a.ourAmt)
 
     const marketTrend = marketRaw.map(r => ({ brand: r.BR, isOurs: String(r.OURS).toLowerCase() === 'true', bucket: String(r.BK || ''), amt: Number(r.AMT) || 0 })).filter(r => r.amt > 0)
 
-    return NextResponse.json({ buildings, marketTrend, meta: { from, to, scope, gran, zone } })
+    return NextResponse.json({ buildings, marketTrend, meta: { from, to, scope, gran, zone, peerThrough: coverage[0]?.PEER_THROUGH ?? null } })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

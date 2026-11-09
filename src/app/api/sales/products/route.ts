@@ -49,9 +49,9 @@ export async function GET(req: Request) {
   } else if (channelGroup === '해외') {
     chFilter = `AND (${col} LIKE '%해외%' OR ${col} LIKE '%수출%')`
   } else if (channelGroup === '오프라인') {
-    chFilter = `AND (${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%쇼핑몰%' OR ${col} LIKE '%사입%')`
+    chFilter = `AND (${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%쇼핑몰%' OR ${col} = '사입' OR ${col} IN ('위탁처','본사매장'))`
   } else if (channelGroup === '온라인') {
-    chFilter = `AND NOT (${col} LIKE '%해외%' OR ${col} LIKE '%수출%' OR ${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%쇼핑몰%' OR ${col} LIKE '%사입%')`
+    chFilter = `AND NOT (${col} LIKE '%해외%' OR ${col} LIKE '%수출%' OR ${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%쇼핑몰%' OR ${col} = '사입' OR ${col} IN ('위탁처','본사매장'))`
   }
 
   const gender = searchParams.get('gender') || ''
@@ -74,9 +74,9 @@ export async function GET(req: Request) {
   } else if (channelGroup === '해외') {
     chFilterSl = `AND (${slCol} LIKE '%해외%' OR ${slCol} LIKE '%수출%')`
   } else if (channelGroup === '오프라인') {
-    chFilterSl = `AND (${slCol} LIKE '%백화점%' OR ${slCol} LIKE '%아울렛%' OR ${slCol} LIKE '%가두%' OR ${slCol} LIKE '%직영%' OR ${slCol} LIKE '%대리%' OR ${slCol} LIKE '%면세%' OR ${slCol} LIKE '%팝업%' OR ${slCol} LIKE '%편집%' OR ${slCol} LIKE '%오프%' OR ${slCol} LIKE '%쇼핑몰%' OR ${slCol} LIKE '%사입%')`
+    chFilterSl = `AND (${slCol} LIKE '%백화점%' OR ${slCol} LIKE '%아울렛%' OR ${slCol} LIKE '%가두%' OR ${slCol} LIKE '%직영%' OR ${slCol} LIKE '%대리%' OR ${slCol} LIKE '%면세%' OR ${slCol} LIKE '%팝업%' OR ${slCol} LIKE '%편집%' OR ${slCol} LIKE '%오프%' OR ${slCol} LIKE '%쇼핑몰%' OR ${slCol} = '사입' OR ${slCol} IN ('위탁처','본사매장'))`
   } else if (channelGroup === '온라인') {
-    chFilterSl = `AND NOT (${slCol} LIKE '%해외%' OR ${slCol} LIKE '%수출%' OR ${slCol} LIKE '%백화점%' OR ${slCol} LIKE '%아울렛%' OR ${slCol} LIKE '%가두%' OR ${slCol} LIKE '%직영%' OR ${slCol} LIKE '%대리%' OR ${slCol} LIKE '%면세%' OR ${slCol} LIKE '%팝업%' OR ${slCol} LIKE '%편집%' OR ${slCol} LIKE '%오프%' OR ${slCol} LIKE '%쇼핑몰%' OR ${slCol} LIKE '%사입%')`
+    chFilterSl = `AND NOT (${slCol} LIKE '%해외%' OR ${slCol} LIKE '%수출%' OR ${slCol} LIKE '%백화점%' OR ${slCol} LIKE '%아울렛%' OR ${slCol} LIKE '%가두%' OR ${slCol} LIKE '%직영%' OR ${slCol} LIKE '%대리%' OR ${slCol} LIKE '%면세%' OR ${slCol} LIKE '%팝업%' OR ${slCol} LIKE '%편집%' OR ${slCol} LIKE '%오프%' OR ${slCol} LIKE '%쇼핑몰%' OR ${slCol} = '사입' OR ${slCol} IN ('위탁처','본사매장'))`
   }
 
   const weekFilterSl = weekNum
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
       // 할인율용: VW_SALES_VAT (스타일별 TAG·SALEAMT_VAT_EX)
       snowflakeQuery<Record<string, string>>(
         `SELECT v.STYLECD,
-           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_TOTAL,
+           SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG_TOTAL,
            SUM(v.SALEAMT_VAT_EX) AS SALE_TOTAL
          FROM ${SALES_VIEW} v
          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

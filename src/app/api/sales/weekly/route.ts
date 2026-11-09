@@ -46,10 +46,10 @@ export async function GET(req: Request) {
       return `AND (${col} LIKE '%해외%' OR ${col} LIKE '%global%' OR ${col} LIKE '%수출%' OR ${col} LIKE '%export%')`
     }
     if (channelGroup === '오프라인') {
-      return `AND (${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%로드샵%' OR ${col} LIKE '%부티크%')`
+      return `AND (${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%로드샵%' OR ${col} LIKE '%부티크%' OR ${col} LIKE '%쇼핑몰%' OR ${col} = '사입' OR ${col} IN ('위탁처','본사매장'))`
     }
     if (channelGroup === '온라인') {
-      return `AND NOT (${col} LIKE '%해외%' OR ${col} LIKE '%global%' OR ${col} LIKE '%수출%' OR ${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%로드샵%' OR ${col} LIKE '%부티크%')`
+      return `AND NOT (${col} LIKE '%해외%' OR ${col} LIKE '%global%' OR ${col} LIKE '%수출%' OR ${col} LIKE '%백화점%' OR ${col} LIKE '%아울렛%' OR ${col} LIKE '%가두%' OR ${col} LIKE '%직영%' OR ${col} LIKE '%대리%' OR ${col} LIKE '%면세%' OR ${col} LIKE '%팝업%' OR ${col} LIKE '%편집%' OR ${col} LIKE '%오프%' OR ${col} LIKE '%로드샵%' OR ${col} LIKE '%부티크%' OR ${col} LIKE '%쇼핑몰%' OR ${col} = '사입' OR ${col} IN ('위탁처','본사매장'))`
     }
     return ''
   }
@@ -95,7 +95,7 @@ export async function GET(req: Request) {
       snowflakeQuery<{ WEEK_NUM: number; TAG: number; SALE: number }>(
         `SELECT
            WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
-           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG,
+           SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG,
            SUM(v.SALEAMT_VAT_EX) AS SALE
          FROM ${SALES_VIEW} v
          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -111,7 +111,7 @@ export async function GET(req: Request) {
       snowflakeQuery<{ WEEK_NUM: number; TAG: number; SALE: number }>(
         `SELECT
            WEEKOFYEAR(TO_DATE(v.SALEDT, 'YYYYMMDD')) AS WEEK_NUM,
-           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG,
+           SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG,
            SUM(v.SALEAMT_VAT_EX) AS SALE
          FROM ${SALES_VIEW} v
          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

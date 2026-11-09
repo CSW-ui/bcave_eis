@@ -74,8 +74,8 @@ export function weeklyQuery(brands: string[], year: string, seasons: string[], a
     FROM inbound_by_batch GROUP BY STYLECD
   ), sales AS (
     SELECT v.STYLECD,SUM(v.SALEQTY) SALE_QTY,SUM(v.SALEAMT_VAT_EX) SALE_AMT,
-      SUM(v.TAGPRICE*v.SALEQTY) SALE_TAG_AMT,
-      COUNT_IF(v.SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
+      SUM(v.TAGPRICE*v.FINANCIAL_SALEQTY) SALE_TAG_AMT,
+      COUNT_IF(v.FINANCIAL_SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
       ${weeks.map((w,i)=>`SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEQTY ELSE 0 END) W${i}`).join(',\n      ')}
     FROM ${SALES_VIEW} v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
     WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' GROUP BY v.STYLECD

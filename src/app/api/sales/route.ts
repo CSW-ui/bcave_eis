@@ -87,7 +87,7 @@ export async function GET(req: Request) {
       // 4. 할인율용: VW_SALES_VAT (브랜드×채널×월)
       snowflakeQuery<Record<string, string>>(
         `SELECT SUBSTRING(v.SALEDT, 1, 6) AS YYYYMM, v.BRANDCD, v.SHOPTYPENM,
-           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+           SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG_AMT,
            SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
          FROM ${SALES_VIEW} v
          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
       // 5. 할인율용: 전년 VW_SALES_VAT
       snowflakeQuery<Record<string, string>>(
         `SELECT SUBSTRING(v.SALEDT, 1, 6) AS YYYYMM, v.BRANDCD, v.SHOPTYPENM,
-           SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+           SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG_AMT,
            SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
          FROM ${SALES_VIEW} v
          JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

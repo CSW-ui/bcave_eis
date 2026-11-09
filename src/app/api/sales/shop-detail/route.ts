@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
-import { ERP_SALES_CUTOVER, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
+import { ERP_NET_SALES_AMOUNT, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // GET /api/sales/shop-detail?shopCd=C3001&from=20260501&to=20260520
 export async function GET(req: Request) {
@@ -22,7 +22,6 @@ export async function GET(req: Request) {
     UNION ALL
     SELECT OLD_SHOPCD FROM ${SHOP_CODE_ALIASES} WHERE SHOPCD = '${shopCd}'
   )`
-  const saleAmount = `CASE WHEN SALEDT >= '${ERP_SALES_CUTOVER}' THEN SALEAMT ELSE SALEAMT / 1.1 END`
 
   // WoS 계산용: 최근 4주(28일) 평균 판매 - to 기준 역산
   const toD = new Date(Number(to.slice(0,4)), Number(to.slice(4,6))-1, Number(to.slice(6,8)))
@@ -44,17 +43,17 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT STYLECD, COLORCD, SIZECD,
           SUM(SALEQTY) as QTY,
-          SUM(${saleAmount}) as REV,
+          SUM(${ERP_NET_SALES_AMOUNT}) as REV,
           SUM(DCAMT) / 1.1 as DC,
           SUM(CASE WHEN
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
-            THEN ${saleAmount} ELSE 0 END) as STORE_REV,
+            THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as STORE_REV,
           SUM(CASE WHEN NOT (
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
           ) AND (SALETYPENM IS NULL OR SALETYPENM NOT IN ('맞교환','예약(완불)'))
-            THEN ${saleAmount} ELSE 0 END) as OTHER_REV
+            THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as OTHER_REV
         FROM BCAVE.SEWON.SW_SALEINFO
         WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${from}' AND '${to}'
@@ -93,8 +92,8 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT
           COUNT(DISTINCT CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN SHOPCD || '|' || SALEDT || '|' || SALENO END) as ORDER_CNT,
-          SUM(CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN ${saleAmount} ELSE 0 END) as RETAIL_REV,
-          SUM(CASE WHEN SALETYPENM = '라이브' THEN ${saleAmount} ELSE 0 END) as LIVE_REV
+          SUM(CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as RETAIL_REV,
+          SUM(CASE WHEN SALETYPENM = '라이브' THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as LIVE_REV
         FROM BCAVE.SEWON.SW_SALEINFO
         WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${from}' AND '${to}'

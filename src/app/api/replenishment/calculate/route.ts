@@ -3,6 +3,7 @@ import { snowflakeQuery } from '@/lib/snowflake'
 import { supabaseAdmin } from '@/lib/supabase'
 import { VALID_BRANDS } from '@/lib/constants'
 import { verifyCronSecret, getServerProfile } from '@/lib/auth'
+import { REPLENISHMENT_NORMAL_SALE, REPLENISHMENT_RETAIL_SHOP, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 export const maxDuration = 300
 
@@ -40,19 +41,16 @@ export async function POST(req: Request) {
 
     const [salesData, whData] = await Promise.all([
       snowflakeQuery<Record<string, string>>(`
-        SELECT s.SHOPCD, MAX(s.SHOPNM) as SHOPNM, s.STYLECD, s.COLORCD, s.SIZECD,
+        SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, MAX(si.SHOPNM) as SHOPNM, s.STYLECD, s.COLORCD, s.SIZECD,
           SUM(s.SALEQTY) as TOTAL_QTY, ROUND(SUM(s.SALEQTY)/7, 2) as DAILY_AVG,
           ${days.map((d, i) => `SUM(CASE WHEN s.SALEDT='${d}' THEN s.SALEQTY ELSE 0 END) as D${i}`).join(',')}
         FROM BCAVE.SEWON.SW_SALEINFO s
-        LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON s.SHOPCD = si.SHOPCD
+        LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
+        LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON COALESCE(alias.SHOPCD, s.SHOPCD) = si.SHOPCD
         WHERE s.BRANDCD='${brand}' AND s.SALEDT BETWEEN '${fromDt}' AND '${cutoffDt}'
-          AND s.SALEQTY>0 AND s.PRICETYPE='0'
-          AND COALESCE(si.SHOPTYPENM,'') NOT LIKE '%면세%'
-          AND COALESCE(si.SHOPTYPENM,'') NOT LIKE '%해외%'
-          AND COALESCE(si.SHOPTYPENM,'') NOT LIKE '%온라인%'
-          AND COALESCE(si.SHOPTYPENM,'') NOT LIKE '%B2B%'
-          AND COALESCE(si.SHOPTYPENM,'') NOT LIKE '%오프라인 위탁%'
-        GROUP BY s.SHOPCD, s.STYLECD, s.COLORCD, s.SIZECD HAVING SUM(s.SALEQTY)>0
+          AND s.SALEQTY>0 AND ${REPLENISHMENT_NORMAL_SALE}
+          AND ${REPLENISHMENT_RETAIL_SHOP}
+        GROUP BY 1, s.STYLECD, s.COLORCD, s.SIZECD HAVING SUM(s.SALEQTY)>0
       `),
       snowflakeQuery<Record<string, string>>(`SELECT STYLECD, SUM(AVAILQTY) as WH FROM BCAVE.SEWON.SW_WHINV GROUP BY STYLECD`),
     ])
@@ -64,7 +62,7 @@ export async function POST(req: Request) {
       skuKeys.length && shopKeys.length
         ? snowflakeQuery<Record<string, string>>(`SELECT SHOPCD,STYLECD,COLORCD,SIZECD,INVQTY FROM BCAVE.SEWON.SW_SHOPINV WHERE SHOPCD IN (${shopKeys.join(',')}) AND STYLECD IN (${skuKeys.join(',')})`)
         : Promise.resolve([]),
-      snowflakeQuery<Record<string, string>>(`SELECT SHOPCD,SHOPNM,SHOPTYPENM,AREANM FROM BCAVE.SEWON.SW_SHOPINFO`),
+      snowflakeQuery<Record<string, string>>(`SELECT SHOPCD,OLD_SHOPCD,SHOPNM,SHOPTYPENM,AREANM FROM BCAVE.SEWON.SW_SHOPINFO`),
       snowflakeQuery<Record<string, string>>(`SELECT STYLECD,STYLENM,TAGPRICE / 1.1 as TAGPRICE,YEARCD,SEASONNM FROM BCAVE.SEWON.SW_STYLEINFO WHERE BRANDCD='${brand}'`),
     ])
 
@@ -74,9 +72,12 @@ export async function POST(req: Request) {
 
     // 3개월 매출 기반 자동 등급
     const rankData = await snowflakeQuery<Record<string, string>>(`
-      SELECT s.SHOPCD, SUM(s.SALEAMT) as AMT FROM BCAVE.SEWON.SW_SALEINFO s
+      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, SUM(s.SALEAMT) as AMT FROM BCAVE.SEWON.SW_SALEINFO s
+      LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
+      LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON COALESCE(alias.SHOPCD, s.SHOPCD) = si.SHOPCD
       WHERE s.BRANDCD='${brand}' AND s.SALEDT>=TO_CHAR(DATEADD(DAY,-90,CURRENT_DATE()),'YYYYMMDD')
-        AND s.SALEQTY>0 AND s.PRICETYPE='0' GROUP BY s.SHOPCD
+        AND s.SALEQTY>0 AND ${REPLENISHMENT_NORMAL_SALE} AND ${REPLENISHMENT_RETAIL_SHOP}
+      GROUP BY 1
     `)
     const rankSorted = [...rankData].sort((a, b) => (Number(b.AMT) || 0) - (Number(a.AMT) || 0))
     const autoGrade = new Map<string, string>()
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
 
     const invMap = new Map(invData.map(r => [`${r.SHOPCD}|${r.STYLECD}|${r.COLORCD}|${r.SIZECD}`, Number(r.INVQTY) || 0]))
     const whMap = new Map(whData.map(r => [r.STYLECD, Number(r.WH) || 0]))
-    const shopMap = new Map(shopData.map(r => [r.SHOPCD, { nm: r.SHOPNM, type: r.SHOPTYPENM, area: r.AREANM }]))
+    const shopMap = new Map(shopData.map(r => [r.SHOPCD, { nm: r.SHOPNM, type: r.SHOPTYPENM, area: r.AREANM, oldCd: r.OLD_SHOPCD }]))
     const saleNm = new Map(salesData.map(r => [r.SHOPCD, r.SHOPNM]))
     const styleMap = new Map(styleData.map(r => [r.STYLECD, { nm: r.STYLENM, price: Number(r.TAGPRICE) || 0, yr: r.YEARCD || '', season: r.SEASONNM || '' }]))
 
@@ -118,7 +119,7 @@ export async function POST(req: Request) {
           shopNm: shop?.nm ?? saleNm.get(shopCd) ?? shopCd,
           shopType: shop?.type ?? '',
           area: shop?.area ?? '',
-          grade: sgMap.get(shopCd) ?? autoGrade.get(shopCd) ?? 'B',
+          grade: sgMap.get(shopCd) ?? sgMap.get(shop?.oldCd ?? '') ?? autoGrade.get(shopCd) ?? 'B',
           skus: [],
         })
       }
@@ -136,6 +137,9 @@ export async function POST(req: Request) {
     }
 
     const allShops = Array.from(shopSkuMap.values())
+    if (allShops.length === 0) {
+      return NextResponse.json({ error: '보충출고 대상 판매·재고 데이터가 없습니다.' }, { status: 422 })
+    }
     console.log(`[보충출고] ${brand}: ${allShops.length}매장, ${allShops.reduce((s, sh) => s + sh.skus.length, 0)} SKU`)
 
     // ═══ STEP 3: Claude에게 매장 단위로 전달 → 수량 판단 ═══

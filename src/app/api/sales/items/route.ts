@@ -108,7 +108,7 @@ export async function GET(req: Request) {
       const wn = parseInt(weekNum)
       dcSql = `
         SELECT si.ITEMNM,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG_AMT,
           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
@@ -120,7 +120,7 @@ export async function GET(req: Request) {
     } else {
       dcSql = `
         SELECT si.ITEMNM,
-          SUM((si.TAGPRICE / 1.1) * v.SALEQTY) AS TAG_AMT,
+          SUM((si.TAGPRICE / 1.1) * v.FINANCIAL_SALEQTY) AS TAG_AMT,
           SUM(v.SALEAMT_VAT_EX) AS SALE_AMT
         FROM ${SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD

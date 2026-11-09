@@ -14,15 +14,16 @@ export async function GET(req: NextRequest) {
     && (allowedCodes.length === 0 || allowedCodes.includes(brandParam))
     ? brandParam : null
   // SHOPTYPENM은 '백화점','아울렛','무신사','해외 사입' 등 구체적 채널명
-  // 해외: SHOPTYPENM에 '해외' 포함
+  // 해외: 기존 해외 채널과 ERP 전환 후 수출 채널
   // 오프라인: 백화점,아울렛,가두,직영,대리,면세,팝업,편집,오프,로드샵,부티크,쇼핑몰,사입(해외제외)
   // 온라인: 해외/오프라인 아닌 나머지
   // 국내: 해외 아닌 전체
+  const overseasChannel = "(SHOPTYPENM LIKE '%해외%' OR SHOPTYPENM LIKE '%수출%')"
   const regionFilterMap: Record<string, string> = {
-    domestic: "AND SHOPTYPENM NOT LIKE '%해외%'",
-    online: "AND SHOPTYPENM NOT LIKE '%해외%' AND SHOPTYPENM NOT IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰')",
-    offline: "AND SHOPTYPENM NOT LIKE '%해외%' AND SHOPTYPENM IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰')",
-    overseas: "AND SHOPTYPENM LIKE '%해외%'",
+    domestic: `AND NOT ${overseasChannel}`,
+    online: `AND NOT ${overseasChannel} AND SHOPTYPENM NOT IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰')`,
+    offline: `AND NOT ${overseasChannel} AND SHOPTYPENM IN ('백화점','아울렛','가두점','직영점','대리점','면세점','팝업','편집숍','로드샵','부티크','쇼핑몰')`,
+    overseas: `AND ${overseasChannel}`,
   }
   const regionFilter = regionFilterMap[region] || ''
   const now = new Date()

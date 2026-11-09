@@ -49,6 +49,7 @@ export async function GET(req: Request) {
     WHERE ${brandWhere} AND ${dateWhere}
     GROUP BY v.SHOPCD, v.BRANDCD, v.SHOPTYPENM, ${VIN}
     HAVING ${win(cy0, cy1, 'v.SALEAMT_VAT_EX')} <> 0 OR ${win(pv0, pv1, 'v.SALEAMT_VAT_EX')} <> 0 OR ${win(ly0, ly1, 'v.SALEAMT_VAT_EX')} <> 0
+        OR ${win(cy0, cy1, 'v.SALEQTY')} <> 0 OR ${win(ly0, ly1, 'v.SALEQTY')} <> 0
   `
 
   const itemSql = `

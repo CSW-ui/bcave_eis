@@ -1,4 +1,5 @@
 import { reportWeeks, validReportDate, WEEKLY_BRANDS } from './planning-weekly-report'
+import { SALES_VIEW } from './sales-scope'
 
 export interface WeeklyChannel {
   channel: string; revenue: number; qty: number; revenueShare: number | null; discountRate: number | null
@@ -20,10 +21,9 @@ export function weeklyChannelQuery(brand: string, style: string, asOf: string) {
     COUNT_IF(v.SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
     ${weeks.map((w,i) => `SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEAMT_VAT_EX ELSE 0 END) W${i}_REVENUE,
     SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEQTY ELSE 0 END) W${i}_QTY`).join(',\n    ')}
-    FROM BCAVE.SEWON.VW_SALES_VAT v
+    FROM ${SALES_VIEW} v
     WHERE v.BRANDCD='${brand}' AND v.STYLECD='${style}'
       AND v.SALEDT BETWEEN '20250101' AND '${asOf.replaceAll('-','')}'
-      AND v.SHOPCD NOT IN ('B6055','B6057','B6063')
     GROUP BY COALESCE(NULLIF(TRIM(v.SHOPTYPENM),''),'미분류')
     ORDER BY REVENUE DESC,CHANNEL`
 }

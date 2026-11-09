@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { snowflakeQuery, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
+import { snowflakeQuery } from '@/lib/snowflake'
+import { OVERSEAS_TRANSFER_ENTITY_CODES, OVERSEAS_TRANSFER_ENTITY_SQL, OVERSEAS_TRANSFER_SHOP_LIST } from '@/lib/sales-scope'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,18 +13,16 @@ export async function GET(req: Request) {
   if (!/^\d{4}$/.test(year)) return NextResponse.json({ error: 'year는 YYYY 형식이어야 합니다.' }, { status: 400 })
   const lyYear = String(Number(year) - 1)
 
-  const inClause = OVERSEAS_TRANSFER_SHOPS.map(s => `'${s}'`).join(',')
-
   const sql = `
-    SELECT v.SHOPCD, v.BRANDCD,
+    SELECT ${OVERSEAS_TRANSFER_ENTITY_SQL} AS SHOPCD, v.BRANDCD,
       SUBSTRING(v.SALEDT, 1, 4) as YR,
       CAST(SUBSTRING(v.SALEDT, 5, 2) AS INT) as MM,
       SUM(v.SALEAMT_VAT_EX) as AMT,
       SUM(v.SALEQTY) as QTY
     FROM BCAVE.SEWON.VW_SALES_VAT v
-    WHERE v.SHOPCD IN (${inClause})
+    WHERE v.SHOPCD IN (${OVERSEAS_TRANSFER_SHOP_LIST})
       AND v.SALEDT BETWEEN '${lyYear}0101' AND '${year}1231'
-    GROUP BY v.SHOPCD, v.BRANDCD, YR, MM
+    GROUP BY 1, v.BRANDCD, YR, MM
   `
 
   try {
@@ -33,7 +32,7 @@ export async function GET(req: Request) {
       shopCd: r.SHOPCD, brandcd: r.BRANDCD,
       yr: r.YR, mm: Number(r.MM), amt: num(r.AMT), qty: num(r.QTY),
     }))
-    return NextResponse.json({ rows: data, meta: { year, lyYear, shops: OVERSEAS_TRANSFER_SHOPS } })
+    return NextResponse.json({ rows: data, meta: { year, lyYear, shops: OVERSEAS_TRANSFER_ENTITY_CODES } })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

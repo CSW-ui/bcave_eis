@@ -1,3 +1,5 @@
+import { OVERSEAS_TRANSFER_SHOP_LIST, SALES_VIEW } from './sales-scope'
+
 export const WEEKLY_BRANDS = ['CO', 'LE', 'WA', 'CK', 'LK'] as const
 export const WEEKLY_SEASONS = ['봄', '여름', '상반기', '가을', '겨울', '하반기', '스탠다드']
 export interface ReportColor { code: string; name: string; orderQty: number }
@@ -75,12 +77,12 @@ export function weeklyQuery(brands: string[], year: string, seasons: string[], a
       SUM(v.TAGPRICE*v.SALEQTY) SALE_TAG_AMT,
       COUNT_IF(v.SALEQTY <> 0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE <= 0)) TAG_MISSING_COUNT,
       ${weeks.map((w,i)=>`SUM(CASE WHEN v.SALEDT BETWEEN '${w.start.replaceAll('-','')}' AND '${w.end.replaceAll('-','')}' THEN v.SALEQTY ELSE 0 END) W${i}`).join(',\n      ')}
-    FROM BCAVE.SEWON.VW_SALES_VAT v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
-    WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' AND v.SHOPCD NOT IN ('B6055','B6057','B6063') GROUP BY v.STYLECD
+    FROM ${SALES_VIEW} v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
+    WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' GROUP BY v.STYLECD
   ), transfers AS (
     SELECT v.STYLECD,SUM(v.SALEQTY) TRF_QTY
     FROM BCAVE.SEWON.VW_SALES_VAT v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
-    WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' AND v.SHOPCD IN ('B6055','B6057','B6063') GROUP BY v.STYLECD
+    WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' AND v.SHOPCD IN (${OVERSEAS_TRANSFER_SHOP_LIST}) GROUP BY v.STYLECD
   ), inventory AS (
     SELECT x.STYLECD,SUM(x.QTY) STOCK FROM (
       SELECT i.STYLECD,SUM(i.INVQTY) QTY FROM BCAVE.SEWON.SW_SHOPINV i JOIN eligible e ON e.STYLECD=i.STYLECD GROUP BY i.STYLECD

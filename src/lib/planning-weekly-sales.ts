@@ -1,4 +1,5 @@
 import { shiftDay, weeklyQuery, toWeeklyProduct, type PlanningWeeklyProduct } from './planning-weekly-report'
+import { OVERSEAS_TRANSFER_SHOP_LIST, SALES_VAT_VIEW } from './sales-scope'
 export type Bucket={q:number;a:number;bq:number;ba:number;inbound:number;transfer:number;tag:number;missing:number}
 export type WeeklySalesProduct=PlanningWeeklyProduct & {history:Record<string,Bucket>;firstSale:string|null}
 export type WeeklySalesData={products:WeeklySalesProduct[];weeks:ReturnType<typeof salesWeeks>;asOf:string;fetchedAt:string}
@@ -6,16 +7,17 @@ export function salesWeeks(asOf:string){return Array.from({length:13},(_,i)=>{co
 export function weeklySalesQuery(brands:string[],year:string,seasons:string[],asOf:string){
  const base=weeklyQuery(brands,year,seasons,asOf),first=salesWeeks(asOf)[0].start,cutoff=asOf.replaceAll('-','')
  const bucket=`GREATEST(-2,FLOOR(DATEDIFF('day',TO_DATE('${first}'),TO_DATE(DAY,'YYYYMMDD'))/7))`
+ const isTransfer=`v.SHOPCD IN (${OVERSEAS_TRANSFER_SHOP_LIST})`
  return `WITH base AS (${base}), events AS (
  SELECT v.STYLECD,v.SALEDT DAY,
- IFF(v.SHOPCD IN ('B6055','B6057','B6063'),0,v.SALEQTY) Q,
- IFF(v.SHOPCD IN ('B6055','B6057','B6063'),0,v.SALEAMT_VAT_EX) A,
- IFF(v.SHOPTYPENM='온라인B2B' AND v.SHOPCD NOT IN ('B6055','B6057','B6063'),v.SALEQTY,0) BQ,
- IFF(v.SHOPTYPENM='온라인B2B' AND v.SHOPCD NOT IN ('B6055','B6057','B6063'),v.SALEAMT_VAT_EX,0) BA,
- 0 INBOUND,IFF(v.SHOPCD IN ('B6055','B6057','B6063'),v.SALEQTY,0) TRANSFER,
- IFF(v.SHOPCD IN ('B6055','B6057','B6063'),0,v.TAGPRICE*v.SALEQTY) TAG,
- IFF(v.SHOPCD NOT IN ('B6055','B6057','B6063') AND v.SALEQTY<>0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE<=0),1,0) MISSING
- FROM BCAVE.SEWON.VW_SALES_VAT v JOIN base e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
+ IFF(${isTransfer},0,v.SALEQTY) Q,
+ IFF(${isTransfer},0,v.SALEAMT_VAT_EX) A,
+ IFF(v.SHOPTYPENM='온라인B2B' AND NOT (${isTransfer}),v.SALEQTY,0) BQ,
+ IFF(v.SHOPTYPENM='온라인B2B' AND NOT (${isTransfer}),v.SALEAMT_VAT_EX,0) BA,
+ 0 INBOUND,IFF(${isTransfer},v.SALEQTY,0) TRANSFER,
+ IFF(${isTransfer},0,v.TAGPRICE*v.SALEQTY) TAG,
+ IFF(NOT (${isTransfer}) AND v.SALEQTY<>0 AND (v.TAGPRICE IS NULL OR v.TAGPRICE<=0),1,0) MISSING
+ FROM ${SALES_VAT_VIEW} v JOIN base e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
  WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}'
  UNION ALL SELECT w.STYLECD,w.WHINDT,0,0,0,0,w.INQTY,0,0,0
  FROM BCAVE.SEWON.SW_WHININFO w JOIN base e ON e.STYLECD=w.STYLECD WHERE w.WHINDT<='${cutoff}'

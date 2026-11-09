@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
+import { ERP_SALES_CUTOVER, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // GET /api/sales/shop-detail?shopCd=C3001&from=20260501&to=20260520
 export async function GET(req: Request) {
@@ -16,6 +17,13 @@ export async function GET(req: Request) {
   }
   if (from > to) return NextResponse.json({ error: 'from > to' }, { status: 400 })
 
+  const salesShopFilter = `SHOPCD IN (
+    SELECT '${shopCd}'
+    UNION ALL
+    SELECT OLD_SHOPCD FROM ${SHOP_CODE_ALIASES} WHERE SHOPCD = '${shopCd}'
+  )`
+  const saleAmount = `CASE WHEN SALEDT >= '${ERP_SALES_CUTOVER}' THEN SALEAMT ELSE SALEAMT / 1.1 END`
+
   // WoS 계산용: 최근 4주(28일) 평균 판매 - to 기준 역산
   const toD = new Date(Number(to.slice(0,4)), Number(to.slice(4,6))-1, Number(to.slice(6,8)))
   const fmt = (d: Date) => `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`
@@ -30,25 +38,25 @@ export async function GET(req: Request) {
         WHERE SHOPCD = '${shopCd}'
         LIMIT 1
       `),
-      // SKU 단위 기간 매출 (VAT 포함 → /1.1)
+      // SKU 단위 기간 매출 (ERP 전환 전 금액만 부가세 제거)
       // STORE_REV (매장 워크인) = SALETYPE in (NULL,'정상') × PRICETYPE in (NULL,'정상','할인','균일')
       // OTHER_REV (기타) = 워크인 외 모든 매출 (단, 맞교환·예약(완불) 제외)
       snowflakeQuery<Record<string, string>>(`
         SELECT STYLECD, COLORCD, SIZECD,
           SUM(SALEQTY) as QTY,
-          SUM(SALEAMT) / 1.1 as REV,
+          SUM(${saleAmount}) as REV,
           SUM(DCAMT) / 1.1 as DC,
           SUM(CASE WHEN
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
-            THEN SALEAMT ELSE 0 END) / 1.1 as STORE_REV,
+            THEN ${saleAmount} ELSE 0 END) as STORE_REV,
           SUM(CASE WHEN NOT (
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
           ) AND (SALETYPENM IS NULL OR SALETYPENM NOT IN ('맞교환','예약(완불)'))
-            THEN SALEAMT ELSE 0 END) / 1.1 as OTHER_REV
+            THEN ${saleAmount} ELSE 0 END) as OTHER_REV
         FROM BCAVE.SEWON.SW_SALEINFO
-        WHERE SHOPCD = '${shopCd}'
+        WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${from}' AND '${to}'
         GROUP BY STYLECD, COLORCD, SIZECD
       `),
@@ -56,7 +64,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT STYLECD, COLORCD, SIZECD, SUM(SALEQTY) as QTY_4W
         FROM BCAVE.SEWON.SW_SALEINFO
-        WHERE SHOPCD = '${shopCd}'
+        WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${last4wStart}' AND '${to}'
         GROUP BY STYLECD, COLORCD, SIZECD
       `),
@@ -72,23 +80,23 @@ export async function GET(req: Request) {
         SELECT STYLECD, COLORCD, SIZECD, SUM(AVAILQTY) as WH_INV
         FROM BCAVE.SEWON.SW_WHINV
         WHERE STYLECD IN (
-          SELECT DISTINCT STYLECD FROM BCAVE.SEWON.SW_SALEINFO WHERE SHOPCD = '${shopCd}' AND SALEDT BETWEEN '${last4wStart}' AND '${to}'
+          SELECT DISTINCT STYLECD FROM BCAVE.SEWON.SW_SALEINFO WHERE ${salesShopFilter} AND SALEDT BETWEEN '${last4wStart}' AND '${to}'
           UNION
           SELECT DISTINCT STYLECD FROM BCAVE.SEWON.SW_SHOPINV WHERE SHOPCD = '${shopCd}'
         )
         GROUP BY STYLECD, COLORCD, SIZECD
       `),
       // 주문 수 + 매출(영수증 단위 평균용): SALETYPENM='라이브' 제외
-      // 영수증 키: SALEDT + SALENO (SALENO는 일자별 0001부터 리셋되므로 단독 사용 시 중복)
+      // 영수증 번호는 매장과 일자마다 다시 시작한다.
       // 라이브 매출은 별도 KPI로 노출
       // - SALENO는 면세점/온라인/해외 채널에서 회계상 정산 묶음(영수증 아님)이라 외부 화이트리스트에서만 사용
       snowflakeQuery<Record<string, string>>(`
         SELECT
-          COUNT(DISTINCT CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN SALEDT || '|' || SALENO END) as ORDER_CNT,
-          SUM(CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN SALEAMT ELSE 0 END) / 1.1 as RETAIL_REV,
-          SUM(CASE WHEN SALETYPENM = '라이브' THEN SALEAMT ELSE 0 END) / 1.1 as LIVE_REV
+          COUNT(DISTINCT CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN SHOPCD || '|' || SALEDT || '|' || SALENO END) as ORDER_CNT,
+          SUM(CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN ${saleAmount} ELSE 0 END) as RETAIL_REV,
+          SUM(CASE WHEN SALETYPENM = '라이브' THEN ${saleAmount} ELSE 0 END) as LIVE_REV
         FROM BCAVE.SEWON.SW_SALEINFO
-        WHERE SHOPCD = '${shopCd}'
+        WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${from}' AND '${to}'
       `),
     ])

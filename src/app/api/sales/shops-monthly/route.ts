@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
+import { SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // 목표/캐시 영향 없이 항상 최신 집계
 export const dynamic = 'force-dynamic'
@@ -18,8 +19,11 @@ export async function GET(req: Request) {
   const lyYear = String(Number(year) - 1)
 
   const channels = (searchParams.get('channels') || '').split(',').filter(Boolean)
+  const shopCode = 'COALESCE(alias.SHOPCD, v.SHOPCD)'
+  const channel = 'COALESCE(si.SHOPTYPENM, v.SHOPTYPENM)'
+  const channelList = channels.map(c => `'${c.replace(/'/g, "''")}'`).join(',')
   const channelClause = channels.length > 0
-    ? `AND v.SHOPTYPENM IN (${channels.map(c => `'${c.replace(/'/g, "''")}'`).join(',')})`
+    ? `AND (${channel} IN (${channelList}) OR legacy.SHOPTYPENM IN (${channelList}) OR v.SHOPTYPENM IN (${channelList}))`
     : ''
 
   // 집계 단위: 월(1~12) 또는 주(ISO 주차). CY/LY는 같은 버킷번호로 매칭(월:동월, 주:동주차)
@@ -35,7 +39,7 @@ export async function GET(req: Request) {
   const vin = `CASE WHEN sti.YEARCD = SUBSTRING(v.SALEDT, 3, 2) THEN 'N' ELSE 'C' END`
 
   const sql = `
-    SELECT v.SHOPCD, v.BRANDCD, v.SHOPTYPENM,
+    SELECT ${shopCode} AS SHOPCD, v.BRANDCD, ${channel} AS SHOPTYPENM,
       MAX(si.SHOPNM) as SHOPNM, MAX(si.AREANM) as AREANM,
       SUBSTRING(v.SALEDT, 1, 4) as YR,
       ${bucketNum} as MM,
@@ -45,12 +49,14 @@ export async function GET(req: Request) {
       SUM(v.SALEQTY) as QTY,
       SUM((sti.TAGPRICE / 1.1) * v.SALEQTY) as TAG
     FROM ${SALES_VIEW} v
-    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON v.SHOPCD = si.SHOPCD
+    LEFT JOIN ${SHOP_CODE_ALIASES} alias ON v.SHOPCD = alias.OLD_SHOPCD
+    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON ${shopCode} = si.SHOPCD
+    LEFT JOIN BCAVE.SEWON.SW_SHOPINFO legacy ON si.OLD_SHOPCD = legacy.SHOPCD
     LEFT JOIN BCAVE.SEWON.SW_STYLEINFO sti ON v.STYLECD = sti.STYLECD AND v.BRANDCD = sti.BRANDCD
     WHERE v.BRANDCD IN ${inClause}
       AND v.SALEDT BETWEEN '${lyYear}0101' AND '${year}1231'
       ${channelClause}
-    GROUP BY v.SHOPCD, v.BRANDCD, v.SHOPTYPENM, YR, MM, ${bucketStart}, ${vin}
+    GROUP BY 1, 2, 3, YR, MM, ${bucketStart}, ${vin}
     HAVING SUM(v.SALEAMT_VAT_EX) <> 0 OR SUM(v.SALEQTY) <> 0
   `
 

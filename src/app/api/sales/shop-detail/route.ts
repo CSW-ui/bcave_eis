@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
-import { ERP_NET_SALES_AMOUNT, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
+import { SALES_WITH_NET_AMOUNT, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // GET /api/sales/shop-detail?shopCd=C3001&from=20260501&to=20260520
 export async function GET(req: Request) {
@@ -43,18 +43,18 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT STYLECD, COLORCD, SIZECD,
           SUM(SALEQTY) as QTY,
-          SUM(${ERP_NET_SALES_AMOUNT}) as REV,
+          SUM(SALEAMT_VAT_EX) as REV,
           SUM(DCAMT) / 1.1 as DC,
           SUM(CASE WHEN
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
-            THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as STORE_REV,
+            THEN SALEAMT_VAT_EX ELSE 0 END) as STORE_REV,
           SUM(CASE WHEN NOT (
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
           ) AND (SALETYPENM IS NULL OR SALETYPENM NOT IN ('맞교환','예약(완불)'))
-            THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as OTHER_REV
-        FROM BCAVE.SEWON.SW_SALEINFO
+            THEN SALEAMT_VAT_EX ELSE 0 END) as OTHER_REV
+        FROM ${SALES_WITH_NET_AMOUNT}
         WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${from}' AND '${to}'
         GROUP BY STYLECD, COLORCD, SIZECD
@@ -92,9 +92,9 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT
           COUNT(DISTINCT CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN SHOPCD || '|' || SALEDT || '|' || SALENO END) as ORDER_CNT,
-          SUM(CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as RETAIL_REV,
-          SUM(CASE WHEN SALETYPENM = '라이브' THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as LIVE_REV
-        FROM BCAVE.SEWON.SW_SALEINFO
+          SUM(CASE WHEN SALETYPENM IS NULL OR SALETYPENM != '라이브' THEN SALEAMT_VAT_EX ELSE 0 END) as RETAIL_REV,
+          SUM(CASE WHEN SALETYPENM = '라이브' THEN SALEAMT_VAT_EX ELSE 0 END) as LIVE_REV
+        FROM ${SALES_WITH_NET_AMOUNT}
         WHERE ${salesShopFilter}
           AND SALEDT BETWEEN '${from}' AND '${to}'
       `),

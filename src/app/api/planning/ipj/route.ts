@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
+import { TRANSFER_SALES_VIEW } from '@/lib/sales-scope'
 import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 
 // 입판재현황 API: 입고·판매·재고를 품목별·차수별로 상세 집계
@@ -343,12 +344,12 @@ export async function GET(req: Request) {
         GROUP BY si.ITEMNM
       `),
 
-      // 20. 당시즌 자회사 이전분(자사 3법인) — 원본 VW. 소진율 분모에서 차감
+      // 20. 당시즌 자회사 이전분(자사 3법인). 소진율 분모에서 차감
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as TRF_QTY,
           SUM(v.SALEAMT_VAT_EX) as TRF_AMT
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${TRANSFER_SALES_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
           AND v.SHOPCD IN (${transferShopClause})

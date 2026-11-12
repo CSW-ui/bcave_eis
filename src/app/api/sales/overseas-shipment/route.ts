@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
-import { OVERSEAS_TRANSFER_ENTITY_CODES, OVERSEAS_TRANSFER_ENTITY_SQL, OVERSEAS_TRANSFER_SHOP_LIST } from '@/lib/sales-scope'
+import { OVERSEAS_TRANSFER_ENTITY_CODES, OVERSEAS_TRANSFER_ENTITY_SQL, OVERSEAS_TRANSFER_SHOP_LIST, TRANSFER_SALES_VIEW } from '@/lib/sales-scope'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/sales/overseas-shipment?year=2026
-//   자사 해외법인(대만·일본·중국 B.CAVE) 이전 출고분 — raw VW(필터 전) 조회
-//   ※ SALES_VIEW는 이 매장들을 제외하므로 여기선 원본 테이블을 직접 사용
+//   자사 해외법인(대만·일본·중국 B.CAVE) 이전 출고분
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const year = (searchParams.get('year') || '2026').replace(/[^0-9]/g, '').slice(0, 4)
@@ -19,7 +18,7 @@ export async function GET(req: Request) {
       CAST(SUBSTRING(v.SALEDT, 5, 2) AS INT) as MM,
       SUM(v.SALEAMT_VAT_EX) as AMT,
       SUM(v.SALEQTY) as QTY
-    FROM BCAVE.SEWON.VW_SALES_VAT v
+    FROM ${TRANSFER_SALES_VIEW} v
     WHERE v.SHOPCD IN (${OVERSEAS_TRANSFER_SHOP_LIST})
       AND v.SALEDT BETWEEN '${lyYear}0101' AND '${year}1231'
     GROUP BY 1, v.BRANDCD, YR, MM

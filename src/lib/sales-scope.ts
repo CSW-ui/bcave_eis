@@ -16,8 +16,29 @@ export const OVERSEAS_TRANSFER_ENTITY_SQL = `CASE v.SHOPCD
   ${TRANSFER_SHOP_PAIRS.map(([original, current]) => `WHEN '${current}' THEN '${original}'`).join('\n  ')}
   ELSE v.SHOPCD END`
 
-// ERP 전환 이후 SALEAMT는 부가세 제외 금액이다. 전환 전에는 기존 VAT 뷰를 사용한다.
+// 신 ERP 판매현황은 실판매금액과 장부금액을 따로 관리한다.
 export const ERP_SALES_CUTOVER = '20261001'
+
+const erpBookAmountEnabled = process.env.EIS_USE_ERP_BOOK_AMOUNT === 'true'
+
+const erpBookAmountJoin = erpBookAmountEnabled ? `
+  LEFT JOIN (
+    SELECT SALEDT, SHOPCD, SALENO, SALESEQ,
+           MAX(ACTUAL_SALE_AMOUNT) AS ACTUAL_SALE_AMOUNT, MAX(BOOK_AMOUNT) AS BOOK_AMOUNT
+    FROM BCAVE.SEWON.ERP_SALES_LEDGER
+    WHERE SALEDT >= '${ERP_SALES_CUTOVER}'
+    GROUP BY SALEDT, SHOPCD, SALENO, SALESEQ
+    HAVING COUNT(*) = 1
+  ) ledger ON s.SALEDT >= '${ERP_SALES_CUTOVER}'
+    AND s.SALEDT = ledger.SALEDT AND s.SHOPCD = ledger.SHOPCD
+    AND s.SALENO = ledger.SALENO AND TRY_TO_NUMBER(s.SALESEQ) = ledger.SALESEQ
+    AND TO_DECIMAL(s.SALEAMT, 38, 6) = ledger.ACTUAL_SALE_AMOUNT` : ''
+
+// 장부 연동 후에는 누락·중복·금액 불일치가 합계에서 조용히 빠지지 않도록 한다.
+const postCutoverAmount = erpBookAmountEnabled ? `CASE
+  WHEN ledger.BOOK_AMOUNT IS NOT NULL THEN ledger.BOOK_AMOUNT
+  ELSE TO_DECIMAL('Missing ERP book amount for ' || s.SALEDT || '/' || s.SHOPCD, 38, 6)
+END` : 's.SALEAMT'
 
 export const REPLENISHMENT_NORMAL_SALE = `s.PRICETYPE = IFF(s.SALEDT < '${ERP_SALES_CUTOVER}', '0', '1')`
 export const REPLENISHMENT_RETAIL_SHOP = `NOT REGEXP_LIKE(COALESCE(si.SHOPTYPENM,''), '.*(면세|해외|온라인|B2B|오프라인 위탁|수출|위탁처).*')`
@@ -34,11 +55,13 @@ export const SHOP_CODE_ALIASES = `(
 export const SALES_WITH_NET_AMOUNT = `(
   SELECT s.*,
          CASE
-           WHEN s.SALEDT >= '${ERP_SALES_CUTOVER}' OR sh.SHOPTYPENM = '면세점' THEN s.SALEAMT
+           WHEN s.SALEDT >= '${ERP_SALES_CUTOVER}' THEN ${postCutoverAmount}
+           WHEN sh.SHOPTYPENM = '면세점' THEN s.SALEAMT
            ELSE s.SALEAMT / 1.1
          END AS SALEAMT_VAT_EX
   FROM BCAVE.SEWON.SW_SALEINFO s
   LEFT JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
+  ${erpBookAmountJoin}
 )`
 
 export const SALES_WITH_CURRENT_SHOP = `(
@@ -60,7 +83,8 @@ export const SALES_VAT_VIEW = `(
          s.SALEDT, LEFT(s.SALEDT, 6) AS YYYYMM, s.STYLECD, s.COLORCD, s.SALEQTY, s.TAGPRICE, s.SALEPRICE,
          s.SALEQTY AS FINANCIAL_SALEQTY,
          CASE
-           WHEN s.SALEDT >= '${ERP_SALES_CUTOVER}' OR sh.SHOPTYPENM = '면세점' THEN s.SALEAMT
+           WHEN s.SALEDT >= '${ERP_SALES_CUTOVER}' THEN ${postCutoverAmount}
+           WHEN sh.SHOPTYPENM = '면세점' THEN s.SALEAMT
            WHEN sh.SHOPTYPECD IN ('C','D','F') AND sh.CORPTYPECD IS NOT NULL THEN s.SALEAMT
            WHEN sh.SHOPTYPECD IN ('6','9') AND sh.CORPTYPECD IS NULL THEN s.SALEAMT
            ELSE ROUND(s.SALEAMT / 1.1, 0)
@@ -69,6 +93,9 @@ export const SALES_VAT_VIEW = `(
   LEFT JOIN BCAVE.SEWON.SW_SHOPINFO sh ON s.SHOPCD = sh.SHOPCD
   LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
   LEFT JOIN BCAVE.SEWON.SW_SHOPINFO legacy ON sh.OLD_SHOPCD = legacy.SHOPCD
+  ${erpBookAmountJoin}
 )`
 
 export const SALES_VIEW = `(SELECT * FROM ${SALES_VAT_VIEW} WHERE SHOPCD NOT IN (${OVERSEAS_TRANSFER_SHOP_LIST}))`
+
+export const TRANSFER_SALES_VIEW = erpBookAmountEnabled ? SALES_VAT_VIEW : 'BCAVE.SEWON.VW_SALES_VAT'

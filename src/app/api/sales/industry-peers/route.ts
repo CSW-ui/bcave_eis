@@ -3,10 +3,11 @@ import { snowflakeQuery, SALES_VIEW } from '@/lib/snowflake'
 import { SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // 백화점·아울렛 동업계 비교 — 전 매장(건물) 단위, 성인/키즈 조닝
-//  우리=VW(VAT포함 ×1.1), 경쟁=SW_INDUSTRYPEERS(비우리 PEERNM)
+//  우리=부가세 포함 기준(면세 매출은 원금액), 경쟁=SW_INDUSTRYPEERS(비우리 PEERNM)
 //  경쟁사는 매니저 수기입력 중복/불일치 → 건물당 (PEERNM,주차) 최댓값으로 dedupe
 //  '와릿이즌'(BR045)=우리 와키윌리이므로 경쟁사 제외
 const OUR_PEER_EXCL = `('커버낫','LEE','CK','와릿이즌')`
+const OUR_GROSS_SALES = `SUM(v.SALEAMT_VAT_EX * IFF(v.SHOPTYPENM = '면세점', 1, 1.1))`
 const BLD = `REGEXP_REPLACE(sh.SHOPNM,'_[^_]+$','')`
 const PEER_SALES = `(
   SELECT COALESCE(alias.SHOPCD, p.SHOPCD) AS SHOPCD, p.SALEDT, p.PEERCD, p.PEERNM, p.PRICETYPE,
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
           WHERE ${BLD}='${building}' AND ${CH} AND v.BRANDCD IN ${zoneCodes} AND v.SALEDT BETWEEN '${from}' AND '${to}'
         )
         SELECT BR, OURS, BK, AMT FROM (
-          SELECT v.BRANDCD AS BR, TRUE AS OURS, ${bucketOur} AS BK, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
+          SELECT v.BRANDCD AS BR, TRUE AS OURS, ${bucketOur} AS BK, ${OUR_GROSS_SALES} AS AMT
           FROM ${SALES_VIEW} v WHERE v.SHOPCD IN (SELECT SHOPCD FROM shops) AND v.BRANDCD IN ${zoneCodes} AND v.SALEDT BETWEEN '${from}' AND '${to}'
           GROUP BY v.BRANDCD, ${bucketOur}
           UNION ALL
@@ -66,7 +67,7 @@ export async function GET(req: Request) {
     const [summaryRaw, ourRaw, marketRaw, coverage] = await Promise.all([
       snowflakeQuery<Record<string, string>>(`
         WITH our_bld AS (
-          SELECT ${BLD} AS BLD, v.BRANDCD AS BR, TRUE AS OURS, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
+          SELECT ${BLD} AS BLD, v.BRANDCD AS BR, TRUE AS OURS, ${OUR_GROSS_SALES} AS AMT
           FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
           WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}'
           GROUP BY ${BLD}, v.BRANDCD
@@ -96,7 +97,7 @@ export async function GET(req: Request) {
         FROM ranked GROUP BY BLD
       `),
       snowflakeQuery<Record<string, string>>(`
-        SELECT ${BLD} AS BLD, v.BRANDCD AS BR, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
+        SELECT ${BLD} AS BLD, v.BRANDCD AS BR, ${OUR_GROSS_SALES} AS AMT
         FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
         WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}'
         GROUP BY ${BLD}, v.BRANDCD
@@ -104,7 +105,7 @@ export async function GET(req: Request) {
       // 시장 추이: 우리 브랜드(VW) + 경쟁사(건물·버킷당 max로 중복제거 후 매장 합산), 버킷별
       snowflakeQuery<Record<string, string>>(`
         -- 우리
-        SELECT v.BRANDCD AS BR, TRUE AS OURS, ${bucketOur} AS BK, SUM(v.SALEAMT_VAT_EX)*1.1 AS AMT
+        SELECT v.BRANDCD AS BR, TRUE AS OURS, ${bucketOur} AS BK, ${OUR_GROSS_SALES} AS AMT
         FROM ${SALES_VIEW} v JOIN BCAVE.SEWON.SW_SHOPINFO sh ON v.SHOPCD=sh.SHOPCD
         WHERE v.BRANDCD IN ${zoneCodes} AND ${CH} AND v.SALEDT BETWEEN '${from}' AND '${to}'
         GROUP BY v.BRANDCD, ${bucketOur}

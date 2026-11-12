@@ -512,7 +512,7 @@ export async function GET(req: Request) {
       const lyOrdCostRate = lyOrdTagAmt > 0 ? Math.round(lyOrdCostAmt / lyOrdTagAmt * 1000) / 10 : 0
 
       return {
-        item: itemNm, category,
+        item: itemNm ?? '미분류', category,
         stCnt, stclCnt, ordQty, ordTagAmt, ordCostAmt, inQty, inAmt,
         stCnt1st, stclCnt1st, ordQty1st, ordTag1st, ordCost1st,
         stCntQR, stclCntQR, ordQtyQR, ordTagQR, ordCostQR,

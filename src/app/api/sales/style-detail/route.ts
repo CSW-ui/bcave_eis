@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { ERP_NET_SALES_AMOUNT, SALES_WITH_CURRENT_SHOP } from '@/lib/sales-scope'
+import { SALES_WITH_CURRENT_SHOP } from '@/lib/sales-scope'
 import { snowflakeQuery } from '@/lib/snowflake'
 
 // GET /api/sales/style-detail?styleCd=CO2301JK04&color=BK&from=20260501&to=20260520
@@ -59,16 +59,16 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT SHOPCD, SIZECD,
           SUM(SALEQTY) as QTY,
-          SUM(${ERP_NET_SALES_AMOUNT}) as REV,
+          SUM(SALEAMT_VAT_EX) as REV,
           SUM(CASE WHEN
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
-            THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as STORE_REV,
+            THEN SALEAMT_VAT_EX ELSE 0 END) as STORE_REV,
           SUM(CASE WHEN NOT (
             (SALETYPENM IS NULL OR SALETYPENM = '정상')
             AND (PRICETYPENM IS NULL OR PRICETYPENM IN ('정상','할인','균일'))
           ) AND (SALETYPENM IS NULL OR SALETYPENM NOT IN ('맞교환','예약(완불)'))
-            THEN ${ERP_NET_SALES_AMOUNT} ELSE 0 END) as OTHER_REV
+            THEN SALEAMT_VAT_EX ELSE 0 END) as OTHER_REV
         FROM ${SALES_WITH_CURRENT_SHOP}
         WHERE STYLECD = '${styleCd}'
           AND SALEDT BETWEEN '${from}' AND '${to}'

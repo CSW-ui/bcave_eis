@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { ERP_NET_SALES_AMOUNT, SALES_WITH_CURRENT_SHOP } from '@/lib/sales-scope'
+import { SALES_WITH_CURRENT_SHOP } from '@/lib/sales-scope'
 import { snowflakeQuery, SALES_VIEW, parseBrandParam } from '@/lib/snowflake'
 
 // GET /api/sales/shops?from=20260101&to=20260521&brands=all&channels=백화점,직영점
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
       --   워크인: SALETYPE in (정상,NULL) × PRICETYPE in (정상,할인,균일,NULL)
       --   기타: 라이브 + 온라인 + 행사 + 직원판매 + 비품 + 대여 + 외매조정 + 기획 등
       SELECT SHOPCD, BRANDCD,
-        SUM(${ERP_NET_SALES_AMOUNT}) AS PROMO_REV
+        SUM(SALEAMT_VAT_EX) AS PROMO_REV
       FROM ${SALES_WITH_CURRENT_SHOP}
       WHERE NOT (
         (SALETYPENM IS NULL OR SALETYPENM = '정상')

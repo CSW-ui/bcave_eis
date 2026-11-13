@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
-import { OVERSEAS_TRANSFER_ENTITY_CODES, OVERSEAS_TRANSFER_ENTITY_SQL, OVERSEAS_TRANSFER_SHOP_LIST, TRANSFER_SALES_VIEW } from '@/lib/sales-scope'
+import { OVERSEAS_TRANSFER_ENTITY_CODES, OVERSEAS_TRANSFER_ENTITY_SQL, OVERSEAS_TRANSFER_SHOP_LIST, SALES_VAT_VIEW } from '@/lib/sales-scope'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
       CAST(SUBSTRING(v.SALEDT, 5, 2) AS INT) as MM,
       SUM(v.SALEAMT_VAT_EX) as AMT,
       SUM(v.SALEQTY) as QTY
-    FROM ${TRANSFER_SALES_VIEW} v
+    FROM ${SALES_VAT_VIEW} v
     WHERE v.SHOPCD IN (${OVERSEAS_TRANSFER_SHOP_LIST})
       AND v.SALEDT BETWEEN '${lyYear}0101' AND '${year}1231'
     GROUP BY 1, v.BRANDCD, YR, MM

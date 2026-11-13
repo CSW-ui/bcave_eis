@@ -1,4 +1,4 @@
-import { OVERSEAS_TRANSFER_SHOP_LIST, SALES_VIEW } from './sales-scope'
+import { OVERSEAS_TRANSFER_SHOP_LIST, SALES_VAT_VIEW, SALES_VIEW } from './sales-scope'
 
 export const WEEKLY_BRANDS = ['CO', 'LE', 'WA', 'CK', 'LK'] as const
 export const WEEKLY_SEASONS = ['봄', '여름', '상반기', '가을', '겨울', '하반기', '스탠다드']
@@ -81,7 +81,7 @@ export function weeklyQuery(brands: string[], year: string, seasons: string[], a
     WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' GROUP BY v.STYLECD
   ), transfers AS (
     SELECT v.STYLECD,SUM(v.SALEQTY) TRF_QTY
-    FROM BCAVE.SEWON.VW_SALES_VAT v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
+    FROM ${SALES_VAT_VIEW} v JOIN eligible e ON e.STYLECD=v.STYLECD AND e.BRANDCD=v.BRANDCD
     WHERE v.SALEDT BETWEEN '20250101' AND '${cutoff}' AND v.SHOPCD IN (${OVERSEAS_TRANSFER_SHOP_LIST}) GROUP BY v.STYLECD
   ), inventory AS (
     SELECT x.STYLECD,SUM(x.QTY) STOCK FROM (

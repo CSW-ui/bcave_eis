@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
 import { supabaseAdmin } from '@/lib/supabase'
 import { VALID_BRANDS } from '@/lib/constants'
-import { REPLENISHMENT_NORMAL_SALE, REPLENISHMENT_RETAIL_SHOP, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
+import { SALES_AMOUNT_WITH_BOOK, REPLENISHMENT_NORMAL_SALE, REPLENISHMENT_RETAIL_SHOP, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 // GET /api/replenishment/shops?brand=CO
 export async function GET(req: Request) {
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 
     // 매장별 최근 3개월 정상 매출 집계 (자동 등급 산정용, 행사 제외)
     const salesRank = await snowflakeQuery<Record<string, string>>(`
-      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, SUM(s.SALEAMT) as SALE_AMT
+      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, SUM(${SALES_AMOUNT_WITH_BOOK}) as SALE_AMT
       FROM BCAVE.SEWON.SW_SALEINFO s
       LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
       WHERE s.BRANDCD = '${brand}'

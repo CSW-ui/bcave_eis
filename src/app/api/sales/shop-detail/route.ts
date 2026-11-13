@@ -37,7 +37,7 @@ export async function GET(req: Request) {
         WHERE SHOPCD = '${shopCd}'
         LIMIT 1
       `),
-      // SKU 단위 기간 매출 (ERP 전환 전 금액만 부가세 제거)
+      // SKU 단위 기간 매출 (공통 부가세 제외 기준)
       // STORE_REV (매장 워크인) = SALETYPE in (NULL,'정상') × PRICETYPE in (NULL,'정상','할인','균일')
       // OTHER_REV (기타) = 워크인 외 모든 매출 (단, 맞교환·예약(완불) 제외)
       snowflakeQuery<Record<string, string>>(`

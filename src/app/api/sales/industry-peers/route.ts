@@ -7,7 +7,7 @@ import { SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 //  경쟁사는 매니저 수기입력 중복/불일치 → 건물당 (PEERNM,주차) 최댓값으로 dedupe
 //  '와릿이즌'(BR045)=우리 와키윌리이므로 경쟁사 제외
 const OUR_PEER_EXCL = `('커버낫','LEE','CK','와릿이즌')`
-const OUR_GROSS_SALES = `SUM(v.SALEAMT_VAT_EX * IFF(v.SHOPTYPENM = '면세점', 1, 1.1))`
+const OUR_GROSS_SALES = `SUM(v.SALEAMT_VAT_IN)`
 const BLD = `REGEXP_REPLACE(sh.SHOPNM,'_[^_]+$','')`
 const PEER_SALES = `(
   SELECT COALESCE(alias.SHOPCD, p.SHOPCD) AS SHOPCD, p.SALEDT, p.PEERCD, p.PEERNM, p.PRICETYPE,

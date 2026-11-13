@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { TopNav } from '@/components/layout/TopNav'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
@@ -43,11 +43,41 @@ function LayoutSkeleton() {
   )
 }
 
+function SalesBookNotice() {
+  const [message, setMessage] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const unavailable = 'ERP 장부금액 적재 상태를 확인할 수 없습니다.'
+    const formatDay = (day: string) => `${day.slice(0, 4)}.${day.slice(4, 6)}.${day.slice(6, 8)}`
+
+    fetch('/api/sales/book-status', { cache: 'no-store', signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error(unavailable)
+        return response.json() as Promise<{ firstDay: string | null; lastDay: string | null }>
+      })
+      .then(({ firstDay, lastDay }) => {
+        if (controller.signal.aborted || !firstDay || !lastDay) return
+        const period = firstDay === lastDay ? formatDay(firstDay) : `${formatDay(firstDay)}~${formatDay(lastDay)}`
+        setMessage(`ERP 장부금액 미적재 거래가 있는 기간 ${period}. 해당 거래는 실판매금액으로 잠정 집계합니다.`)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setMessage(unavailable)
+      })
+
+    return () => controller.abort()
+  }, [])
+
+  if (!message) return null
+  return <p role="status" className="mx-4 mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">{message}</p>
+}
+
 function DashboardGuard({ children }: { children: React.ReactNode }) {
   const { profile, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
   const isSecurityPage = pathname === '/settings/security' || pathname.startsWith('/settings/security/')
+  const hasSales = pathname === '/' || pathname === '/dashboard' || /^\/(sales|planning)(\/|$)/.test(pathname)
 
   useEffect(() => {
     if (!loading && profile?.role === 'vendor' && !isSecurityPage) {
@@ -73,7 +103,10 @@ function DashboardGuard({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-surface-subtle">
       <TopNav />
-      <main className="eis-workspace">{loading ? <LayoutSkeleton /> : children}</main>
+      <main className="eis-workspace">
+        {!loading && hasSales && <SalesBookNotice key={pathname} />}
+        {loading ? <LayoutSkeleton /> : children}
+      </main>
     </div>
   )
 }

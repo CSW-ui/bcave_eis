@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery, SALES_VIEW, OVERSEAS_TRANSFER_SHOPS } from '@/lib/snowflake'
-import { TRANSFER_SALES_VIEW } from '@/lib/sales-scope'
+import { SALES_VAT_VIEW } from '@/lib/sales-scope'
 import { VALID_BRANDS, ITEM_CATEGORY_MAP } from '@/lib/constants'
 
 // 입판재현황 API: 입고·판매·재고를 품목별·차수별로 상세 집계
@@ -349,7 +349,7 @@ export async function GET(req: Request) {
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as TRF_QTY,
           SUM(v.SALEAMT_VAT_EX) as TRF_AMT
-        FROM ${TRANSFER_SALES_VIEW} v
+        FROM ${SALES_VAT_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
           AND v.SHOPCD IN (${transferShopClause})
@@ -362,7 +362,7 @@ export async function GET(req: Request) {
       snowflakeQuery<Record<string, string>>(`
         SELECT si.ITEMNM,
           SUM(v.SALEQTY) as LY_TRF_QTY
-        FROM BCAVE.SEWON.VW_SALES_VAT v
+        FROM ${SALES_VAT_VIEW} v
         JOIN BCAVE.SEWON.SW_STYLEINFO si ON v.STYLECD = si.STYLECD AND v.BRANDCD = si.BRANDCD
         WHERE ${vBrandClause}
           AND v.SHOPCD IN (${transferShopClause})

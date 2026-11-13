@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { snowflakeQuery } from '@/lib/snowflake'
+import { SALES_AMOUNT_WITH_BOOK } from '@/lib/sales-scope'
 
 // GET /api/replenishment/results?brand=CO&date=20260316
 export async function GET(req: Request) {
@@ -75,7 +76,7 @@ export async function GET(req: Request) {
 
   // 자동 등급
   const rankRes = await snowflakeQuery<Record<string, string>>(`
-    SELECT s.SHOPCD, SUM(s.SALEAMT) as AMT FROM BCAVE.SEWON.SW_SALEINFO s
+    SELECT s.SHOPCD, SUM(${SALES_AMOUNT_WITH_BOOK}) as AMT FROM BCAVE.SEWON.SW_SALEINFO s
     WHERE s.BRANDCD='${brand}' AND s.SALEDT>=TO_CHAR(DATEADD(DAY,-90,CURRENT_DATE()),'YYYYMMDD')
       AND s.SALEQTY>0 AND s.PRICETYPE='0' GROUP BY s.SHOPCD
   `)

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { snowflakeQuery } from '@/lib/snowflake'
+import { SALES_WITH_NET_AMOUNT } from '@/lib/sales-scope'
 
 // 글로벌 영업현황 — 매장×브랜드×채널유형 단위
 // YTD + 월별 + 주간(금주/전주) + 할인율/원가율
@@ -26,14 +27,14 @@ export async function GET(req: Request) {
         sh.AREACD, sh.AREANM, sh.SHOPNM, sh.SHOPTYPENM,
         sa.BRANDNM,
         SUBSTR(sa.SALEDT, 1, 6) AS YM,
-        SUM(sa.SALEAMT) AS AMT,
+        SUM(sa.SALEAMT_VAT_EX) AS AMT,
         SUM(sa.SALEQTY) AS QTY,
         SUM(sa.TAGPRICE * sa.SALEQTY) AS TAG,
         SUM(COALESCE(pc.PRECOST, st.PRODCOST, 0) * sa.SALEQTY) AS COGS,
-        SUM(CASE WHEN sa.SALEDT >= '${cwStartDt}' THEN sa.SALEAMT ELSE 0 END) AS CW_AMT,
+        SUM(CASE WHEN sa.SALEDT >= '${cwStartDt}' THEN sa.SALEAMT_VAT_EX ELSE 0 END) AS CW_AMT,
         SUM(CASE WHEN sa.SALEDT >= '${cwStartDt}' THEN sa.TAGPRICE * sa.SALEQTY ELSE 0 END) AS CW_TAG,
-        SUM(CASE WHEN sa.SALEDT >= '${pwStartDt}' AND sa.SALEDT < '${pwEndDt}' THEN sa.SALEAMT ELSE 0 END) AS PW_AMT
-      FROM SW_SALEINFO sa
+        SUM(CASE WHEN sa.SALEDT >= '${pwStartDt}' AND sa.SALEDT < '${pwEndDt}' THEN sa.SALEAMT_VAT_EX ELSE 0 END) AS PW_AMT
+      FROM ${SALES_WITH_NET_AMOUNT} sa
       JOIN SW_SHOPINFO sh ON sa.SHOPCD = sh.SHOPCD
       JOIN SW_STYLEINFO st ON sa.STYLECD = st.STYLECD AND sa.BRANDCD = st.BRANDCD
       LEFT JOIN (SELECT STYLECD, BRANDCD, AVG(PRECOST) AS PRECOST FROM SW_STYLEINFO_DETAIL GROUP BY STYLECD, BRANDCD) pc ON st.STYLECD = pc.STYLECD AND st.BRANDCD = pc.BRANDCD

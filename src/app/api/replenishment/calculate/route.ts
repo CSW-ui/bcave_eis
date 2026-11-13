@@ -3,7 +3,7 @@ import { snowflakeQuery } from '@/lib/snowflake'
 import { supabaseAdmin } from '@/lib/supabase'
 import { VALID_BRANDS } from '@/lib/constants'
 import { verifyCronSecret, getServerProfile } from '@/lib/auth'
-import { REPLENISHMENT_NORMAL_SALE, REPLENISHMENT_RETAIL_SHOP, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
+import { SALES_AMOUNT_WITH_BOOK, REPLENISHMENT_NORMAL_SALE, REPLENISHMENT_RETAIL_SHOP, SHOP_CODE_ALIASES } from '@/lib/sales-scope'
 
 export const maxDuration = 300
 
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     // 3개월 매출 기반 자동 등급
     const rankData = await snowflakeQuery<Record<string, string>>(`
-      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, SUM(s.SALEAMT) as AMT FROM BCAVE.SEWON.SW_SALEINFO s
+      SELECT COALESCE(alias.SHOPCD, s.SHOPCD) AS SHOPCD, SUM(${SALES_AMOUNT_WITH_BOOK}) as AMT FROM BCAVE.SEWON.SW_SALEINFO s
       LEFT JOIN ${SHOP_CODE_ALIASES} alias ON s.SHOPCD = alias.OLD_SHOPCD
       LEFT JOIN BCAVE.SEWON.SW_SHOPINFO si ON COALESCE(alias.SHOPCD, s.SHOPCD) = si.SHOPCD
       WHERE s.BRANDCD='${brand}' AND s.SALEDT>=TO_CHAR(DATEADD(DAY,-90,CURRENT_DATE()),'YYYYMMDD')
